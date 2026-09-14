@@ -103,14 +103,14 @@ content_type = "image/png"
 id = "KdgagI2DhtPZfCrPa65HS"
 uri = "file://artifacts/lead-scout-desktop/Real-Windows-portable-1.0.0-x64.7z"
 type = "unspecified"
-title = "Real Windows portable — UI fixes"
-description = "Сборка с уменьшенной прозрачной иконкой, рабочими кнопками окна на входе, исправленным прогресс-баром, нижней анимацией ошибок, устойчивыми фильтрами и более широкой активной линией навигации."
+title = "Real Windows portable — fixed window controls"
+description = "Пересобранная версия: кнопки закрытия, сворачивания и разворачивания вынесены из drag-области и срабатывают сразу при нажатии."
 logical_id = "516e2ad3-7757-49d7-8b70-6c8a7993cbf5"
-content_hash = "sha256:eeed9552d2ed725ee2b8cb833ddc06e0a0b5e11ae00cae1fd6a02f95bc2b3438"
-size = 94550683
-mtime_ms = 1789401877063
-storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2929918a-2bad-485e-b0f1-dc67096566c8/516e2ad3-7757-49d7-8b70-6c8a7993cbf5/81893bc5-2046-4aff-b6fa-ebf9153d63d0"
-storage_version_token = "1789401935440516"
+content_hash = "sha256:97c4a85115b4bc7ffd1ae4ed4bdb8478b5f917826816170ae10dffe5d1598722"
+size = 94549645
+mtime_ms = 1789402515539
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2929918a-2bad-485e-b0f1-dc67096566c8/516e2ad3-7757-49d7-8b70-6c8a7993cbf5/adb546f2-e0c6-451a-b8c8-7fb1198ddc59"
+storage_version_token = "1789402525951025"
 content_type = "application/octet-stream"
 
 [[outputs]]
