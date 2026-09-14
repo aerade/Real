@@ -1,0 +1,57 @@
+name: Real Windows Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_url:
+        description: Published Real API URL, for example https://real.example.com
+        required: true
+        type: string
+  push:
+    tags:
+      - "real-v*"
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.26.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Configure desktop endpoints
+        env:
+          INPUT_API_URL: ${{ inputs.api_url }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          $current = Get-Content artifacts/lead-scout-desktop/electron/runtime-config.json | ConvertFrom-Json
+          if ($env:INPUT_API_URL) { $current.apiBaseUrl = $env:INPUT_API_URL }
+          $current.updateUrl = "https://github.com/$env:REPOSITORY/releases/latest/download/"
+          $current | ConvertTo-Json | Set-Content artifacts/lead-scout-desktop/electron/runtime-config.json
+      - run: pnpm --filter @workspace/lead-scout-desktop run build:desktop
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Real-Windows
+          path: |
+            artifacts/lead-scout-desktop/release/*.exe
+            artifacts/lead-scout-desktop/release/latest.yml
+            artifacts/lead-scout-desktop/release/*.blockmap
+      - name: Publish tagged release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view $env:GITHUB_REF_NAME 2>$null
+          if ($LASTEXITCODE -ne 0) { gh release create $env:GITHUB_REF_NAME --title $env:GITHUB_REF_NAME --generate-notes }
+          gh release upload $env:GITHUB_REF_NAME artifacts/lead-scout-desktop/release/*.exe artifacts/lead-scout-desktop/release/latest.yml artifacts/lead-scout-desktop/release/*.blockmap --clobber

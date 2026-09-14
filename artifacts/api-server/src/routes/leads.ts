@@ -1,4 +1,5 @@
 import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
+import { searchPublicBusinesses } from "../lib/osm-leads";
 
 type Role = "owner" | "manager";
 type Status = "new" | "claimed" | "contacted" | "replied" | "rejected" | "no_reply" | "deal";
@@ -42,6 +43,8 @@ const countries = [
 ];
 
 const now = () => new Date().toISOString();
+const externalLeadIds = new Map<string, number>();
+let nextLeadId = 10_000;
 const leads: Lead[] = [
   {
     id: 1, name: "Сибирский Дом", country: "Россия", city: "Красноярск", industry: "Строительство",
@@ -151,16 +154,53 @@ router.get("/leads", (req, res) => {
   res.json(result.sort((a, b) => b.score - a.score));
 });
 
-router.post("/leads/search", (req, res) => {
-  const { country, city, industry } = req.body ?? {};
-  const result = leads
-    .filter((lead) => lead.status === "new" && !lead.assignee)
-    .filter((lead) => !country || lead.country.toLowerCase().includes(String(country).toLowerCase()) || String(country).toLowerCase().includes(lead.country.toLowerCase()))
-    .filter((lead) => !city || lead.city.toLowerCase().includes(String(city).toLowerCase()))
-    .filter((lead) => !industry || lead.industry.toLowerCase().includes(String(industry).toLowerCase()))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 20);
-  res.json(result);
+router.post("/leads/search", async (req, res) => {
+  const country = String(req.body?.country ?? "").trim();
+  const city = String(req.body?.city ?? "").trim();
+  const industry = String(req.body?.industry ?? "").trim();
+  if (!country && !city) return res.status(400).json({ error: "Укажите город или страну" });
+
+  try {
+    const businesses = await searchPublicBusinesses({ country, city, industry });
+    const found = businesses.map((business) => {
+      let id = externalLeadIds.get(business.sourceId);
+      if (!id) {
+        id = nextLeadId++;
+        externalLeadIds.set(business.sourceId, id);
+      }
+
+      const existing = leads.find((lead) => lead.id === id);
+      if (existing) return existing;
+
+      const lead: Lead = {
+        id,
+        name: business.name,
+        country: country === "any" ? "" : country,
+        city,
+        industry: business.industry,
+        website: business.website,
+        status: "new",
+        score: business.score,
+        scoreReasons: business.scoreReasons,
+        issues: business.issues,
+        reviewsCount: 0,
+        rating: null,
+        branchesCount: 1,
+        contacts: business.contacts,
+        source: "OpenStreetMap",
+        assignee: null,
+        note: null,
+        updatedAt: now(),
+      };
+      leads.push(lead);
+      return lead;
+    });
+
+    return res.json(found.filter((lead) => lead.status === "new" && !lead.assignee).slice(0, 20));
+  } catch (error) {
+    req.log.error({ err: error }, "Public lead search failed");
+    return res.status(502).json({ error: error instanceof Error ? error.message : "Источник поиска временно недоступен" });
+  }
 });
 
 router.get("/leads/:id", (req, res) => {

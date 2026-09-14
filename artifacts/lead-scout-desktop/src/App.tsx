@@ -10,6 +10,7 @@ import {
   useLocation,
   Router as WouterRouter,
 } from 'wouter';
+import { useHashLocation } from 'wouter/use-hash-location';
 import { AuthProvider, ProtectedRoute } from '@/hooks/use-auth';
 import { Login } from '@/pages/login';
 import { Dashboard } from '@/pages/dashboard';
@@ -71,7 +72,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+        <WouterRouter
+          base={window.realDesktop ? "" : import.meta.env.BASE_URL.replace(/\/$/, '')}
+          hook={window.realDesktop ? useHashLocation : undefined}
+        >
           <AuthProvider>
             <Router />
           </AuthProvider>

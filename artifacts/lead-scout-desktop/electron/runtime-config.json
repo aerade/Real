@@ -1,0 +1,4 @@
+{
+  "apiBaseUrl": "https://api.example.invalid",
+  "updateUrl": "https://updates.example.invalid/real/windows"
+}

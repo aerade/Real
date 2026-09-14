@@ -42,8 +42,8 @@ export function SearchPage() {
 
         <div className="bg-card border border-card-border rounded-xl p-4 shrink-0 shadow-sm">
           <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
-            <div className="space-y-1.5">
-              <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Страна</Label>
+            <div className="flex flex-col gap-1.5">
+              <Label className="h-3 text-[10px] leading-3 uppercase tracking-wider text-muted-foreground">Страна</Label>
               <Select value={country} onValueChange={setCountry}>
                 <SelectTrigger className="h-8 text-xs bg-background/50 border-border/50">
                   <SelectValue placeholder="Любая" />
@@ -57,8 +57,8 @@ export function SearchPage() {
               </Select>
             </div>
 
-            <div className="space-y-1.5">
-              <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Город</Label>
+            <div className="flex flex-col gap-1.5">
+              <Label className="h-3 text-[10px] leading-3 uppercase tracking-wider text-muted-foreground">Город</Label>
               <div className="relative">
                 <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input 
@@ -70,8 +70,8 @@ export function SearchPage() {
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Отрасль</Label>
+            <div className="flex flex-col gap-1.5">
+              <Label className="h-3 text-[10px] leading-3 uppercase tracking-wider text-muted-foreground">Отрасль</Label>
               <div className="relative">
                 <Building2 className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input 

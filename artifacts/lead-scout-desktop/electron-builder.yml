@@ -1,0 +1,29 @@
+appId: com.real.leadscout
+productName: Real
+copyright: Copyright © 2026 Real
+directories:
+  output: release
+files:
+  - dist/public/**/*
+  - dist/electron/**/*
+extraResources:
+  - from: electron/runtime-config.json
+    to: runtime-config.json
+win:
+  icon: ../../attached_assets/real-logo/real-mark.ico
+  target:
+    - target: nsis
+      arch:
+        - x64
+  artifactName: Real-Setup-${version}-${arch}.${ext}
+nsis:
+  oneClick: false
+  differentialPackage: false
+  allowToChangeInstallationDirectory: true
+  perMachine: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Real
+publish:
+  provider: generic
+  url: https://updates.example.invalid/real/windows
