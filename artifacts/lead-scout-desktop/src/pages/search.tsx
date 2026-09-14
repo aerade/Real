@@ -1,13 +1,123 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useSearchLeads, useListCountries } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search as SearchIcon, AlertTriangle, Building2, Globe, MapPin } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Search as SearchIcon, AlertTriangle, Building2, Globe, MapPin, Target, Check } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
+
+// Static local suggestions catalog
+const POPULAR_CITIES = [
+  { value: "Moscow", aliases: ["msk", "moskva", "москва", "мск"] },
+  { value: "Saint Petersburg", aliases: ["spb", "piter", "санкт-петербург", "спб", "питер"] },
+  { value: "Novosibirsk", aliases: ["nsk", "новосибирск", "нск"] },
+  { value: "Yekaterinburg", aliases: ["ekb", "екатеринбург", "екб"] },
+  { value: "Kazan", aliases: ["kzn", "казань"] },
+  { value: "Nizhny Novgorod", aliases: ["nn", "nizhny", "нижний новгород", "нижний", "нн"] },
+  { value: "Krasnoyarsk", aliases: ["krsk", "красноярск"] },
+  { value: "Samara", aliases: ["samara", "самара"] },
+  { value: "London", aliases: ["ldn", "лондон"] },
+  { value: "New York", aliases: ["ny", "nyc", "нью йорк"] }
+];
+
+const POPULAR_INDUSTRIES = [
+  { value: "Auto Repair", aliases: ["car service", "сто", "автосервис", "ремонт авто"] },
+  { value: "Dentistry", aliases: ["dental", "стоматология", "стоматолог", "зубной"] },
+  { value: "Beauty Salon", aliases: ["salon", "spa", "салон красоты", "спа", "парикмахерская"] },
+  { value: "Restaurant", aliases: ["cafe", "food", "ресторан", "кафе", "еда", "общепит"] },
+  { value: "Real Estate", aliases: ["property", "недвижимость", "риэлтор", "агентство недвижимости"] },
+  { value: "Construction", aliases: ["build", "строительство", "стройка", "ремонт"] },
+  { value: "Furniture", aliases: ["мебель", "мебельный"] },
+  { value: "Legal Services", aliases: ["lawyer", "юрист", "адвокат", "юридические услуги"] },
+  { value: "Fitness", aliases: ["gym", "фитнес", "тренажерный зал", "спортзал"] },
+  { value: "Hotel", aliases: ["hostel", "отель", "гостиница", "хостел"] }
+];
+
+function SuggestionInput({ 
+  value, 
+  onChange, 
+  options, 
+  placeholder, 
+  icon: Icon,
+  disabled = false
+}: { 
+  value: string; 
+  onChange: (v: string) => void; 
+  options: typeof POPULAR_CITIES; 
+  placeholder: string;
+  icon: React.ElementType;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [inputVal, setInputVal] = useState(value);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync prop value to input state
+  useEffect(() => {
+    setInputVal(value);
+  }, [value]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputVal(e.target.value);
+    onChange(e.target.value); // keep parent state in sync for free text
+  };
+
+  const handleSelect = (selectedValue: string) => {
+    setInputVal(selectedValue);
+    onChange(selectedValue);
+    setOpen(false);
+  };
+
+  // Typo-tolerant and abbreviation-aware filtering
+  const filteredOptions = options.filter(opt => {
+    if (!inputVal) return true;
+    const lowerInput = inputVal.toLowerCase().trim();
+    if (opt.value.toLowerCase().includes(lowerInput)) return true;
+    return opt.aliases.some(alias => alias.toLowerCase().includes(lowerInput) || lowerInput.includes(alias.toLowerCase()));
+  });
+
+  return (
+    <Popover open={open && !disabled} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <div className="relative">
+          <Icon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input 
+            ref={inputRef}
+            value={inputVal} 
+            onChange={handleInputChange} 
+            onClick={() => setOpen(true)}
+            onFocus={() => setOpen(true)}
+            className="pl-9 h-11 text-sm bg-background border-border/50 rounded-xl focus-visible:ring-2 focus-visible:ring-primary/50 shadow-sm transition-all" 
+            placeholder={placeholder}
+            disabled={disabled}
+          />
+        </div>
+      </PopoverTrigger>
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-1 rounded-xl shadow-lg border-border/50" align="start">
+        {filteredOptions.length === 0 ? (
+          <div className="p-2 text-xs text-muted-foreground text-center">Press Enter to use "{inputVal}"</div>
+        ) : (
+          <div className="max-h-[200px] overflow-y-auto">
+            {filteredOptions.map((opt) => (
+              <div 
+                key={opt.value} 
+                onClick={() => handleSelect(opt.value)}
+                className="px-3 py-2 text-sm font-medium hover:bg-accent rounded-lg cursor-pointer flex items-center justify-between group"
+              >
+                <span>{opt.value}</span>
+                {value === opt.value && <Check className="w-4 h-4 text-primary" />}
+              </div>
+            ))}
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 export function SearchPage() {
   const [country, setCountry] = useState("");
@@ -18,181 +128,169 @@ export function SearchPage() {
   const { data: countries } = useListCountries();
   const searchMutation = useSearchLeads();
 
+  // Reset city when country changes to Any or empty
+  useEffect(() => {
+    if (!country || country === "any") {
+      setCity("");
+    }
+  }, [country]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!country && !city && !industry) return;
     
+    // Ensure we don't send "any" to the API
+    const searchCountry = country === "any" ? "" : country;
+    
     setHasSearched(true);
     searchMutation.mutate({
-      data: { country, city, industry }
+      data: { country: searchCountry, city, industry }
     });
   };
 
   const results = searchMutation.data || [];
-  const popularCities = ["Москва", "Санкт-Петербург", "Новосибирск", "Екатеринбург", "Казань", "Нижний Новгород", "Красноярск", "Самара"];
-  const popularIndustries = ["СТО", "Стоматология", "Салон красоты", "Ресторан", "Недвижимость", "Строительство", "Мебель", "Юридические услуги", "Фитнес", "Отель"];
+  const cityDisabled = !country || country === "any";
 
   return (
     <AppLayout>
       <div className="space-y-6 flex flex-col h-full">
-        <div className="flex items-center justify-between border-b border-border/40 pb-4 shrink-0">
+        <div className="flex items-center justify-between pb-2 shrink-0">
           <div>
-            <h1 className="text-lg font-bold tracking-tight">Поиск</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">Поиск потенциальных клиентов</p>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Search</h1>
+            <p className="text-sm font-medium text-muted-foreground mt-1">Discover new leads and opportunities</p>
           </div>
         </div>
 
-        <div className="bg-card border border-card-border rounded-xl p-4 shrink-0 shadow-sm">
-          <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-4 gap-3 items-start">
-            <div className="flex flex-col gap-1.5">
-              <Label className="h-3 text-[10px] leading-3 uppercase tracking-wider text-muted-foreground">Страна</Label>
+        <div className="bg-card border border-card-border rounded-2xl p-5 shrink-0 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+          
+          <form onSubmit={handleSearch} className="relative z-10 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div className="flex flex-col gap-2">
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Country</Label>
               <Select value={country} onValueChange={setCountry}>
-                <SelectTrigger className="h-8 text-xs bg-background/50 border-border/50">
-                  <SelectValue placeholder="Любая" />
+                <SelectTrigger className="h-11 text-sm bg-background border-border/50 rounded-xl focus:ring-2 focus:ring-primary/50 shadow-sm transition-all">
+                  <SelectValue placeholder="Select Country" />
                 </SelectTrigger>
-                <SelectContent className="text-xs">
-                  <SelectItem value="any">Любая</SelectItem>
+                <SelectContent className="rounded-xl border-border/50 shadow-lg">
+                  <SelectItem value="any" className="font-bold">Any Country</SelectItem>
                   {countries?.filter(c => c.enabled).map(c => (
-                    <SelectItem key={c.code} value={c.name}>{c.name}</SelectItem>
+                    <SelectItem key={c.code} value={c.name} className="font-medium">{c.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label className="h-3 text-[10px] leading-3 uppercase tracking-wider text-muted-foreground">Город</Label>
-              <div className="relative">
-                <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <Input 
-                  list="popular-cities"
-                  value={city} 
-                  onChange={e => setCity(e.target.value)} 
-                  className="pl-8 h-8 text-xs bg-background/50 border-border/50" 
-                  placeholder="Например: Москва" 
-                />
-                <datalist id="popular-cities">
-                  {popularCities.map((item) => <option key={item} value={item} />)}
-                </datalist>
-              </div>
-              <div className="flex flex-wrap gap-1 mt-1">
-                {popularCities.slice(0, 4).map(c => (
-                  <button key={c} type="button" onClick={() => setCity(c)} className="text-[9px] px-1.5 py-0.5 rounded-sm bg-accent/40 hover:bg-accent text-muted-foreground transition-colors">
-                    {c}
-                  </button>
-                ))}
-              </div>
+            <div className="flex flex-col gap-2">
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">City</Label>
+              <SuggestionInput 
+                value={city}
+                onChange={setCity}
+                options={POPULAR_CITIES}
+                placeholder={cityDisabled ? "Select country first" : "e.g. London"}
+                icon={MapPin}
+                disabled={cityDisabled}
+              />
             </div>
 
-            <div className="flex flex-col gap-1.5 self-start">
-              <Label className="h-3 text-[10px] leading-3 uppercase tracking-wider text-muted-foreground">Отрасль</Label>
-              <div className="relative">
-                <Building2 className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <Input 
-                  list="popular-industries"
-                  value={industry} 
-                  onChange={e => setIndustry(e.target.value)} 
-                  className="pl-8 h-8 text-xs bg-background/50 border-border/50" 
-                  placeholder="Например: Стоматология" 
-                />
-                <datalist id="popular-industries">
-                  {popularIndustries.map((item) => <option key={item} value={item} />)}
-                </datalist>
-              </div>
-              <div className="flex flex-wrap gap-1 mt-1">
-                {popularIndustries.slice(0, 4).map(i => (
-                  <button key={i} type="button" onClick={() => setIndustry(i)} className="text-[9px] px-1.5 py-0.5 rounded-sm bg-accent/40 hover:bg-accent text-muted-foreground transition-colors">
-                    {i}
-                  </button>
-                ))}
-              </div>
+            <div className="flex flex-col gap-2">
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Industry</Label>
+              <SuggestionInput 
+                value={industry}
+                onChange={setIndustry}
+                options={POPULAR_INDUSTRIES}
+                placeholder="e.g. Dentistry"
+                icon={Building2}
+              />
             </div>
 
-            <Button type="submit" disabled={searchMutation.isPending} className="h-8 text-xs bg-foreground text-background hover:bg-foreground/90 w-full shadow-sm self-start mt-4.5">
-              <SearchIcon className="w-3.5 h-3.5 mr-1.5" />
-              Найти
+            <Button type="submit" disabled={searchMutation.isPending} className="h-11 rounded-xl font-bold bg-primary text-primary-foreground hover:bg-primary/90 w-full shadow-md transition-all active:scale-[0.98]">
+              <SearchIcon className="w-4 h-4 mr-2" />
+              Find Leads
             </Button>
           </form>
         </div>
 
         {hasSearched && (
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-card border border-card-border rounded-xl shadow-sm">
-            <div className="flex items-center justify-between p-3 border-b border-border/40 shrink-0 bg-accent/10">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Результаты {results.length > 0 && <span>({results.length})</span>}
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-card border border-card-border rounded-2xl shadow-sm">
+            <div className="flex items-center justify-between p-4 border-b border-border/40 shrink-0 bg-muted/30">
+              <h2 className="text-sm font-bold uppercase tracking-widest text-foreground/80 flex items-center gap-2">
+                <Target className="w-4 h-4 text-primary" />
+                Results {results.length > 0 && <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full text-xs">{results.length}</span>}
               </h2>
             </div>
 
             <div className="flex-1 overflow-y-auto">
               {searchMutation.isPending ? (
-                <div className="h-full flex items-center justify-center text-xs text-muted-foreground p-8">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
-                    Поиск компаний...
-                  </div>
+                <div className="h-full flex flex-col items-center justify-center text-sm font-medium text-muted-foreground p-8 space-y-4">
+                  <div className="w-8 h-8 rounded-full border-4 border-primary/30 border-t-primary animate-spin" />
+                  <p>Searching for opportunities...</p>
                 </div>
               ) : results.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center p-8">
-                  <SearchIcon className="w-6 h-6 text-muted-foreground/30 mb-3" />
-                  <p className="text-xs text-muted-foreground">Ничего не найдено</p>
+                <div className="h-full flex flex-col items-center justify-center p-8 text-center max-w-sm mx-auto">
+                  <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                    <SearchIcon className="w-8 h-8 text-muted-foreground/50" />
+                  </div>
+                  <h3 className="text-lg font-bold text-foreground mb-2">No leads found</h3>
+                  <p className="text-sm font-medium text-muted-foreground">Try adjusting your search criteria. Selecting a broader geography or industry might yield more results.</p>
                 </div>
               ) : (
-                <div className="divide-y divide-border/40">
+                <div className="divide-y divide-border/40 p-2 space-y-2">
                   {results.map((lead) => (
-                    <Link key={lead.id} href={`/leads/${lead.id}`} className="flex items-center p-3 group cursor-default">
+                    <Link key={lead.id} href={`/leads/${lead.id}`} className="flex items-center p-4 rounded-xl group cursor-pointer hover:bg-accent/50 transition-all border border-transparent hover:border-border/60">
                       <div className="flex-1 min-w-0 pr-4">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-medium text-foreground truncate">{lead.name}</span>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded-sm bg-accent text-muted-foreground border border-border/50 shrink-0">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="text-base font-bold text-foreground truncate group-hover:text-primary transition-colors">{lead.name}</span>
+                          <span className="text-[10px] px-2 py-1 rounded-full bg-muted font-bold text-muted-foreground shrink-0 uppercase tracking-wider">
                             {lead.industry}
                           </span>
                         </div>
-                        <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <MapPin className="w-3 h-3 opacity-70" />
+                        <div className="flex items-center gap-5 text-xs font-medium text-muted-foreground">
+                          <span className="flex items-center gap-1.5">
+                            <MapPin className="w-3.5 h-3.5 opacity-70" />
                             {lead.city}, {lead.country}
                           </span>
                           {lead.website ? (
-                            <span className="flex items-center gap-1 text-blue-400/80">
-                              <Globe className="w-3 h-3 opacity-70" />
+                            <span className="flex items-center gap-1.5 text-blue-500">
+                              <Globe className="w-3.5 h-3.5 opacity-70" />
                               {new URL(lead.website).hostname.replace('www.', '')}
                             </span>
                           ) : (
-                            <span className="flex items-center gap-1 text-orange-400/80">
-                              <AlertTriangle className="w-3 h-3 opacity-70" />
-                              Нет сайта
+                            <span className="flex items-center gap-1.5 text-orange-500">
+                              <AlertTriangle className="w-3.5 h-3.5 opacity-70" />
+                              No website
                             </span>
                           )}
                         </div>
                       </div>
                       
-                      <div className="w-32 shrink-0 pr-4">
-                        <div className="flex flex-wrap gap-1">
-                          {lead.issues.slice(0, 1).map((issue, i) => (
-                            <span key={i} className="text-[9px] px-1.5 py-0.5 rounded-sm bg-background border border-border/50 text-muted-foreground truncate max-w-full">
+                      <div className="w-48 shrink-0 pr-6">
+                        <div className="flex flex-wrap gap-1.5">
+                          {lead.issues.slice(0, 2).map((issue, i) => (
+                            <span key={i} className="text-[10px] px-2 py-1 rounded-md bg-background border border-border/50 font-medium text-muted-foreground truncate max-w-full">
                               {issue}
                             </span>
                           ))}
-                          {lead.issues.length > 1 && (
-                            <span className="text-[9px] px-1.5 py-0.5 rounded-sm bg-background border border-border/50 text-muted-foreground">
-                              +{lead.issues.length - 1}
+                          {lead.issues.length > 2 && (
+                            <span className="text-[10px] px-2 py-1 rounded-md bg-background border border-border/50 font-bold text-muted-foreground">
+                              +{lead.issues.length - 2}
                             </span>
                           )}
                         </div>
                       </div>
 
-                      <div className="w-16 shrink-0 text-right pr-2">
+                      <div className="w-20 shrink-0 flex flex-col items-end pr-4 border-r border-border/40 mr-4">
                         <span className={cn(
-                          "font-mono text-xs font-semibold",
-                          lead.score >= 80 ? "text-emerald-400" : lead.score >= 50 ? "text-amber-400" : "text-rose-400"
+                          "font-mono text-xl font-black",
+                          lead.score >= 80 ? "text-emerald-500" : lead.score >= 50 ? "text-amber-500" : "text-rose-500"
                         )}>
                           {lead.score}
                         </span>
-                        <div className="text-[9px] text-muted-foreground uppercase tracking-wider mt-0.5">Score</div>
+                        <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">Score</div>
                       </div>
                       
-                      <div className="w-8 shrink-0 flex justify-end">
-                        <div className="w-6 h-6 rounded-md bg-accent/30 flex items-center justify-center text-muted-foreground/50">
-                          <span className="text-xs">→</span>
+                      <div className="w-10 shrink-0 flex justify-end">
+                        <div className="w-8 h-8 rounded-full bg-background border border-border/50 flex items-center justify-center text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all shadow-sm group-hover:shadow-md group-hover:scale-110">
+                          <span className="font-bold">→</span>
                         </div>
                       </div>
                     </Link>

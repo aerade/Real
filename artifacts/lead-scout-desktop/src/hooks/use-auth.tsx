@@ -1,8 +1,9 @@
 import { createContext, useContext, ReactNode, useEffect } from "react";
-import { useGetSession, useLogout } from "@workspace/api-client-react";
+import { getGetSessionQueryKey, useGetSession, useLogout } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { Spinner } from "@/components/ui/spinner";
 import type { Session } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface AuthContextType {
   session: Session | null;
@@ -15,13 +16,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { data: session, isLoading } = useGetSession();
   const logoutMutation = useLogout();
+  const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
 
   const logout = () => {
     logoutMutation.mutate(undefined, {
       onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetSessionQueryKey() });
         setLocation("/login");
-        window.location.reload();
       },
     });
   };

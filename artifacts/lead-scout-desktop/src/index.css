@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&family=Spline+Sans+Mono:wght@400;600&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @plugin "@tailwindcss/typography";
@@ -58,51 +58,51 @@
 }
 
 :root, .dark {
-  --background: 0 0% 4%;
+  --background: 0 0% 3%;
   --foreground: 0 0% 98%;
   
   --card: 0 0% 6%;
   --card-foreground: 0 0% 98%;
-  --card-border: 0 0% 12%;
+  --card-border: 0 0% 13%;
   
-  --popover: 0 0% 6%;
+  --popover: 0 0% 7%;
   --popover-foreground: 0 0% 98%;
-  --popover-border: 0 0% 12%;
+  --popover-border: 0 0% 14%;
   
   --primary: 0 0% 98%;
-  --primary-foreground: 0 0% 9%;
+  --primary-foreground: 0 0% 8%;
   
   --secondary: 0 0% 12%;
   --secondary-foreground: 0 0% 98%;
   
   --muted: 0 0% 10%;
-  --muted-foreground: 0 0% 65%;
+  --muted-foreground: 0 0% 64%;
   
   --accent: 0 0% 12%;
   --accent-foreground: 0 0% 98%;
   
-  --destructive: 0 62% 40%;
-  --destructive-foreground: 0 0% 98%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
   
-  --border: 0 0% 12%;
-  --input: 0 0% 12%;
-  --ring: 0 0% 30%;
+  --border: 0 0% 13%;
+  --input: 0 0% 13%;
+  --ring: 0 0% 42%;
   
   --sidebar: 0 0% 4%;
   --sidebar-foreground: 0 0% 90%;
-  --sidebar-border: 0 0% 12%;
+  --sidebar-border: 0 0% 13%;
   --sidebar-primary: 0 0% 98%;
   --sidebar-primary-foreground: 0 0% 9%;
   --sidebar-accent: 0 0% 10%;
   --sidebar-accent-foreground: 0 0% 98%;
   
-  --radius: 0.4rem;
-  --app-font-sans: 'Plus Jakarta Sans', sans-serif;
-  --app-font-mono: 'Space Mono', monospace;
+  --radius: 0.75rem;
+  --app-font-sans: 'Bricolage Grotesque', sans-serif;
+  --app-font-mono: 'Spline Sans Mono', monospace;
 
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
-  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.3);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.35);
+  --shadow: 0 2px 4px 0 rgb(0 0 0 / 0.45);
+  --shadow-md: 0 8px 22px -5px rgb(0 0 0 / 0.65);
 }
 
 @layer base {
@@ -110,7 +110,10 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply font-sans antialiased bg-background text-foreground text-sm selection:bg-white/20;
+    @apply font-sans antialiased text-foreground text-sm selection:bg-primary/20 bg-transparent overflow-hidden;
+  }
+  #root {
+    @apply h-screen w-screen overflow-hidden p-[6px] m-0;
   }
 }
 
@@ -123,11 +126,11 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted));
-  border-radius: 4px;
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--border));
+  background: hsl(var(--muted-foreground) / 0.5);
 }
 
 @keyframes progress-indeterminate {
@@ -135,7 +138,7 @@
     transform: translateX(-100%);
   }
   50% {
-    transform: translateX(200%);
+    transform: translateX(100%);
   }
   100% {
     transform: translateX(-100%);
@@ -143,5 +146,33 @@
 }
 
 .animate-progress-indeterminate {
-  animation: progress-indeterminate 2s ease-in-out infinite;
+  animation: progress-indeterminate 2.5s ease-in-out infinite;
+}
+
+@keyframes noise {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-5%, -10%); }
+  20% { transform: translate(-15%, 5%); }
+  30% { transform: translate(7%, -25%); }
+  40% { transform: translate(-5%, 25%); }
+  50% { transform: translate(-15%, 10%); }
+  60% { transform: translate(15%, 0%); }
+  70% { transform: translate(0%, 15%); }
+  80% { transform: translate(3%, 35%); }
+  90% { transform: translate(-10%, 10%); }
+}
+
+.noise-bg {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  right: -50%;
+  bottom: -50%;
+  width: 200%;
+  height: 200%;
+  background: transparent url('data:image/svg+xml,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)"/%3E%3C/svg%3E');
+  opacity: 0.05;
+  animation: noise 8s steps(10) infinite;
+  pointer-events: none;
+  z-index: 0;
 }

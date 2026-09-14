@@ -27,7 +27,7 @@ export function Dashboard() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between border-b border-border/40 pb-4">
+        <div className="flex items-center justify-between pb-2">
           <div>
             <h1 className="text-lg font-bold tracking-tight">Рабочий обзор</h1>
             <p className="text-xs text-muted-foreground mt-0.5">Сводка показателей и активность</p>

@@ -97,7 +97,7 @@ export function LeadDetailsPage() {
           Назад
         </Link>
 
-        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-border/40 pb-4">
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 pb-2">
           <div>
             <h1 className="text-xl font-bold tracking-tight">{lead.name}</h1>
             <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-muted-foreground">

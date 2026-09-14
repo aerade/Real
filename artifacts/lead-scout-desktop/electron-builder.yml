@@ -10,7 +10,7 @@ extraResources:
   - from: electron/runtime-config.json
     to: runtime-config.json
 win:
-  icon: ../../attached_assets/real-logo/real-mark.ico
+  icon: ../../attached_assets/real-logo/real-mark-white.ico
   target:
     - target: nsis
       arch:

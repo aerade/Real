@@ -1,78 +1,91 @@
-import { useState } from "react";
-import { useLogin } from "@workspace/api-client-react";
+import { useState, useEffect, useRef } from "react";
+import { getGetSessionQueryKey, useLogin } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, ArrowRight } from "lucide-react";
 import realMarkWhite from "@/assets/real-mark-white.svg";
 import { WindowControls } from "@/components/layout/window-controls";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function Login() {
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [showError, setShowError] = useState(false);
   const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
+  const errorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   const loginMutation = useLogin();
 
+  useEffect(() => {
+    return () => {
+      if (errorTimer.current) clearTimeout(errorTimer.current);
+    };
+  }, []);
+
+  const showValidationError = (message: string) => {
+    if (errorTimer.current) clearTimeout(errorTimer.current);
+    setError(message);
+    setShowError(true);
+    errorTimer.current = setTimeout(() => {
+      setShowError(false);
+      errorTimer.current = setTimeout(() => setError(""), 300);
+    }, 1500);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    if (errorTimer.current) clearTimeout(errorTimer.current);
+    setShowError(false);
     
     if (!login || !password) {
-      setError("Введите логин и пароль");
+      showValidationError("Введите логин и пароль");
       return;
     }
 
     loginMutation.mutate({ data: { login, password } }, {
       onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetSessionQueryKey() });
         setLocation("/");
-        window.location.reload();
       },
       onError: () => {
-        setError("Неверный логин или пароль");
+        showValidationError("Неверный логин или пароль");
       }
     });
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground relative select-none">
+    <div className="h-full w-full flex flex-col bg-background text-foreground relative select-none rounded-2xl overflow-hidden border border-border/20 shadow-2xl">
+      <div className="noise-bg" />
+      
       {/* Top Bar Decorative */}
-      <header className="h-12 border-b border-border/10 flex items-center px-4 shrink-0 absolute top-0 left-0 w-full z-10" style={{ WebkitAppRegion: "drag" } as React.CSSProperties}>
+      <header className="h-14 flex items-center px-4 shrink-0 absolute top-0 left-0 w-full z-10" style={{ WebkitAppRegion: "drag" } as React.CSSProperties}>
         <WindowControls />
-        <div className="absolute right-4 flex items-center gap-1.5 opacity-80" style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}>
-          <img src={realMarkWhite} alt="Real" className="h-4 w-4 object-contain" />
-        </div>
       </header>
 
-      <div className="flex-1 flex flex-col items-center justify-center p-6 mt-12">
+      <div className="flex-1 flex flex-col items-center justify-center p-6 relative z-10">
         <div className="w-full max-w-[340px] flex flex-col items-center">
           
           {/* Logo & Header */}
-          <div className="flex flex-col items-center mb-8 text-center space-y-4">
-            <img src={realMarkWhite} alt="Real" className="h-12 w-12 object-contain opacity-90" />
-            <div className="space-y-1">
-              <h1 className="text-xl font-semibold tracking-tight">Welcome to Real</h1>
-              <p className="text-sm text-muted-foreground">The best way to find clients</p>
+          <div className="flex flex-col items-center mb-10 text-center space-y-4">
+            <img src={realMarkWhite} alt="Real" className="w-[72px] h-[72px] object-contain opacity-95" />
+            <div className="space-y-1.5 mt-2">
+              <h1 className="text-2xl font-bold tracking-tight text-foreground">Welcome back to Real</h1>
+              <p className="text-sm font-medium text-muted-foreground">Find companies. Find opportunities.</p>
             </div>
           </div>
           
           <form onSubmit={handleSubmit} className="w-full flex flex-col items-center space-y-4">
-            {error && (
-              <div className="w-full p-3 text-xs text-destructive-foreground bg-destructive/90 rounded-2xl flex items-center gap-2 justify-center mb-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                {error}
-              </div>
-            )}
-            
             <div className="w-full space-y-3">
               <Input 
                 id="login" 
                 autoComplete="username"
                 value={login}
                 onChange={(e) => setLogin(e.target.value)}
-                placeholder="Имя пользователя" 
-                className="w-full h-12 rounded-2xl bg-transparent border-border/50 text-center px-4 placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring/50"
+                placeholder="Username" 
+                className="w-full h-12 rounded-xl bg-card border-border/50 text-center px-4 placeholder:text-muted-foreground/70 focus-visible:ring-2 focus-visible:ring-primary/50 shadow-sm"
                 disabled={loginMutation.isPending}
               />
               <Input 
@@ -81,20 +94,31 @@ export function Login() {
                 type="password" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Пароль"
-                className="w-full h-12 rounded-2xl bg-transparent border-border/50 text-center px-4 placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring/50"
+                placeholder="Password"
+                className="w-full h-12 rounded-xl bg-card border-border/50 text-center px-4 placeholder:text-muted-foreground/70 focus-visible:ring-2 focus-visible:ring-primary/50 shadow-sm"
                 disabled={loginMutation.isPending}
               />
             </div>
             
             <Button 
               type="submit" 
-              className="w-[200px] h-10 rounded-2xl bg-foreground text-background hover:bg-foreground/90 text-sm font-semibold transition-all mt-4"
+              className="w-[200px] h-12 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-bold transition-all mt-4 group relative overflow-hidden shadow-md"
               disabled={loginMutation.isPending}
             >
-              {loginMutation.isPending ? "Вход..." : "Войти в систему"}
+              <div className="absolute inset-0 flex items-center justify-center transition-all duration-300 group-hover:translate-x-full group-hover:opacity-0">
+                {loginMutation.isPending ? "Logging in..." : "Log in"}
+              </div>
+              <div className="absolute inset-0 flex items-center justify-center transition-all duration-300 -translate-x-full opacity-0 group-hover:translate-x-0 group-hover:opacity-100">
+                <ArrowRight className="w-5 h-5" />
+              </div>
             </Button>
           </form>
+
+          {/* Error Message */}
+          <div className={`mt-6 w-full p-3 text-sm font-medium text-destructive bg-destructive/10 rounded-xl flex items-center gap-2 justify-center transition-all duration-300 transform ${showError ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-4 scale-95 pointer-events-none'}`}>
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            {error || " "}
+          </div>
         </div>
       </div>
     </div>

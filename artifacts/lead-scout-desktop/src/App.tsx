@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
@@ -21,6 +21,9 @@ import { AdminPage } from '@/pages/admin';
 import { StartupScreen } from '@/components/startup-screen';
 
 const queryClient = new QueryClient();
+
+// Track startup screen execution per process
+let hasRunStartupScreen = false;
 
 function Router() {
   return (
@@ -70,7 +73,13 @@ function RoutedErrorBoundary({ children }: { children: ReactNode }) {
 }
 
 function App() {
-  const [startupComplete, setStartupComplete] = useState(false);
+  const [startupComplete, setStartupComplete] = useState(hasRunStartupScreen);
+
+  useEffect(() => {
+    if (startupComplete) {
+      hasRunStartupScreen = true;
+    }
+  }, [startupComplete]);
 
   return (
     <QueryClientProvider client={queryClient}>

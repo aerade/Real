@@ -19,7 +19,7 @@ export function LeadsPage() {
   return (
     <AppLayout>
       <div className="space-y-6 flex flex-col h-full">
-        <div className="flex items-center justify-between border-b border-border/40 pb-4 shrink-0">
+        <div className="flex items-center justify-between pb-2 shrink-0">
           <div>
             <h1 className="text-lg font-bold tracking-tight">Мои лиды</h1>
             <p className="text-xs text-muted-foreground mt-0.5">Ваши компании в работе</p>
