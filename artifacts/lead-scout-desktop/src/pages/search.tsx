@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { Search as SearchIcon, AlertTriangle, Building2, Globe, MapPin, Target, Check } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
@@ -110,7 +110,7 @@ function SuggestionInput({
 
   return (
     <Popover open={open && !disabled} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+      <PopoverAnchor asChild>
         <div className="relative">
           <Icon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input 
@@ -124,7 +124,7 @@ function SuggestionInput({
             disabled={disabled}
           />
         </div>
-      </PopoverTrigger>
+      </PopoverAnchor>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-1 rounded-xl shadow-lg border-border/50" align="start">
         {filteredOptions.length === 0 ? (
           <div className="p-2 text-xs text-muted-foreground text-center">Press Enter to use "{inputVal}"</div>

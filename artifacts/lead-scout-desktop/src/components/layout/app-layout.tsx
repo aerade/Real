@@ -40,7 +40,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   {item.label}
                 </div>
                 {isActive && (
-                  <div className="absolute -bottom-[2px] left-1/2 -translate-x-1/2 w-6 h-[3px] bg-primary rounded-full" />
+                  <div className="absolute -bottom-[2px] left-1/2 -translate-x-1/2 w-[calc(100%_-_36px)] h-[3px] bg-primary rounded-full" />
                 )}
               </Link>
             );

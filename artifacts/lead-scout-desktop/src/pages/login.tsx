@@ -115,7 +115,7 @@ export function Login() {
           </form>
 
           {/* Error Message */}
-          <div className={`mt-6 w-full p-3 text-sm font-medium text-destructive bg-destructive/10 rounded-xl flex items-center gap-2 justify-center transition-all duration-300 transform ${showError ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-4 scale-95 pointer-events-none'}`}>
+          <div className={`absolute bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%_-_3rem)] max-w-[340px] p-3 text-sm font-medium text-destructive bg-destructive/10 rounded-xl flex items-center gap-2 justify-center transition-all duration-300 transform ${showError ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-3 scale-95 pointer-events-none'}`}>
             <AlertCircle className="w-4 h-4 shrink-0" />
             {error || " "}
           </div>
