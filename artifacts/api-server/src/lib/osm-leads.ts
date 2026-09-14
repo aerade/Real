@@ -9,6 +9,16 @@ type OverpassElement = {
   tags?: OsmTags;
 };
 
+type NominatimBusiness = {
+  osm_type: string;
+  osm_id: number;
+  display_name: string;
+  type: string;
+  category: string;
+  namedetails?: Record<string, string | undefined>;
+  extratags?: OsmTags;
+};
+
 export type PublicBusiness = {
   sourceId: string;
   name: string;
@@ -80,6 +90,54 @@ function describeIndustry(tags: OsmTags, fallback: string): string {
   return fallback || tags.amenity || tags.shop || tags.office || tags.craft || tags.tourism || "Услуги";
 }
 
+async function searchNominatimBusinesses(input: {
+  country: string;
+  city: string;
+  industry: string;
+}): Promise<PublicBusiness[]> {
+  if (!input.city || !input.industry) return [];
+  const alias = Object.entries(categoryAliases)
+    .find(([name]) => input.industry.toLowerCase().includes(name))?.[1][0] ?? input.industry;
+  const query = `${alias} in ${input.city}${input.country && input.country !== "any" ? `, ${input.country}` : ""}`;
+  const url = new URL(NOMINATIM_URL);
+  url.searchParams.set("q", query);
+  url.searchParams.set("format", "jsonv2");
+  url.searchParams.set("limit", "20");
+  url.searchParams.set("addressdetails", "1");
+  url.searchParams.set("extratags", "1");
+  url.searchParams.set("namedetails", "1");
+
+  const response = await fetch(url, {
+    headers: { "User-Agent": USER_AGENT, "Accept-Language": "ru,en;q=0.8" },
+    signal: AbortSignal.timeout(12_000),
+  });
+  if (!response.ok) return [];
+  const results = await response.json() as NominatimBusiness[];
+
+  return results
+    .filter((item) => !["highway", "public_transport", "railway"].includes(item.category))
+    .filter((item) => !["bus_stop", "platform", "station"].includes(item.type))
+    .map((item) => {
+      const tags = item.extratags ?? {};
+      const name = item.namedetails?.name ?? item.display_name.split(",")[0]!.trim();
+      const website = websiteFrom(tags);
+      const contacts = contactsFrom(tags);
+      return {
+        sourceId: `osm:${item.osm_type}:${item.osm_id}`,
+        name,
+        industry: input.industry,
+        website,
+        contacts,
+        issues: website ? ["Требуется проверка скорости и мобильной версии"] : ["Сайт не найден"],
+        score: Math.min(96, 58 + (!website ? 24 : 8) + Math.min(contacts.length * 5, 14)),
+        scoreReasons: [
+          !website ? "Нет собственного сайта" : "Есть сайт для технического аудита",
+          contacts.length > 0 ? "Опубликованы прямые контакты" : "Есть публичная карточка компании",
+        ],
+      };
+    });
+}
+
 function buildQuery(lat: number, lon: number, industry: string): string {
   const area = `around:12000,${lat},${lon}`;
   const aliases = Object.entries(categoryAliases)
@@ -110,6 +168,9 @@ export async function searchPublicBusinesses(input: {
   city: string;
   industry: string;
 }): Promise<PublicBusiness[]> {
+  const directResults = await searchNominatimBusinesses(input);
+  if (directResults.length >= 10) return directResults.slice(0, 20);
+
   const location = [input.city, input.country === "any" ? "" : input.country].filter(Boolean).join(", ");
   if (!location) throw new Error("Для реального поиска укажите город или страну");
 
@@ -140,7 +201,7 @@ export async function searchPublicBusinesses(input: {
           "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
         },
         body: new URLSearchParams({ data: query }),
-        signal: AbortSignal.timeout(25_000),
+        signal: AbortSignal.timeout(12_000),
       });
       if (!response.ok) {
         lastError = `Overpass вернул ${response.status}`;
@@ -152,11 +213,14 @@ export async function searchPublicBusinesses(input: {
       lastError = error instanceof Error ? error.message : lastError;
     }
   }
-  if (!data) throw new Error(lastError);
+  if (!data) {
+    if (directResults.length > 0) return directResults;
+    throw new Error(lastError);
+  }
 
   const seen = new Set<string>();
 
-  return (data.elements ?? [])
+  const overpassResults = (data.elements ?? [])
     .filter((item) => item.tags?.name)
     .filter((item) => {
       const key = item.tags!.name!.trim().toLowerCase();
@@ -187,4 +251,10 @@ export async function searchPublicBusinesses(input: {
     })
     .sort((a, b) => b.score - a.score)
     .slice(0, 20);
+
+  const merged = new Map<string, PublicBusiness>();
+  for (const business of [...directResults, ...overpassResults]) {
+    merged.set(business.sourceId, business);
+  }
+  return [...merged.values()].sort((a, b) => b.score - a.score).slice(0, 20);
 }
