@@ -61,8 +61,10 @@ export function Login() {
       <div className="noise-bg" />
       
       {/* Top Bar Decorative */}
-      <header className="h-14 flex items-center px-4 shrink-0 absolute top-0 left-0 w-full z-10" style={{ WebkitAppRegion: "drag" } as React.CSSProperties}>
-        <WindowControls />
+      <header className="h-14 flex items-center px-4 shrink-0 absolute top-0 left-0 w-full z-10 pointer-events-none" style={{ WebkitAppRegion: "drag" } as React.CSSProperties}>
+        <div className="pointer-events-auto h-full" style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}>
+          <WindowControls />
+        </div>
       </header>
 
       <div className="flex-1 flex flex-col items-center justify-center p-6 relative z-10">
