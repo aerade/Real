@@ -5,10 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Search as SearchIcon, AlertTriangle, Building2, Globe, MapPin, ArrowRight } from "lucide-react";
+import { Search as SearchIcon, AlertTriangle, Building2, Globe, MapPin } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 
@@ -35,153 +32,150 @@ export function SearchPage() {
 
   return (
     <AppLayout>
-      <div className="p-8 max-w-7xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Поиск лидов</h1>
-          <p className="text-muted-foreground mt-2">Поиск и ранжирование компаний со слабым сайтом.</p>
+      <div className="space-y-6 flex flex-col h-full">
+        <div className="flex items-center justify-between border-b border-border/40 pb-4 shrink-0">
+          <div>
+            <h1 className="text-lg font-bold tracking-tight">Поиск</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">Поиск потенциальных клиентов</p>
+          </div>
         </div>
 
-        <Card className="border-border/50 shadow-sm bg-card">
-          <CardContent className="p-6">
-            <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-              <div className="space-y-2">
-                <Label>Страна</Label>
-                <Select value={country} onValueChange={setCountry}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Любая" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="any">Любая</SelectItem>
-                    {countries?.filter(c => c.enabled).map(c => (
-                      <SelectItem key={c.code} value={c.name}>{c.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+        <div className="bg-card border border-card-border rounded-xl p-4 shrink-0 shadow-sm">
+          <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+            <div className="space-y-1.5">
+              <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Страна</Label>
+              <Select value={country} onValueChange={setCountry}>
+                <SelectTrigger className="h-8 text-xs bg-background/50 border-border/50">
+                  <SelectValue placeholder="Любая" />
+                </SelectTrigger>
+                <SelectContent className="text-xs">
+                  <SelectItem value="any">Любая</SelectItem>
+                  {countries?.filter(c => c.enabled).map(c => (
+                    <SelectItem key={c.code} value={c.name}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-              <div className="space-y-2">
-                <Label>Город</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    value={city} 
-                    onChange={e => setCity(e.target.value)} 
-                    className="pl-9" 
-                    placeholder="Например: Москва" 
-                  />
-                </div>
+            <div className="space-y-1.5">
+              <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Город</Label>
+              <div className="relative">
+                <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input 
+                  value={city} 
+                  onChange={e => setCity(e.target.value)} 
+                  className="pl-8 h-8 text-xs bg-background/50 border-border/50" 
+                  placeholder="Например: Москва" 
+                />
               </div>
+            </div>
 
-              <div className="space-y-2">
-                <Label>Отрасль</Label>
-                <div className="relative">
-                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    value={industry} 
-                    onChange={e => setIndustry(e.target.value)} 
-                    className="pl-9" 
-                    placeholder="Например: Стоматология" 
-                  />
-                </div>
+            <div className="space-y-1.5">
+              <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Отрасль</Label>
+              <div className="relative">
+                <Building2 className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input 
+                  value={industry} 
+                  onChange={e => setIndustry(e.target.value)} 
+                  className="pl-8 h-8 text-xs bg-background/50 border-border/50" 
+                  placeholder="Например: Стоматология" 
+                />
               </div>
+            </div>
 
-              <Button type="submit" disabled={searchMutation.isPending} className="w-full">
-                <SearchIcon className="w-4 h-4" />
-                Найти
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+            <Button type="submit" disabled={searchMutation.isPending} className="h-8 text-xs bg-foreground text-background hover:bg-foreground/90 w-full shadow-sm">
+              <SearchIcon className="w-3.5 h-3.5 mr-1.5" />
+              Найти
+            </Button>
+          </form>
+        </div>
 
         {hasSearched && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">
-                Результаты {results.length > 0 && <span className="text-muted-foreground font-normal ml-2">({results.length})</span>}
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-card border border-card-border rounded-xl shadow-sm">
+            <div className="flex items-center justify-between p-3 border-b border-border/40 shrink-0 bg-accent/10">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Результаты {results.length > 0 && <span>({results.length})</span>}
               </h2>
             </div>
 
-            {searchMutation.isPending ? (
-              <div className="py-20 text-center text-muted-foreground border rounded-lg bg-card">
-                Ищем подходящие компании...
-              </div>
-            ) : results.length === 0 ? (
-              <div className="py-20 text-center border rounded-lg bg-card flex flex-col items-center">
-                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                  <SearchIcon className="w-8 h-8 text-muted-foreground/50" />
+            <div className="flex-1 overflow-y-auto">
+              {searchMutation.isPending ? (
+                <div className="h-full flex items-center justify-center text-xs text-muted-foreground p-8">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+                    Поиск компаний...
+                  </div>
                 </div>
-                <h3 className="text-lg font-medium text-foreground">Ничего не найдено</h3>
-                <p className="text-muted-foreground mt-1 max-w-sm">Попробуйте изменить параметры поиска или расширить географию.</p>
-              </div>
-            ) : (
-              <Card className="border-border/50 shadow-sm overflow-hidden">
-                <Table>
-                  <TableHeader className="bg-muted/30">
-                    <TableRow>
-                      <TableHead>Компания</TableHead>
-                      <TableHead>Локация</TableHead>
-                      <TableHead>Сайт</TableHead>
-                      <TableHead className="w-[200px]">Проблемы</TableHead>
-                      <TableHead className="text-right w-[120px]">Оценка (0-100)</TableHead>
-                      <TableHead className="w-[100px]"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {results.map((lead) => (
-                      <TableRow key={lead.id} className="hover:bg-muted/50 cursor-pointer group">
-                        <TableCell className="font-medium">
-                          {lead.name}
-                          <div className="text-xs text-muted-foreground font-normal mt-0.5">{lead.industry}</div>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-foreground/80">{lead.city}, {lead.country}</span>
-                        </TableCell>
-                        <TableCell>
+              ) : results.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center p-8">
+                  <SearchIcon className="w-6 h-6 text-muted-foreground/30 mb-3" />
+                  <p className="text-xs text-muted-foreground">Ничего не найдено</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-border/40">
+                  {results.map((lead) => (
+                    <Link key={lead.id} href={`/leads/${lead.id}`} className="flex items-center p-3 hover:bg-accent/40 transition-colors group cursor-default">
+                      <div className="flex-1 min-w-0 pr-4">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-medium text-foreground truncate">{lead.name}</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-sm bg-accent text-muted-foreground border border-border/50 shrink-0">
+                            {lead.industry}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <MapPin className="w-3 h-3 opacity-70" />
+                            {lead.city}, {lead.country}
+                          </span>
                           {lead.website ? (
-                            <a href={lead.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-sm flex items-center gap-1">
-                              <Globe className="w-3 h-3" />
+                            <span className="flex items-center gap-1 text-blue-400/80">
+                              <Globe className="w-3 h-3 opacity-70" />
                               {new URL(lead.website).hostname.replace('www.', '')}
-                            </a>
+                            </span>
                           ) : (
-                            <span className="text-muted-foreground text-sm flex items-center gap-1">
-                              <AlertTriangle className="w-3 h-3 text-warning" />
+                            <span className="flex items-center gap-1 text-orange-400/80">
+                              <AlertTriangle className="w-3 h-3 opacity-70" />
                               Нет сайта
                             </span>
                           )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {lead.issues.slice(0, 2).map((issue, i) => (
-                              <Badge key={i} variant="secondary" className="text-[10px] px-1.5 py-0">
-                                {issue}
-                              </Badge>
-                            ))}
-                            {lead.issues.length > 2 && (
-                              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                +{lead.issues.length - 2}
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right font-mono">
-                          <span className={cn(
-                            "font-bold text-lg",
-                            lead.score >= 80 ? "text-success" : lead.score >= 50 ? "text-warning" : "text-destructive"
-                          )}>
-                            {lead.score}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <Link href={`/leads/${lead.id}`} className="inline-flex h-8 items-center justify-center rounded-md bg-secondary text-secondary-foreground px-3 text-xs font-medium shadow-sm transition-colors hover:bg-secondary/80 w-full opacity-0 group-hover:opacity-100">
-                            Открыть
-                          </Link>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </Card>
-            )}
+                        </div>
+                      </div>
+                      
+                      <div className="w-32 shrink-0 pr-4">
+                        <div className="flex flex-wrap gap-1">
+                          {lead.issues.slice(0, 1).map((issue, i) => (
+                            <span key={i} className="text-[9px] px-1.5 py-0.5 rounded-sm bg-background border border-border/50 text-muted-foreground truncate max-w-full">
+                              {issue}
+                            </span>
+                          ))}
+                          {lead.issues.length > 1 && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-sm bg-background border border-border/50 text-muted-foreground">
+                              +{lead.issues.length - 1}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="w-16 shrink-0 text-right pr-2">
+                        <span className={cn(
+                          "font-mono text-xs font-semibold",
+                          lead.score >= 80 ? "text-emerald-400" : lead.score >= 50 ? "text-amber-400" : "text-rose-400"
+                        )}>
+                          {lead.score}
+                        </span>
+                        <div className="text-[9px] text-muted-foreground uppercase tracking-wider mt-0.5">Score</div>
+                      </div>
+                      
+                      <div className="w-8 shrink-0 flex justify-end">
+                        <div className="w-6 h-6 rounded-md bg-accent/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <span className="text-xs">→</span>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

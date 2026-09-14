@@ -3,10 +3,7 @@ import { useListUsers, useListCountries, useCreateCountry, getListCountriesQuery
 import { AppLayout } from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Spinner } from "@/components/ui/spinner";
 import { Shield, Map, Plus, Check, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -37,128 +34,109 @@ export function AdminPage() {
 
   return (
     <AppLayout>
-      <div className="p-8 max-w-7xl mx-auto space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-            <Shield className="w-8 h-8 text-primary" />
-            Панель владельца
-          </h1>
-          <p className="text-muted-foreground mt-2">Управление командой и географией поиска.</p>
+      <div className="space-y-6 flex flex-col h-full">
+        <div className="flex items-center justify-between border-b border-border/40 pb-4 shrink-0">
+          <div>
+            <h1 className="text-lg font-bold tracking-tight">Настройки</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">Управление доступом и географией</p>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-          <Card className="border-border/50 shadow-sm flex flex-col">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                Команда
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-card border border-card-border rounded-xl p-4 shadow-sm flex flex-col h-[500px]">
+            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2 mb-4 shrink-0">
+              <Shield className="w-3.5 h-3.5" /> Команда
+            </h3>
+            
+            <div className="flex-1 overflow-y-auto">
               {usersLoading ? (
-                <div className="flex justify-center p-8"><Spinner /></div>
+                <div className="h-full flex items-center justify-center">
+                  <div className="w-3 h-3 rounded-full border-2 border-foreground/30 border-t-foreground animate-spin" />
+                </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Имя</TableHead>
-                      <TableHead>Логин</TableHead>
-                      <TableHead>Роль</TableHead>
-                      <TableHead className="text-right">Статус</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {users?.map(user => (
-                      <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.name}</TableCell>
-                        <TableCell className="text-muted-foreground">{user.login}</TableCell>
-                        <TableCell>
-                          <Badge variant={user.role === 'owner' ? 'default' : 'secondary'} className="capitalize">
-                            {user.role}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {user.active ? (
-                            <span className="inline-flex items-center gap-1 text-sm text-success font-medium">
-                              <Check className="w-4 h-4" /> Активен
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-sm text-muted-foreground font-medium">
-                              <X className="w-4 h-4" /> Отключен
-                            </span>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <div className="space-y-2">
+                  {users?.map(user => (
+                    <div key={user.id} className="flex items-center justify-between p-3 rounded-lg bg-accent/20 border border-border/40">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center text-xs font-semibold shrink-0">
+                          {user.name.charAt(0)}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-xs font-medium text-foreground truncate">{user.name}</div>
+                          <div className="text-[10px] text-muted-foreground truncate">{user.login}</div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-background border border-border/50 uppercase tracking-wider">
+                          {user.role}
+                        </span>
+                        {user.active ? (
+                          <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]" title="Активен" />
+                        ) : (
+                          <div className="w-2 h-2 rounded-full bg-muted-foreground" title="Отключен" />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          <Card className="border-border/50 shadow-sm flex flex-col">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Map className="w-5 h-5 text-muted-foreground" />
-                География поиска
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1 space-y-6">
-              <form onSubmit={handleAddCountry} className="flex items-end gap-3 bg-muted/20 p-4 rounded-lg border border-border border-dashed">
-                <div className="space-y-2 flex-1">
-                  <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Код страны (напр. KZ)</label>
-                  <Input 
-                    value={newCode} 
-                    onChange={e => setNewCode(e.target.value)} 
-                    placeholder="Код (2 буквы)" 
-                    maxLength={2}
-                    className="uppercase"
-                  />
-                </div>
-                <div className="space-y-2 flex-[2]">
-                  <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Название страны</label>
-                  <Input 
-                    value={newName} 
-                    onChange={e => setNewName(e.target.value)} 
-                    placeholder="Название" 
-                  />
-                </div>
-                <Button type="submit" disabled={createCountry.isPending || !newCode || !newName}>
-                  <Plus className="w-4 h-4 mr-2" /> Добавить
-                </Button>
-              </form>
+          <div className="bg-card border border-card-border rounded-xl p-4 shadow-sm flex flex-col h-[500px]">
+            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2 mb-4 shrink-0">
+              <Map className="w-3.5 h-3.5" /> География поиска
+            </h3>
+            
+            <form onSubmit={handleAddCountry} className="flex gap-2 mb-4 shrink-0">
+              <Input 
+                value={newCode} 
+                onChange={e => setNewCode(e.target.value)} 
+                placeholder="Код (KZ)" 
+                maxLength={2}
+                className="w-16 h-8 text-xs uppercase bg-background border-border/50 focus-visible:ring-1 focus-visible:ring-ring/50 px-2 text-center"
+              />
+              <Input 
+                value={newName} 
+                onChange={e => setNewName(e.target.value)} 
+                placeholder="Название страны" 
+                className="flex-1 h-8 text-xs bg-background border-border/50 focus-visible:ring-1 focus-visible:ring-ring/50 px-3"
+              />
+              <Button type="submit" disabled={createCountry.isPending || !newCode || !newName} className="h-8 w-8 p-0 bg-foreground text-background shrink-0 hover:bg-foreground/90">
+                <Plus className="w-4 h-4" />
+              </Button>
+            </form>
 
+            <div className="flex-1 overflow-y-auto">
               {countriesLoading ? (
-                <div className="flex justify-center p-8"><Spinner /></div>
+                <div className="h-full flex items-center justify-center">
+                  <div className="w-3 h-3 rounded-full border-2 border-foreground/30 border-t-foreground animate-spin" />
+                </div>
               ) : (
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader className="bg-muted/30">
-                      <TableRow>
-                        <TableHead className="w-[100px]">Код</TableHead>
-                        <TableHead>Название</TableHead>
-                        <TableHead className="text-right">Статус в поиске</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {countries?.map(country => (
-                        <TableRow key={country.code}>
-                          <TableCell className="font-mono text-muted-foreground uppercase">{country.code}</TableCell>
-                          <TableCell className="font-medium">{country.name}</TableCell>
-                          <TableCell className="text-right">
-                            {country.enabled ? (
-                              <Badge variant="success">Включено</Badge>
-                            ) : (
-                              <Badge variant="secondary">Отключено</Badge>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                <div className="space-y-1.5">
+                  {countries?.map(country => (
+                    <div key={country.code} className="flex items-center justify-between p-2.5 rounded-lg bg-accent/10 border border-border/30 hover:bg-accent/30 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono text-[10px] text-muted-foreground uppercase">{country.code}</span>
+                        <span className="text-xs font-medium text-foreground/90">{country.name}</span>
+                      </div>
+                      
+                      {country.enabled ? (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded text-emerald-400 bg-emerald-400/10 uppercase tracking-wider">
+                          Доступна
+                        </span>
+                      ) : (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded text-muted-foreground bg-muted/20 uppercase tracking-wider">
+                          Отключена
+                        </span>
+                      )}
+                    </div>
+                  ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
     </AppLayout>
