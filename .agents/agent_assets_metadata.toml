@@ -103,14 +103,14 @@ content_type = "image/png"
 id = "KdgagI2DhtPZfCrPa65HS"
 uri = "file://artifacts/lead-scout-desktop/Real-Windows-portable-1.0.0-x64.7z"
 type = "unspecified"
-title = "Real Windows portable — reduced static noise"
-description = "Пересобранная Windows-версия без анимации шума; текстура экрана входа уменьшена до едва заметной."
+title = "Real Windows portable — 3% static noise"
+description = "Пересобранная версия с неподвижным шумом прозрачностью 3%."
 logical_id = "516e2ad3-7757-49d7-8b70-6c8a7993cbf5"
-content_hash = "sha256:acd64475b005d8c7f75ebefc37b410e7a0d27f7ab98633ba130e506f1d26ca5a"
-size = 94546349
-mtime_ms = 1789400586339
-storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2929918a-2bad-485e-b0f1-dc67096566c8/516e2ad3-7757-49d7-8b70-6c8a7993cbf5/5ed65c48-a23b-4930-bbf1-c31266335f92"
-storage_version_token = "1789400594934011"
+content_hash = "sha256:50b835d0587f78a10ad536bd1c2433a38cd6ec354c66cbb5054b0ba4c31c7c3d"
+size = 94542259
+mtime_ms = 1789400948548
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2929918a-2bad-485e-b0f1-dc67096566c8/516e2ad3-7757-49d7-8b70-6c8a7993cbf5/0b23c758-ecc7-46d7-ad02-b8486e0fa6ca"
+storage_version_token = "1789400958422309"
 content_type = "application/octet-stream"
 
 [[outputs]]
