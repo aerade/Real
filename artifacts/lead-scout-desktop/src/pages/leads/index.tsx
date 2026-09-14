@@ -73,7 +73,7 @@ export function LeadsPage() {
                 {leads.map((lead) => {
                   const leadStatus = statusMap[lead.status] || { label: lead.status, variant: 'neutral' };
                   return (
-                    <Link key={lead.id} href={`/leads/${lead.id}`} className="grid grid-cols-[2fr_1fr_1fr_1fr_80px] gap-4 px-4 py-3 items-center hover:bg-accent/40 transition-colors group">
+                    <Link key={lead.id} href={`/leads/${lead.id}`} className="grid grid-cols-[2fr_1fr_1fr_1fr_80px] gap-4 px-4 py-3 items-center group">
                       <div className="min-w-0 pr-2">
                         <div className="font-medium text-xs text-foreground truncate">{lead.name}</div>
                         {lead.website && (

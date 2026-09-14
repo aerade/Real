@@ -1,1 +1,2 @@
 - [Windows NSIS releases](windows-nsis-releases.md) — build Real installers on a Windows runner; Replit Nix Wine cannot complete electron-builder’s NSIS helper step.
+- [Russia-wide OSM search](russia-wide-osm-search.md) — sample major cities at Nominatim-safe cadence; a country-center radius is not nationwide coverage.

@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
@@ -18,6 +18,7 @@ import { SearchPage } from '@/pages/search';
 import { LeadsPage } from '@/pages/leads/index';
 import { LeadDetailsPage } from '@/pages/leads/[id]';
 import { AdminPage } from '@/pages/admin';
+import { StartupScreen } from '@/components/startup-screen';
 
 const queryClient = new QueryClient();
 
@@ -69,17 +70,23 @@ function RoutedErrorBoundary({ children }: { children: ReactNode }) {
 }
 
 function App() {
+  const [startupComplete, setStartupComplete] = useState(false);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter
-          base={window.realDesktop ? "" : import.meta.env.BASE_URL.replace(/\/$/, '')}
-          hook={window.realDesktop ? useHashLocation : undefined}
-        >
-          <AuthProvider>
-            <Router />
-          </AuthProvider>
-        </WouterRouter>
+        {!startupComplete ? (
+          <StartupScreen onComplete={() => setStartupComplete(true)} />
+        ) : (
+          <WouterRouter
+            base={window.realDesktop ? "" : import.meta.env.BASE_URL.replace(/\/$/, '')}
+            hook={window.realDesktop ? useHashLocation : undefined}
+          >
+            <AuthProvider>
+              <Router />
+            </AuthProvider>
+          </WouterRouter>
+        )}
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>

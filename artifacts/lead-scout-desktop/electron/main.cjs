@@ -39,6 +39,13 @@ function configureUpdates() {
 }
 
 ipcMain.handle("real:get-config", () => runtimeConfig());
+ipcMain.handle("real:window-control", (event, action) => {
+  const window = BrowserWindow.fromWebContents(event.sender);
+  if (!window) return;
+  if (action === "minimize") window.minimize();
+  if (action === "maximize") window.isMaximized() ? window.unmaximize() : window.maximize();
+  if (action === "close") window.close();
+});
 ipcMain.handle("real:check-updates", async () => {
   const { updateUrl } = runtimeConfig();
   if (!updateUrl || updateUrl.includes("example.invalid")) return { configured: false };
@@ -67,12 +74,13 @@ ipcMain.handle("real:request", async (_event, request) => {
 
 function createWindow() {
   const window = new BrowserWindow({
-    width: 1120,
-    height: 720,
-    minWidth: 980,
-    minHeight: 620,
-    backgroundColor: "#101010",
+    width: 980,
+    height: 640,
+    minWidth: 860,
+    minHeight: 560,
+    backgroundColor: "#070707",
     show: false,
+    frame: false,
     title: "Real",
     icon: path.join(__dirname, "../dist/public/favicon.ico"),
     webPreferences: {

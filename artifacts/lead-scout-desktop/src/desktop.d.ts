@@ -17,6 +17,7 @@ interface Window {
     request(request: DesktopRequest): Promise<DesktopResponse>;
     getConfig(): Promise<{ apiBaseUrl: string; updateUrl: string }>;
     checkForUpdates(): Promise<{ configured: boolean }>;
+    windowControl(action: "minimize" | "maximize" | "close"): Promise<void>;
     onUpdateStatus(listener: (status: unknown) => void): () => void;
   };
 }

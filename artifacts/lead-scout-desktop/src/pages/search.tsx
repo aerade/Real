@@ -29,6 +29,8 @@ export function SearchPage() {
   };
 
   const results = searchMutation.data || [];
+  const popularCities = ["Москва", "Санкт-Петербург", "Новосибирск", "Екатеринбург", "Казань", "Нижний Новгород", "Красноярск", "Самара"];
+  const popularIndustries = ["СТО", "Стоматология", "Салон красоты", "Ресторан", "Недвижимость", "Строительство", "Мебель", "Юридические услуги", "Фитнес", "Отель"];
 
   return (
     <AppLayout>
@@ -41,7 +43,7 @@ export function SearchPage() {
         </div>
 
         <div className="bg-card border border-card-border rounded-xl p-4 shrink-0 shadow-sm">
-          <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+          <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-4 gap-3 items-start">
             <div className="flex flex-col gap-1.5">
               <Label className="h-3 text-[10px] leading-3 uppercase tracking-wider text-muted-foreground">Страна</Label>
               <Select value={country} onValueChange={setCountry}>
@@ -62,28 +64,50 @@ export function SearchPage() {
               <div className="relative">
                 <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input 
+                  list="popular-cities"
                   value={city} 
                   onChange={e => setCity(e.target.value)} 
                   className="pl-8 h-8 text-xs bg-background/50 border-border/50" 
                   placeholder="Например: Москва" 
                 />
+                <datalist id="popular-cities">
+                  {popularCities.map((item) => <option key={item} value={item} />)}
+                </datalist>
+              </div>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {popularCities.slice(0, 4).map(c => (
+                  <button key={c} type="button" onClick={() => setCity(c)} className="text-[9px] px-1.5 py-0.5 rounded-sm bg-accent/40 hover:bg-accent text-muted-foreground transition-colors">
+                    {c}
+                  </button>
+                ))}
               </div>
             </div>
 
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5 self-start">
               <Label className="h-3 text-[10px] leading-3 uppercase tracking-wider text-muted-foreground">Отрасль</Label>
               <div className="relative">
                 <Building2 className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input 
+                  list="popular-industries"
                   value={industry} 
                   onChange={e => setIndustry(e.target.value)} 
                   className="pl-8 h-8 text-xs bg-background/50 border-border/50" 
                   placeholder="Например: Стоматология" 
                 />
+                <datalist id="popular-industries">
+                  {popularIndustries.map((item) => <option key={item} value={item} />)}
+                </datalist>
+              </div>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {popularIndustries.slice(0, 4).map(i => (
+                  <button key={i} type="button" onClick={() => setIndustry(i)} className="text-[9px] px-1.5 py-0.5 rounded-sm bg-accent/40 hover:bg-accent text-muted-foreground transition-colors">
+                    {i}
+                  </button>
+                ))}
               </div>
             </div>
 
-            <Button type="submit" disabled={searchMutation.isPending} className="h-8 text-xs bg-foreground text-background hover:bg-foreground/90 w-full shadow-sm">
+            <Button type="submit" disabled={searchMutation.isPending} className="h-8 text-xs bg-foreground text-background hover:bg-foreground/90 w-full shadow-sm self-start mt-4.5">
               <SearchIcon className="w-3.5 h-3.5 mr-1.5" />
               Найти
             </Button>
@@ -114,7 +138,7 @@ export function SearchPage() {
               ) : (
                 <div className="divide-y divide-border/40">
                   {results.map((lead) => (
-                    <Link key={lead.id} href={`/leads/${lead.id}`} className="flex items-center p-3 hover:bg-accent/40 transition-colors group cursor-default">
+                    <Link key={lead.id} href={`/leads/${lead.id}`} className="flex items-center p-3 group cursor-default">
                       <div className="flex-1 min-w-0 pr-4">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-xs font-medium text-foreground truncate">{lead.name}</span>
@@ -167,7 +191,7 @@ export function SearchPage() {
                       </div>
                       
                       <div className="w-8 shrink-0 flex justify-end">
-                        <div className="w-6 h-6 rounded-md bg-accent/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="w-6 h-6 rounded-md bg-accent/30 flex items-center justify-center text-muted-foreground/50">
                           <span className="text-xs">→</span>
                         </div>
                       </div>

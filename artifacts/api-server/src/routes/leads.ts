@@ -176,7 +176,7 @@ router.post("/leads/search", async (req, res) => {
         id,
         name: business.name,
         country: country === "any" ? "" : country,
-        city,
+        city: business.city || city,
         industry: business.industry,
         website: business.website,
         status: "new",

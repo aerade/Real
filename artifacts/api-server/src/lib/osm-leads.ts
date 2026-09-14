@@ -22,6 +22,7 @@ type NominatimBusiness = {
 export type PublicBusiness = {
   sourceId: string;
   name: string;
+  city?: string;
   industry: string;
   website: string | null;
   contacts: Array<{ type: string; value: string; url: string }>;
@@ -40,7 +41,9 @@ const USER_AGENT = "RealLeadScout/1.0 (public-business-search)";
 
 const categoryAliases: Record<string, string[]> = {
   стоматология: ["dentist"],
+  зубы: ["dentist"],
   клиника: ["clinic", "doctors"],
+  медицина: ["clinic", "doctors", "dentist", "pharmacy"],
   ресторан: ["restaurant", "cafe", "fast_food"],
   кафе: ["cafe"],
   юрист: ["lawyer"],
@@ -48,11 +51,23 @@ const categoryAliases: Record<string, string[]> = {
   недвижимость: ["estate_agent"],
   строительство: ["construction", "builder"],
   мебель: ["furniture", "carpenter"],
+  ритейл: ["supermarket", "convenience", "clothes"],
+  производство: ["industrial", "factory", "manufacturer"],
+  it: ["it", "telecommunication", "computer"],
+  сто: ["car_repair", "tyres", "car_parts"],
   автосервис: ["car_repair"],
+  автомобиль: ["car_repair", "car_parts", "car_dealer"],
+  шиномонтаж: ["tyres", "car_repair"],
   красота: ["beauty", "hairdresser"],
+  салон: ["beauty", "hairdresser"],
   фитнес: ["fitness_centre", "sports_centre"],
   отель: ["hotel", "guest_house"],
+  гостиница: ["hotel", "guest_house"],
+  бухгалтер: ["accountant"],
+  маркетинг: ["advertising_agency"],
+  ремонт: ["craft", "electronics_repair"],
 };
+const searchCache = new Map<string, { expiresAt: number; results: PublicBusiness[] }>();
 
 function escapeOverpass(value: string): string {
   return value.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
@@ -125,6 +140,7 @@ async function searchNominatimBusinesses(input: {
       return {
         sourceId: `osm:${item.osm_type}:${item.osm_id}`,
         name,
+        city: input.city,
         industry: input.industry,
         website,
         contacts,
@@ -163,11 +179,27 @@ function buildQuery(lat: number, lon: number, industry: string): string {
   return `[out:json][timeout:25];(${selectors.join("")});out center tags 80;`;
 }
 
-export async function searchPublicBusinesses(input: {
+async function searchPublicBusinessesUncached(input: {
   country: string;
   city: string;
   industry: string;
 }): Promise<PublicBusiness[]> {
+  if (!input.city && input.country.toLowerCase().includes("рос")) {
+    const popularCities = ["Москва", "Санкт-Петербург", "Новосибирск", "Екатеринбург", "Казань"];
+    const broadIndustries = ["СТО", "Стоматология", "Ресторан", "Салон красоты", "Недвижимость"];
+    const countryResults: PublicBusiness[] = [];
+    for (const [index, city] of popularCities.entries()) {
+      const cityResults = await searchNominatimBusinesses({
+        ...input,
+        city,
+        industry: input.industry || broadIndustries[index]!,
+      });
+      countryResults.push(...cityResults.slice(0, 4));
+      if (city !== popularCities.at(-1)) await new Promise((resolve) => setTimeout(resolve, 1_050));
+    }
+    if (countryResults.length > 0) return countryResults.slice(0, 20);
+  }
+
   const directResults = await searchNominatimBusinesses(input);
   if (directResults.length >= 10) return directResults.slice(0, 20);
 
@@ -241,6 +273,7 @@ export async function searchPublicBusinesses(input: {
       return {
         sourceId: `osm:${item.type}:${item.id}`,
         name: tags.name!.trim(),
+        city: input.city,
         industry: describeIndustry(tags, input.industry.trim()),
         website,
         contacts,
@@ -257,4 +290,17 @@ export async function searchPublicBusinesses(input: {
     merged.set(business.sourceId, business);
   }
   return [...merged.values()].sort((a, b) => b.score - a.score).slice(0, 20);
+}
+
+export async function searchPublicBusinesses(input: {
+  country: string;
+  city: string;
+  industry: string;
+}): Promise<PublicBusiness[]> {
+  const key = [input.country, input.city, input.industry].map((value) => value.trim().toLowerCase()).join("|");
+  const cached = searchCache.get(key);
+  if (cached && cached.expiresAt > Date.now()) return cached.results;
+  const results = await searchPublicBusinessesUncached(input);
+  searchCache.set(key, { expiresAt: Date.now() + 15 * 60 * 1_000, results });
+  return results;
 }

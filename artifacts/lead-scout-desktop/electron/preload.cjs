@@ -4,6 +4,7 @@ contextBridge.exposeInMainWorld("realDesktop", {
   request: (request) => ipcRenderer.invoke("real:request", request),
   getConfig: () => ipcRenderer.invoke("real:get-config"),
   checkForUpdates: () => ipcRenderer.invoke("real:check-updates"),
+  windowControl: (action) => ipcRenderer.invoke("real:window-control", action),
   onUpdateStatus: (listener) => {
     const handler = (_event, value) => listener(value);
     ipcRenderer.on("real:update-status", handler);
