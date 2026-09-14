@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Home, Search, Target, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { WindowControls } from "./window-controls";
+import realMarkWhite from "@/assets/real-mark-white.svg";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const [location] = useLocation();
@@ -46,8 +47,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
           })}
         </nav>
         
-        {/* Spacer to balance the left window controls */}
-        <div className="w-[100px] shrink-0 pointer-events-none" />
+        <div className="w-[100px] shrink-0 flex justify-end pointer-events-none">
+          <img src={realMarkWhite} alt="Real" className="h-5 w-5 object-contain opacity-90" />
+        </div>
       </header>
 
       {/* Main Content Area */}

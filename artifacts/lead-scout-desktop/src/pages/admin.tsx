@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useListUsers, useListCountries, useCreateCountry, getListCountriesQueryKey } from "@workspace/api-client-react";
+import { getListCountriesQueryKey, getListUsersQueryKey, useCreateCountry, useListCountries, useListUsers } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,8 +13,8 @@ export function AdminPage() {
   const { session, logout } = useAuth();
   const isOwner = session?.user?.role === 'owner';
   
-  const { data: users, isLoading: usersLoading } = useListUsers({ query: { enabled: isOwner } });
-  const { data: countries, isLoading: countriesLoading } = useListCountries({ query: { enabled: isOwner } });
+  const { data: users, isLoading: usersLoading } = useListUsers({ query: { enabled: isOwner, queryKey: getListUsersQueryKey() } });
+  const { data: countries, isLoading: countriesLoading } = useListCountries({ query: { enabled: isOwner, queryKey: getListCountriesQueryKey() } });
   const createCountry = useCreateCountry();
   const queryClient = useQueryClient();
   const { toast } = useToast();

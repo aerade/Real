@@ -12,30 +12,46 @@ import { cn } from "@/lib/utils";
 
 // Static local suggestions catalog
 const POPULAR_CITIES = [
-  { value: "Moscow", aliases: ["msk", "moskva", "москва", "мск"] },
-  { value: "Saint Petersburg", aliases: ["spb", "piter", "санкт-петербург", "спб", "питер"] },
-  { value: "Novosibirsk", aliases: ["nsk", "новосибирск", "нск"] },
-  { value: "Yekaterinburg", aliases: ["ekb", "екатеринбург", "екб"] },
-  { value: "Kazan", aliases: ["kzn", "казань"] },
-  { value: "Nizhny Novgorod", aliases: ["nn", "nizhny", "нижний новгород", "нижний", "нн"] },
-  { value: "Krasnoyarsk", aliases: ["krsk", "красноярск"] },
-  { value: "Samara", aliases: ["samara", "самара"] },
+  { value: "Москва", aliases: ["msk", "moskva", "москв", "мск"] },
+  { value: "Санкт-Петербург", aliases: ["spb", "piter", "санкт петербург", "питер", "спб"] },
+  { value: "Новосибирск", aliases: ["nsk", "novosib", "новосиб", "нск"] },
+  { value: "Екатеринбург", aliases: ["ekb", "екат", "екб"] },
+  { value: "Казань", aliases: ["kzn", "казан", "каз"] },
+  { value: "Нижний Новгород", aliases: ["nn", "nizhny", "нижний", "нн"] },
+  { value: "Красноярск", aliases: ["krsk", "краснояр", "крас"] },
+  { value: "Самара", aliases: ["samara", "самар"] },
   { value: "London", aliases: ["ldn", "лондон"] },
   { value: "New York", aliases: ["ny", "nyc", "нью йорк"] }
 ];
 
 const POPULAR_INDUSTRIES = [
-  { value: "Auto Repair", aliases: ["car service", "сто", "автосервис", "ремонт авто"] },
-  { value: "Dentistry", aliases: ["dental", "стоматология", "стоматолог", "зубной"] },
-  { value: "Beauty Salon", aliases: ["salon", "spa", "салон красоты", "спа", "парикмахерская"] },
-  { value: "Restaurant", aliases: ["cafe", "food", "ресторан", "кафе", "еда", "общепит"] },
-  { value: "Real Estate", aliases: ["property", "недвижимость", "риэлтор", "агентство недвижимости"] },
-  { value: "Construction", aliases: ["build", "строительство", "стройка", "ремонт"] },
-  { value: "Furniture", aliases: ["мебель", "мебельный"] },
-  { value: "Legal Services", aliases: ["lawyer", "юрист", "адвокат", "юридические услуги"] },
-  { value: "Fitness", aliases: ["gym", "фитнес", "тренажерный зал", "спортзал"] },
-  { value: "Hotel", aliases: ["hostel", "отель", "гостиница", "хостел"] }
+  { value: "СТО", aliases: ["car service", "автосервис", "авто сервис", "ремонт авто", "шин"] },
+  { value: "Стоматология", aliases: ["dental", "стоматолог", "стоматол", "зубной", "зубы"] },
+  { value: "Салон красоты", aliases: ["salon", "spa", "красот", "спа", "парикмахерская"] },
+  { value: "Ресторан", aliases: ["cafe", "food", "ресторан", "кафе", "еда", "общепит"] },
+  { value: "Недвижимость", aliases: ["property", "недвиж", "риэлтор", "риелтор", "агентство недвижимости"] },
+  { value: "Строительство", aliases: ["build", "строит", "стройка", "ремонт"] },
+  { value: "Мебель", aliases: ["furniture", "мебел", "мебельный"] },
+  { value: "Юридические услуги", aliases: ["lawyer", "legal", "юрист", "адвокат", "юрид"] },
+  { value: "Фитнес", aliases: ["gym", "fitness", "фитнес", "тренажерный зал", "спортзал"] },
+  { value: "Отель", aliases: ["hotel", "hostel", "отел", "гостиница", "хостел"] }
 ];
+
+function editDistance(a: string, b: string) {
+  const row = Array.from({ length: b.length + 1 }, (_, index) => index);
+  for (let i = 1; i <= a.length; i++) {
+    let previous = row[0];
+    row[0] = i;
+    for (let j = 1; j <= b.length; j++) {
+      const current = row[j];
+      row[j] = a[i - 1] === b[j - 1]
+        ? previous
+        : Math.min(previous + 1, row[j - 1] + 1, current + 1);
+      previous = current;
+    }
+  }
+  return row[b.length];
+}
 
 function SuggestionInput({ 
   value, 
@@ -73,11 +89,23 @@ function SuggestionInput({
   };
 
   // Typo-tolerant and abbreviation-aware filtering
-  const filteredOptions = options.filter(opt => {
-    if (!inputVal) return true;
+  const filteredOptions = [...options].filter(opt => {
+    if (!inputVal.trim()) return true;
     const lowerInput = inputVal.toLowerCase().trim();
-    if (opt.value.toLowerCase().includes(lowerInput)) return true;
-    return opt.aliases.some(alias => alias.toLowerCase().includes(lowerInput) || lowerInput.includes(alias.toLowerCase()));
+    const candidates = [opt.value, ...opt.aliases].map((item) => item.toLowerCase());
+    return candidates.some((candidate) =>
+      candidate.includes(lowerInput) ||
+      lowerInput.includes(candidate) ||
+      editDistance(candidate, lowerInput) <= Math.max(1, Math.floor(lowerInput.length * 0.34))
+    );
+  }).sort((a, b) => {
+    if (!inputVal.trim()) return 0;
+    const query = inputVal.toLowerCase().trim();
+    const rank = (option: typeof options[number]) => Math.min(...[option.value, ...option.aliases].map((item) => {
+      const candidate = item.toLowerCase();
+      return candidate.includes(query) || query.includes(candidate) ? 0 : editDistance(candidate, query);
+    }));
+    return rank(a) - rank(b);
   });
 
   return (
@@ -236,10 +264,10 @@ export function SearchPage() {
               ) : (
                 <div className="divide-y divide-border/40 p-2 space-y-2">
                   {results.map((lead) => (
-                    <Link key={lead.id} href={`/leads/${lead.id}`} className="flex items-center p-4 rounded-xl group cursor-pointer hover:bg-accent/50 transition-all border border-transparent hover:border-border/60">
+                    <Link key={lead.id} href={`/leads/${lead.id}`} className="flex items-center p-4 rounded-xl group cursor-pointer border border-transparent">
                       <div className="flex-1 min-w-0 pr-4">
                         <div className="flex items-center gap-3 mb-2">
-                          <span className="text-base font-bold text-foreground truncate group-hover:text-primary transition-colors">{lead.name}</span>
+                          <span className="text-base font-bold text-foreground truncate">{lead.name}</span>
                           <span className="text-[10px] px-2 py-1 rounded-full bg-muted font-bold text-muted-foreground shrink-0 uppercase tracking-wider">
                             {lead.industry}
                           </span>
@@ -289,7 +317,7 @@ export function SearchPage() {
                       </div>
                       
                       <div className="w-10 shrink-0 flex justify-end">
-                        <div className="w-8 h-8 rounded-full bg-background border border-border/50 flex items-center justify-center text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all shadow-sm group-hover:shadow-md group-hover:scale-110">
+                        <div className="w-8 h-8 rounded-full bg-background border border-border/50 flex items-center justify-center text-muted-foreground">
                           <span className="font-bold">→</span>
                         </div>
                       </div>
