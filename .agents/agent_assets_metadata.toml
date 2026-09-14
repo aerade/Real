@@ -98,3 +98,17 @@ mtime_ms = 1789389425623
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2929918a-2bad-485e-b0f1-dc67096566c8/59dd89f6-e5ef-41a5-a1cf-a3aae7fa06fc/838d77cc-7b9f-4ff1-aa56-9e5568e13117"
 storage_version_token = "1789389532275651"
 content_type = "image/png"
+
+[[outputs]]
+id = "KdgagI2DhtPZfCrPa65HS"
+uri = "file://artifacts/lead-scout-desktop/Real-Windows-portable-1.0.0-x64.7z"
+type = "unspecified"
+title = "Real для Windows x64"
+description = "Рабочая переносимая сборка Real 1.0.0. Распакуйте архив через 7-Zip и запустите win-unpacked/Real.exe."
+logical_id = "516e2ad3-7757-49d7-8b70-6c8a7993cbf5"
+content_hash = "sha256:d2a1208398601364bd9746c6b628ae79d654e2d4d0884070386b2b14ab4124ff"
+size = 93650478
+mtime_ms = 1789394684776
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2929918a-2bad-485e-b0f1-dc67096566c8/516e2ad3-7757-49d7-8b70-6c8a7993cbf5/5f6e8795-c3ea-48ea-8213-e93feba05dc0"
+storage_version_token = "1789394700049696"
+content_type = "application/octet-stream"
