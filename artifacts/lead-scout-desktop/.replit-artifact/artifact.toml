@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Lead Scout"
+description = "Русскоязычная программа для поиска перспективных компаний без сайта или с устаревшим сайтом, распределения лидов между небольшой командой и ведения статусов контакта."
+version = "1.0.0"
+id = "artifacts/lead-scout-desktop"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 20737
+
+[services.development]
+run = "pnpm --filter @workspace/lead-scout-desktop run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/lead-scout-desktop", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/lead-scout-desktop/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20737"
+BASE_PATH = "/"

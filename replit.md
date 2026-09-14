@@ -1,6 +1,6 @@
-# [Project name]
+# Lead Scout
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Русскоязычная CRM для поиска, оценки и распределения потенциальных клиентов на разработку сайтов.
 
 ## Run & Operate
 
@@ -22,15 +22,19 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/lead-scout-desktop` — основной интерфейс программы.
+- `artifacts/api-server/src/routes/leads.ts` — API авторизации, поиска, лидов и панели владельца.
+- `lib/api-spec/openapi.yaml` — контракт API.
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Общий сервер отвечает за атомарное закрепление компании, чтобы один лид не выдавался двум менеджерам.
+- Бесплатные источники используются без обхода CAPTCHA, авторизации, robots.txt и блокировок.
+- Рейтинг перспективности должен быть объяснимым: интерфейс показывает причины оценки и обнаруженные проблемы сайта.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+Вход владельца и менеджеров, поиск по стране/городу/отрасли, ранжирование компаний, закрепление, контакты, заметки, статусы воронки и административный обзор.
 
 ## User preferences
 
