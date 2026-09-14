@@ -1,0 +1,100 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "YdNaWE190xi3tjY64EfAV"
+uri = "file://attached_assets/real-logo/real-logo-horizontal.svg"
+type = "image"
+title = "Real — горизонтальный логотип SVG"
+description = "Черная векторная версия логотипа Real с надписью."
+logical_id = "4c2b9b2e-d5a1-4539-9e71-5b6690fb25e4"
+content_hash = "sha256:f96d0575db4b2a5b6a4ae7f761aaaaf4b7b36d9301969fcf5ff27af3ac90b6e3"
+size = 4672
+mtime_ms = 1789389422251
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2929918a-2bad-485e-b0f1-dc67096566c8/4c2b9b2e-d5a1-4539-9e71-5b6690fb25e4/94458de2-8700-4c66-9f61-d29442679760"
+storage_version_token = "1789389524551729"
+content_type = "image/svg+xml"
+
+[[outputs]]
+id = "9EMwBpwIQrs88zhFa7EsP"
+uri = "file://attached_assets/real-logo/real-logo-horizontal-white.svg"
+type = "image"
+title = "Real — белый горизонтальный логотип SVG"
+description = "Белая векторная версия логотипа Real для темного фона."
+logical_id = "94d8f06f-1418-4468-b79f-bf97cbd3fbee"
+content_hash = "sha256:1ca15060467a929071aae20fe1f63c3d00f1c8c7b548cf2bcccf4874f2192830"
+size = 4672
+mtime_ms = 1789389422259
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2929918a-2bad-485e-b0f1-dc67096566c8/94d8f06f-1418-4468-b79f-bf97cbd3fbee/0cbc6052-d288-4b5f-b70a-b8c4f5e6189b"
+storage_version_token = "1789389525844053"
+content_type = "image/svg+xml"
+
+[[outputs]]
+id = "XInBcvFkwC0WXqy_2bAd1"
+uri = "file://attached_assets/real-logo/real-mark.svg"
+type = "image"
+title = "Real — знак SVG"
+description = "Черный векторный знак Real без надписи."
+logical_id = "a403c0a4-3be1-4b0e-ae8b-9763ced85c71"
+content_hash = "sha256:84e435ece9221061e466306dba55bce851bd0a44c1132ad687857c711e3e0a31"
+size = 2255
+mtime_ms = 1789389424691
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2929918a-2bad-485e-b0f1-dc67096566c8/a403c0a4-3be1-4b0e-ae8b-9763ced85c71/b7c46b4d-d288-4da7-b771-8f63a252be0d"
+storage_version_token = "1789389527112575"
+content_type = "image/svg+xml"
+
+[[outputs]]
+id = "uI-3RsbOT52nqI900klKH"
+uri = "file://attached_assets/real-logo/real-mark-white.svg"
+type = "image"
+title = "Real — белый знак SVG"
+description = "Белый векторный знак Real для темного фона."
+logical_id = "30dc2555-10e8-4899-9425-a09d17433297"
+content_hash = "sha256:89db732ec0c851cbead095e5589d92d8d34a5320362498bae73c2928cd49da6c"
+size = 2255
+mtime_ms = 1789389424702
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2929918a-2bad-485e-b0f1-dc67096566c8/30dc2555-10e8-4899-9425-a09d17433297/f795e228-e10a-4e74-887f-2538c59452d2"
+storage_version_token = "1789389528375962"
+content_type = "image/svg+xml"
+
+[[outputs]]
+id = "cu2g-rHJR_l3VZUeplyU-"
+uri = "file://attached_assets/real-logo/real-mark.ico"
+type = "image"
+title = "Real — иконка Windows ICO"
+description = "Иконка Windows с размерами 16, 24, 32, 48, 64, 128 и 256 пикселей."
+logical_id = "aae5592d-1d53-4d7d-892c-05f707e63866"
+content_hash = "sha256:06628ce9e54b4d489c0c3e6cabc2df4ebede47be31d50a752d4a029e43b02c13"
+size = 107625
+mtime_ms = 1789389436140
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2929918a-2bad-485e-b0f1-dc67096566c8/aae5592d-1d53-4d7d-892c-05f707e63866/d28ae9a9-b3cc-400b-b053-08f2c54e61bb"
+storage_version_token = "1789389529633043"
+content_type = "image/x-icon"
+
+[[outputs]]
+id = "kHk9BPs9xHW_xJzib-0Rc"
+uri = "file://attached_assets/real-logo/real-mark-1024.png"
+type = "image"
+title = "Real — знак PNG 1024"
+description = "Черный знак на прозрачном квадратном холсте 1024×1024."
+logical_id = "7d06f1ab-673f-45ee-87e5-466ef9a7313a"
+content_hash = "sha256:06b40c1ddcbfef797b9312ee4b9fef89c563b5df1dc4dd279287584bd1375e77"
+size = 25223
+mtime_ms = 1789389425383
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2929918a-2bad-485e-b0f1-dc67096566c8/7d06f1ab-673f-45ee-87e5-466ef9a7313a/65856c1f-2066-4f70-8470-8de59c83b9f4"
+storage_version_token = "1789389530984968"
+content_type = "image/png"
+
+[[outputs]]
+id = "EPkjHOXlXSinouP2hkbPq"
+uri = "file://attached_assets/real-logo/real-mark-1024-white.png"
+type = "image"
+title = "Real — белый знак PNG 1024"
+description = "Белый знак на прозрачном квадратном холсте 1024×1024."
+logical_id = "59dd89f6-e5ef-41a5-a1cf-a3aae7fa06fc"
+content_hash = "sha256:9e3315beb495a62c5f9b53b5bf67ebbb727eede66f1ad969dc7dad90c3e21743"
+size = 30501
+mtime_ms = 1789389425623
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2929918a-2bad-485e-b0f1-dc67096566c8/59dd89f6-e5ef-41a5-a1cf-a3aae7fa06fc/838d77cc-7b9f-4ff1-aa56-9e5568e13117"
+storage_version_token = "1789389532275651"
+content_type = "image/png"
