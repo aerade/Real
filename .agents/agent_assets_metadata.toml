@@ -112,3 +112,31 @@ mtime_ms = 1789399959679
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2929918a-2bad-485e-b0f1-dc67096566c8/516e2ad3-7757-49d7-8b70-6c8a7993cbf5/70016c7c-db8c-4601-be8b-1212f57b81f3"
 storage_version_token = "1789399996371772"
 content_type = "application/octet-stream"
+
+[[outputs]]
+id = "pITJHdBgtvmEu4Ps8o8C1"
+uri = "file://attached_assets/real-logo/real-mark-white-preview.png"
+type = "image"
+title = "Real white app icon — preview"
+description = "Визуальное превью новой белой иконки приложения на прозрачном фоне."
+logical_id = "75026eaf-eb4f-4d76-8bbd-f2f6acadedc0"
+content_hash = "sha256:2eca8738c696878677a722c360619783789b72f36e859fd0abd8d1b68635a3a0"
+size = 27142
+mtime_ms = 1789400097548
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2929918a-2bad-485e-b0f1-dc67096566c8/75026eaf-eb4f-4d76-8bbd-f2f6acadedc0/8aebd75f-05ae-4fe8-ad8f-734ca00a8007"
+storage_version_token = "1789400107010575"
+content_type = "image/png"
+
+[[outputs]]
+id = "i_8uiNJrW3joTUFm7rd93"
+uri = "file://attached_assets/real-logo/real-mark-white.ico"
+type = "image"
+title = "Real white app icon — .ico"
+description = "Оригинальный Windows .ico-файл с размерами 16–256 px."
+logical_id = "cedbed65-ae68-474e-985d-c10f99528c25"
+content_hash = "sha256:1a512c6fee25130baecbdd9a57f136b0c8af94f86352bf3e4e39b64fed7ce4ce"
+size = 114035
+mtime_ms = 1789398994294
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2929918a-2bad-485e-b0f1-dc67096566c8/cedbed65-ae68-474e-985d-c10f99528c25/c22edf88-2ee0-471d-a469-e6a295fa086d"
+storage_version_token = "1789400108312498"
+content_type = "image/x-icon"
