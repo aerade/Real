@@ -1,0 +1,51 @@
+root@samojlenko0604:/opt/real# git config --global --add safe.directory /opt/real
+
+cd /opt/real
+git pull --ff-only
+remote: Enumerating objects: 58, done.
+remote: Counting objects: 100% (58/58), done.
+remote: Compressing objects: 100% (20/20), done.
+remote: Total 39 (delta 20), reused 38 (delta 19), pack-reused 0 (from 0)
+Unpacking objects: 100% (39/39), 118.21 KiB | 647.00 KiB/s, done.
+From github-real:aerade/Real
+   3aaef1e..fe3cccf  main       -> origin/main
+Updating 3aaef1e..fe3cccf
+Fast-forward
+ .replit                                                                     |   2 +-
+ artifacts/api-server/src/app.ts                                             |   2 +
+ artifacts/api-server/src/index.ts                                           |  22 +-
+ artifacts/api-server/src/lib/store.ts                                       | 421 ++++++++++++++++++++++++++++++++++++
+ artifacts/api-server/src/routes/leads.ts                                    | 352 +++++++++++++-----------------
+ artifacts/lead-scout-desktop/electron/runtime-config.json                   |   4 +-
+ ...nter-email-address-used-for-urgent-renewal-and-securit_1789467794475.txt |  33 +++
+ attached_assets/image_1789468403517.png                                     | Bin 0 -> 57952 bytes
+ attached_assets/image_1789468499978.png                                     | Bin 0 -> 68199 bytes
+ lib/db/src/schema/activities.ts                                             |  17 ++
+ lib/db/src/schema/countries.ts                                              |  13 ++
+ lib/db/src/schema/index.ts                                                  |   5 +-
+ lib/db/src/schema/leads.ts                                                  |  51 +++++
+ lib/db/src/schema/users.ts                                                  |  22 ++
+ 14 files changed, 735 insertions(+), 209 deletions(-)
+ create mode 100644 artifacts/api-server/src/lib/store.ts
+ create mode 100644 attached_assets/Pasted-Enter-email-address-used-for-urgent-renewal-and-securit_1789467794475.txt
+ create mode 100644 attached_assets/image_1789468403517.png
+ create mode 100644 attached_assets/image_1789468499978.png
+ create mode 100644 lib/db/src/schema/activities.ts
+ create mode 100644 lib/db/src/schema/countries.ts
+ create mode 100644 lib/db/src/schema/leads.ts
+ create mode 100644 lib/db/src/schema/users.ts
+root@samojlenko0604:/opt/real# git log -1 --oneline
+fe3cccf (HEAD -> main, origin/main, origin/HEAD) Persist clients and workflow data in PostgreSQL
+root@samojlenko0604:/opt/real# pnpm install --frozen-lockfile
+uv sync --locked
+Scope: all 9 workspace projects
+✓ Lockfile passes supply-chain policies (verified 1h ago)
+Error: ERR_PNPM_IGNORED_BUILDS
+
+  × installing dependencies
+  ╰─▶ Ignored build scripts: electron@38.8.6, esbuild@0.28.2
+  help: Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.
+
+Resolved 14 packages in 2ms
+Checked 13 packages in 11ms
+root@samojlenko0604:/opt/real#
