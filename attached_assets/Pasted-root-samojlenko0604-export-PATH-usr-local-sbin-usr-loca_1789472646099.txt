@@ -1,0 +1,51 @@
+root@samojlenko0604:~# export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+command -v nginx
+nginx -v
+systemctl status nginx --no-pager
+/usr/sbin/nginx
+nginx version: nginx/1.30.4
+● nginx.service - A high performance web server and a reverse proxy server
+     Loaded: loaded (/usr/lib/systemd/system/nginx.service; enabled; preset: enabled)
+    Drop-In: /etc/systemd/system/nginx.service.d
+             └─nofile.conf
+     Active: active (running) since Tue 2026-09-15 12:29:08 MSK; 2h 14min ago
+       Docs: man:nginx(8)
+   Main PID: 812 (nginx)
+      Tasks: 2 (limit: 1046)
+     Memory: 2.2M (peak: 11.4M swap: 2.6M swap peak: 2.7M)
+        CPU: 408ms
+     CGroup: /system.slice/nginx.service
+             ├─  812 "nginx: master process /usr/sbin/nginx -g daemon on; master_process on;"
+             └─10168 "nginx: worker process"
+
+Sep 15 12:29:07 samojlenko0604.fvds.ru systemd[1]: Starting nginx.service - A high performance web server and a …rver...
+Sep 15 12:29:08 samojlenko0604.fvds.ru systemd[1]: Started nginx.service - A high performance web server and a r…server.
+Sep 15 13:20:20 samojlenko0604.fvds.ru systemd[1]: Reloading nginx.service - A high performance web server and a…rver...
+Sep 15 13:20:20 samojlenko0604.fvds.ru nginx[10135]: 2026/09/15 13:20:20 [notice] 10135#10135: signal process started
+Sep 15 13:20:20 samojlenko0604.fvds.ru systemd[1]: Reloaded nginx.service - A high performance web server and a …server.
+Sep 15 13:22:13 samojlenko0604.fvds.ru systemd[1]: Reloading nginx.service - A high performance web server and a…rver...
+Sep 15 13:22:13 samojlenko0604.fvds.ru nginx[10166]: 2026/09/15 13:22:13 [notice] 10166#10166: signal process started
+Sep 15 13:22:13 samojlenko0604.fvds.ru systemd[1]: Reloaded nginx.service - A high performance web server and a …server.
+Hint: Some lines were ellipsized, use -l to show in full.
+root@samojlenko0604:~# certbot --nginx --redirect -d api.real-clients.ru
+Saving debug log to /var/log/letsencrypt/letsencrypt.log
+Requesting a certificate for api.real-clients.ru
+
+Successfully received certificate.
+Certificate is saved at: /etc/letsencrypt/live/api.real-clients.ru/fullchain.pem
+Key is saved at:         /etc/letsencrypt/live/api.real-clients.ru/privkey.pem
+This certificate expires on 2026-12-14.
+These files will be updated when the certificate renews.
+Certbot has set up a scheduled task to automatically renew this certificate in the background.
+
+Deploying certificate
+Could not install certificate
+
+NEXT STEPS:
+- The certificate was saved, but could not be installed (installer: nginx). After fixing the error shown below, try installing it again by running:
+  certbot install --cert-name api.real-clients.ru
+
+Could not automatically find a matching server block for api.real-clients.ru. Set the `server_name` directive to use the Nginx installer.
+Ask for help or search for solutions at https://community.letsencrypt.org. See the logfile /var/log/letsencrypt/letsencrypt.log or re-run Certbot with -v for more details.
+root@samojlenko0604:~#
