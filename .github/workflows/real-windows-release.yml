@@ -15,7 +15,7 @@ permissions:
   contents: write
 
 jobs:
-  windows:
+  build:
     runs-on: windows-latest
     defaults:
       run:
@@ -40,18 +40,51 @@ jobs:
           $current.updateUrl = "https://github.com/$env:REPOSITORY/releases/latest/download/"
           $current | ConvertTo-Json | Set-Content artifacts/lead-scout-desktop/electron/runtime-config.json
       - run: pnpm --filter @workspace/lead-scout-desktop run build:desktop
-      - name: Verify installer and uninstaller window controls
+      - name: Upload generated Windows release
+        uses: actions/upload-artifact@v4
+        with:
+          name: Real-Windows
+          path: |
+            artifacts/lead-scout-desktop/release/*.exe
+            artifacts/lead-scout-desktop/release/latest.yml
+            artifacts/lead-scout-desktop/release/*.blockmap
+          if-no-files-found: error
+          retention-days: 30
+
+  verify-installer-ui:
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - windows-latest
+          - windows-2022
+    defaults:
+      run:
         shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download generated Windows release
+        uses: actions/download-artifact@v4
+        with:
+          name: Real-Windows
+          path: artifacts/lead-scout-desktop/release
+      - name: Verify installer and uninstaller window controls
+        env:
+          VERIFY_IMAGE: ${{ matrix.os }}
         run: |
-          $installer = Get-ChildItem artifacts/lead-scout-desktop/release -Filter 'Real-Setup-*.exe' |
+          $installer = Get-ChildItem artifacts/lead-scout-desktop/release -Recurse -Filter 'Real-Setup-*.exe' |
             Where-Object { $_.Name -notlike '*uninstaller*' } |
             Select-Object -First 1
-          if (-not $installer) { throw "Generated Real NSIS installer was not found." }
-          .github/scripts/verify-real-installer.ps1 -InstallerPath $installer.FullName
-      - name: Smoke test installer lifecycle
-        shell: pwsh
+          if (-not $installer) { throw "Generated Real NSIS installer was not found on $env:VERIFY_IMAGE." }
+          .github/scripts/verify-real-installer.ps1 `
+            -InstallerPath $installer.FullName `
+            -EnvironmentName $env:VERIFY_IMAGE
+      - name: Smoke test installer lifecycle on the primary image
+        if: matrix.os == 'windows-latest'
         run: |
-          $installer = Get-ChildItem artifacts/lead-scout-desktop/release -Filter 'Real-Setup-*.exe' |
+          $installer = Get-ChildItem artifacts/lead-scout-desktop/release -Recurse -Filter 'Real-Setup-*.exe' |
             Where-Object { $_.Name -notlike '*uninstaller*' } |
             Select-Object -First 1
           if (-not $installer) { throw "Generated Real NSIS installer was not found for the lifecycle smoke test." }
@@ -60,18 +93,27 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Real-installer-ui-evidence
+          name: Real-installer-ui-evidence-${{ matrix.os }}
           path: artifacts/lead-scout-desktop/release/installer-ui-evidence/
           if-no-files-found: warn
-      - uses: actions/upload-artifact@v4
+          retention-days: 30
+
+  publish:
+    needs:
+      - build
+      - verify-installer-ui
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Download generated Windows release
+        uses: actions/download-artifact@v4
         with:
           name: Real-Windows
-          path: |
-            artifacts/lead-scout-desktop/release/*.exe
-            artifacts/lead-scout-desktop/release/latest.yml
-            artifacts/lead-scout-desktop/release/*.blockmap
+          path: artifacts/lead-scout-desktop/release
       - name: Publish tagged release
-        if: startsWith(github.ref, 'refs/tags/')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

@@ -1,11 +1,15 @@
 param(
   [Parameter(Mandatory = $true)]
-  [string]$InstallerPath
+  [string]$InstallerPath,
+
+  [string]$EnvironmentName = $null
 )
 
 $ErrorActionPreference = "Stop"
 $evidenceDirectory = Join-Path $env:GITHUB_WORKSPACE "artifacts/lead-scout-desktop/release/installer-ui-evidence"
 New-Item -ItemType Directory -Force -Path $evidenceDirectory | Out-Null
+$resolvedInstallerPath = (Resolve-Path -LiteralPath $InstallerPath).Path
+$installerSha256 = (Get-FileHash -LiteralPath $resolvedInstallerPath -Algorithm SHA256).Hash
 
 Add-Type -TypeDefinition @"
 using System;
@@ -212,7 +216,16 @@ $uninstallerPath = Join-Path $installDirectory "Uninstall Real.exe"
 $process = $null
 $uninstallerProcess = $null
 $report = [ordered]@{
-  installer = (Resolve-Path $InstallerPath).Path
+  environment = [ordered]@{
+    image = $EnvironmentName
+    runnerOs = $env:RUNNER_OS
+    runnerArch = $env:RUNNER_ARCH
+    imageOs = $env:ImageOS
+    workflowJob = $env:GITHUB_JOB
+    runId = $env:GITHUB_RUN_ID
+  }
+  installer = $resolvedInstallerPath
+  installerSha256 = $installerSha256
   result = "failed"
   windowTitle = $null
   windowHandle = $null
@@ -415,7 +428,7 @@ function Find-VisibleWindowByTitle {
 
 try {
   $process = Start-Process `
-    -FilePath (Resolve-Path $InstallerPath).Path `
+    -FilePath $resolvedInstallerPath `
     -ArgumentList "/D=$installDirectory" `
     -PassThru
   $deadline = [DateTime]::UtcNow.AddSeconds(30)
@@ -491,7 +504,7 @@ try {
   }
 
   $process = Start-Process `
-    -FilePath (Resolve-Path $InstallerPath).Path `
+    -FilePath $resolvedInstallerPath `
     -ArgumentList "/D=$installDirectory" `
     -PassThru
   $deadline = [DateTime]::UtcNow.AddSeconds(30)
