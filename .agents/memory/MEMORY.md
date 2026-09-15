@@ -1,3 +1,4 @@
+- [NSIS branding bitmaps](windows-nsis-branding-bitmaps.md) — use opaque classic 24-bit BMPs; Windows NSIS can silently omit 32-bit branding images.
 - [Windows NSIS releases](windows-nsis-releases.md) — build Real installers on a Windows runner; Replit Nix Wine cannot complete electron-builder’s NSIS helper step.
 - [Windows native build dependencies](windows-native-build-dependencies.md) — Windows CI needs x64 optional packages for Rollup, esbuild, lightningcss, and Tailwind Oxide in the lockfile.
 - [Russia-wide OSM search](russia-wide-osm-search.md) — sample major cities at Nominatim-safe cadence; a country-center radius is not nationwide coverage.
