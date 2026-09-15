@@ -1,0 +1,49 @@
+root@samojlenko0604:~# sleep 3
+
+systemctl status real-api --no-pager -l
+curl http://127.0.0.1:8080/api/healthz
+● real-api.service - Real API Server
+     Loaded: loaded (/etc/systemd/system/real-api.service; enabled; preset: enabled)
+     Active: active (running) since Tue 2026-09-15 14:39:33 MSK; 1min 9s ago
+   Main PID: 15178 (MainThread)
+      Tasks: 11 (limit: 1046)
+     Memory: 32.8M (peak: 47.5M)
+        CPU: 709ms
+     CGroup: /system.slice/real-api.service
+             └─15178 /usr/bin/node /opt/real/artifacts/api-server/dist/index.mjs
+
+Sep 15 14:39:33 samojlenko0604.fvds.ru systemd[1]: Started real-api.service - Real API Server.
+Sep 15 14:39:34 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789472374487,"pid":15178,"hostname":"samojlenko0604.fvds.ru","port":8080,"msg":"Server listening"}
+{"status":"ok"}root@samapt update4:~# apt update
+apt install -y certbot python3-certbot-nginx
+Hit:1 http://mirror.hoztnode.net/ubuntu noble-security InRelease
+Hit:2 http://mirror.hoztnode.net/ubuntu noble-updates InRelease
+Hit:3 http://mirror.hoztnode.net/ubuntu noble InRelease
+Hit:4 http://download.ispmanager.com/repo/ubuntu 6-5.445-noble InRelease
+Hit:5 http://download.ispmanager.com/repo/ubuntu base-noble InRelease
+Hit:6 https://download.ispmanager.com/repo/ubuntu nginx-noble InRelease
+Hit:7 https://deb.nodesource.com/node_24.x nodistro InRelease
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+4 packages can be upgraded. Run 'apt list --upgradable' to see them.
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+certbot is already the newest version (2.9.0-1).
+python3-certbot-nginx is already the newest version (2.9.0-1).
+0 upgraded, 0 newly installed, 0 to remove and 4 not upgraded.
+root@samojlenko0604:~# if ufw status | grep -q "Status: active"; then
+  ufw allow 'Nginx Full'
+fi
+Command 'ufw' is available in the following places
+ * /sbin/ufw
+ * /usr/sbin/ufw
+The command could not be located because '/sbin:/usr/sbin' is not included in the PATH environment variable.
+This is most likely caused by the lack of administrative privileges associated with your user account.
+ufw: command not found
+root@samojlenko0604:~# certbot --nginx --redirect -d api.real-clients.ru
+Saving debug log to /var/log/letsencrypt/letsencrypt.log
+The nginx plugin is not working; there may be problems with your existing configuration.
+The error was: NoInstallationError("Could not find a usable 'nginx' binary. Ensure nginx exists, the binary is executable, and your PATH is set correctly.")
+root@samojlenko0604:~#
