@@ -39,7 +39,12 @@ jobs:
           if ($env:INPUT_API_URL) { $current.apiBaseUrl = $env:INPUT_API_URL }
           $current.updateUrl = "https://github.com/$env:REPOSITORY/releases/latest/download/"
           $current | ConvertTo-Json | Set-Content artifacts/lead-scout-desktop/electron/runtime-config.json
-      - run: pnpm --filter @workspace/lead-scout-desktop run build:desktop
+      - name: Build Windows installer
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+        run: pnpm --filter @workspace/lead-scout-desktop run build:desktop
       - name: Upload generated Windows release
         uses: actions/upload-artifact@v4
         with:
@@ -48,6 +53,61 @@ jobs:
             artifacts/lead-scout-desktop/release/*.exe
             artifacts/lead-scout-desktop/release/latest.yml
             artifacts/lead-scout-desktop/release/*.blockmap
+          if-no-files-found: error
+          retention-days: 30
+
+  verify-authenticode:
+    needs: build
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download generated Windows release
+        uses: actions/download-artifact@v4
+        with:
+          name: Real-Windows
+          path: artifacts/lead-scout-desktop/release
+      - name: Verify installer and uninstaller Authenticode signatures
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          IS_TAG_RELEASE: ${{ startsWith(github.ref, 'refs/tags/') }}
+        run: |
+          $installer = Get-ChildItem artifacts/lead-scout-desktop/release -Recurse -Filter 'Real-Setup-*.exe' |
+            Where-Object { $_.Name -notlike '*uninstaller*' } |
+            Select-Object -First 1
+          if (-not $installer) { throw "Generated Real NSIS installer was not found for Authenticode verification." }
+
+          $report = Join-Path (Resolve-Path artifacts/lead-scout-desktop/release).Path "authenticode-report.json"
+          $signingConfigured = (
+            -not [String]::IsNullOrWhiteSpace($env:CSC_LINK) -or
+            -not [String]::IsNullOrWhiteSpace($env:WIN_CSC_LINK)
+          )
+          $requireSignature = $env:IS_TAG_RELEASE -eq "true" -or $signingConfigured
+          $arguments = @(
+            "-InstallerPath", $installer.FullName,
+            "-ReportPath", $report
+          )
+          if ($requireSignature) {
+            $arguments += "-RequireSignature"
+          }
+
+          & .github/scripts/verify-authenticode.ps1 @arguments
+          if ($LASTEXITCODE -ne 0) {
+            throw "Authenticode verification failed."
+          }
+
+          if (-not $requireSignature) {
+            Write-Warning "No Authenticode certificate configuration was detected. This workflow run is development-only and its unsigned artifacts must not be distributed."
+          }
+      - name: Upload Authenticode report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Real-authenticode-report
+          path: artifacts/lead-scout-desktop/release/authenticode-report.json
           if-no-files-found: error
           retention-days: 30
 
@@ -101,6 +161,7 @@ jobs:
   publish:
     needs:
       - build
+      - verify-authenticode
       - verify-installer-ui
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: windows-latest
@@ -113,10 +174,15 @@ jobs:
         with:
           name: Real-Windows
           path: artifacts/lead-scout-desktop/release
+      - name: Download Authenticode report
+        uses: actions/download-artifact@v4
+        with:
+          name: Real-authenticode-report
+          path: artifacts/lead-scout-desktop/release
       - name: Publish tagged release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release view $env:GITHUB_REF_NAME 2>$null
           if ($LASTEXITCODE -ne 0) { gh release create $env:GITHUB_REF_NAME --title $env:GITHUB_REF_NAME --generate-notes }
-          gh release upload $env:GITHUB_REF_NAME artifacts/lead-scout-desktop/release/*.exe artifacts/lead-scout-desktop/release/latest.yml artifacts/lead-scout-desktop/release/*.blockmap --clobber
+          gh release upload $env:GITHUB_REF_NAME artifacts/lead-scout-desktop/release/*.exe artifacts/lead-scout-desktop/release/latest.yml artifacts/lead-scout-desktop/release/*.blockmap artifacts/lead-scout-desktop/release/authenticode-report.json --clobber
