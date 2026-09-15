@@ -1,6 +1,6 @@
 import { randomBytes, scrypt as nodeScrypt, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
-import { and, desc, eq, isNull, or, type SQL } from "drizzle-orm";
+import { and, desc, eq, isNull, like, or, type SQL } from "drizzle-orm";
 import {
   activitiesTable,
   countriesTable,
@@ -226,43 +226,13 @@ export async function initializeDatabase(): Promise<void> {
 
   await db.insert(countriesTable).values(DEFAULT_COUNTRIES).onConflictDoNothing({ target: countriesTable.code });
 
-  const users = await db.select().from(usersTable);
-  const usersByLogin = new Map(users.map((user) => [user.login, user]));
-  const existingLeads = await db.select({ id: leadsTable.id }).from(leadsTable).limit(1);
-
-  if (existingLeads.length === 0) {
-    await db.insert(leadsTable).values(
-      DEFAULT_LEADS.map((lead) => ({
-        sourceId: lead.sourceId,
-        name: lead.name,
-        country: lead.country,
-        city: lead.city,
-        industry: lead.industry,
-        website: lead.website,
-        status: lead.status,
-        score: lead.score,
-        scoreReasons: lead.scoreReasons,
-        issues: lead.issues,
-        reviewsCount: lead.reviewsCount,
-        rating: lead.rating,
-        branchesCount: lead.branchesCount,
-        contacts: lead.contacts,
-        source: lead.source,
-        assigneeId: lead.assigneeLogin ? usersByLogin.get(lead.assigneeLogin)?.id ?? null : null,
-        note: lead.note,
-      })),
-    );
-  }
-
-  const existingActivities = await db.select({ id: activitiesTable.id }).from(activitiesTable).limit(1);
-  if (existingActivities.length === 0) {
-    const anna = usersByLogin.get("anna");
-    const max = usersByLogin.get("max");
-    await db.insert(activitiesTable).values([
-      { text: "Анна взяла в работу Atelier Lumière", userId: anna?.id ?? null },
-      { text: "Максим написал Hudson Smile Studio", userId: max?.id ?? null },
-    ]);
-  }
+  // Keep the dashboard limited to live data. These are the only known demo rows
+  // and demo activities; searched clients and user-generated activity are preserved.
+  await db.delete(leadsTable).where(like(leadsTable.sourceId, "demo:%"));
+  await db.delete(activitiesTable).where(or(
+    eq(activitiesTable.text, "Анна взяла в работу Atelier Lumière"),
+    eq(activitiesTable.text, "Максим написал Hudson Smile Studio"),
+  ));
 }
 
 export async function authenticate(login: string, password: string): Promise<PublicUser | null> {
@@ -346,7 +316,25 @@ export async function upsertSearchedLead(
     source: business.source ?? "OpenStreetMap",
     assigneeId: null,
     note: null,
-  }).onConflictDoNothing({ target: leadsTable.sourceId }).returning({ id: leadsTable.id });
+  }).onConflictDoUpdate({
+    target: leadsTable.sourceId,
+    set: {
+      name: business.name,
+      country: country === "any" ? "" : country,
+      city: business.city || city,
+      industry: business.industry,
+      website: business.website,
+      score: business.score,
+      scoreReasons: business.scoreReasons,
+      issues: business.issues,
+      reviewsCount: business.reviewsCount ?? 0,
+      rating: business.rating ?? null,
+      branchesCount: 1,
+      contacts: business.contacts,
+      source: business.source ?? "OpenStreetMap",
+      updatedAt: new Date(),
+    },
+  }).returning({ id: leadsTable.id });
 
   const id = inserted[0]?.id ?? (await db.select({ id: leadsTable.id }).from(leadsTable)
     .where(eq(leadsTable.sourceId, business.sourceId)).limit(1))[0]?.id;
@@ -358,9 +346,12 @@ export async function upsertSearchedLead(
 export async function getDashboard(user: AuthUser) {
   const visible = await listLeads(user);
   const statuses: LeadStatus[] = ["new", "claimed", "contacted", "replied", "rejected", "no_reply", "deal"];
-  const recent = await db.select().from(activitiesTable)
+  const recentQuery = db.select().from(activitiesTable)
     .orderBy(desc(activitiesTable.at))
     .limit(8);
+  const recent = user.role === "owner"
+    ? await recentQuery
+    : await recentQuery.where(eq(activitiesTable.userId, user.id));
 
   return {
     available: visible.filter((lead) => lead.status === "new").length,

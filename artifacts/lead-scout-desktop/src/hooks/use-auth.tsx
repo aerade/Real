@@ -20,9 +20,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [, setLocation] = useLocation();
 
   const logout = () => {
+    if (logoutMutation.isPending) return;
     logoutMutation.mutate(undefined, {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getGetSessionQueryKey() });
+      onSettled: () => {
+        queryClient.setQueryData(getGetSessionQueryKey(), { authenticated: false, user: null });
+        queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== getGetSessionQueryKey()[0] });
         setLocation("/login");
       },
     });

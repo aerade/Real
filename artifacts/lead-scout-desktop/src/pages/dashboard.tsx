@@ -33,23 +33,17 @@ export function Dashboard() {
             <p className="text-xs text-muted-foreground mt-0.5">Сводка показателей и активность</p>
           </div>
           
-          <div className="flex gap-4 items-center bg-accent/30 px-3 py-1.5 rounded-lg border border-border/50">
-            <span className="text-xs text-muted-foreground">Статус базы:</span>
-            <span className="text-xs font-medium text-emerald-400">В норме</span>
-          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           {statCards.map((stat, i) => (
-            <div key={i} className="bg-card border border-card-border rounded-xl p-4 flex flex-col gap-3 relative overflow-hidden group">
+            <div key={i} className="bg-card border border-card-border rounded-xl p-4 flex flex-col gap-3 relative overflow-hidden">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{stat.title}</span>
-                <stat.icon className="w-3.5 h-3.5 text-muted-foreground/50 group-hover:text-foreground transition-colors" />
+                <stat.icon className="w-3.5 h-3.5 text-muted-foreground/50" />
               </div>
               <div className="text-2xl font-semibold tracking-tight">{stat.value}</div>
               
-              {/* Decorative subtle gradient */}
-              <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
             </div>
           ))}
         </div>
@@ -95,7 +89,7 @@ export function Dashboard() {
               ) : (
                 data.recent.map((activity) => (
                   <div key={activity.id} className="relative flex gap-3 group">
-                    <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-border group-hover:bg-foreground/50 transition-colors shrink-0" />
+                    <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-border shrink-0" />
                     <div>
                       <p className="text-[11px] leading-tight text-foreground/80 mb-0.5">{activity.text}</p>
                       <p className="text-[9px] text-muted-foreground/60 font-mono">

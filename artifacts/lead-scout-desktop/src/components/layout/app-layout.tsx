@@ -31,10 +31,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
           {navItems.map((item) => {
             const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
             return (
-              <Link key={item.href} href={item.href} className="relative h-9 flex items-center justify-center px-4 rounded-full group cursor-pointer hover:bg-muted/50 transition-colors">
+              <Link key={item.href} href={item.href} className="relative h-9 flex items-center justify-center px-4 cursor-pointer">
                 <div className={cn(
                   "flex items-center gap-1.5 text-xs font-semibold transition-colors duration-200",
-                  isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                  isActive ? "text-primary" : "text-muted-foreground"
                 )}>
                   <item.icon className="w-3.5 h-3.5" />
                   {item.label}

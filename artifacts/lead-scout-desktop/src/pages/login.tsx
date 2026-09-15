@@ -3,7 +3,7 @@ import { getGetSessionQueryKey, useLogin } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { AlertCircle, ArrowRight } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import realMarkWhite from "@/assets/real-mark-white.svg";
 import { WindowControls } from "@/components/layout/window-controls";
 import { useQueryClient } from "@tanstack/react-query";
@@ -87,7 +87,7 @@ export function Login() {
                 value={login}
                 onChange={(e) => setLogin(e.target.value)}
                 placeholder="Username" 
-                className="w-full h-12 rounded-xl bg-card border-border/50 text-center px-4 placeholder:text-muted-foreground/70 focus-visible:ring-2 focus-visible:ring-primary/50 shadow-sm"
+                className="w-full h-12 rounded-xl bg-card border-border/50 text-center px-4 placeholder:text-muted-foreground/70 shadow-sm"
                 disabled={loginMutation.isPending}
               />
               <Input 
@@ -97,22 +97,17 @@ export function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Password"
-                className="w-full h-12 rounded-xl bg-card border-border/50 text-center px-4 placeholder:text-muted-foreground/70 focus-visible:ring-2 focus-visible:ring-primary/50 shadow-sm"
+                 className="w-full h-12 rounded-xl bg-card border-border/50 text-center px-4 placeholder:text-muted-foreground/70 shadow-sm"
                 disabled={loginMutation.isPending}
               />
             </div>
             
             <Button 
               type="submit" 
-              className="w-[200px] h-12 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-bold transition-all mt-4 group relative overflow-hidden shadow-md"
+              className="w-[200px] h-12 rounded-xl bg-primary text-primary-foreground text-sm font-bold mt-4 shadow-md"
               disabled={loginMutation.isPending}
             >
-              <div className="absolute inset-0 flex items-center justify-center transition-all duration-300 group-hover:translate-x-full group-hover:opacity-0">
-                {loginMutation.isPending ? "Logging in..." : "Log in"}
-              </div>
-              <div className="absolute inset-0 flex items-center justify-center transition-all duration-300 -translate-x-full opacity-0 group-hover:translate-x-0 group-hover:opacity-100">
-                <ArrowRight className="w-5 h-5" />
-              </div>
+              {loginMutation.isPending ? "Logging in..." : "Log in"}
             </Button>
           </form>
 

@@ -20,11 +20,20 @@ type TwoGisContact = {
 type TwoGisItem = {
   id?: string;
   name?: string;
+  category?: string;
+  address?: string;
+  city?: string;
+  website?: string | null;
+  has_website?: boolean;
+  phones?: string[];
+  email?: string;
+  rating?: number | string | null;
+  reviews_count?: number | string;
   address_name?: string;
   city_alias?: string;
   adm_div?: Array<{ type?: string; name?: string; city_alias?: string }>;
   contact_groups?: Array<{ contacts?: TwoGisContact[] }>;
-  rubrics?: Array<{ name?: string; kind?: string }>;
+  rubrics?: Array<{ name?: string; kind?: string } | string>;
   reviews?: {
     general_rating?: number;
     general_review_count?: number;
@@ -141,20 +150,44 @@ function extractContacts(item: TwoGisItem): {
     }
   }
 
+  for (const phone of item.phones ?? []) {
+    const value = phone.trim();
+    if (value && !seen.has(`phone:${value}`)) {
+      seen.add(`phone:${value}`);
+      contacts.push({ type: "Телефон", value, url: `tel:${value.replace(/[^\d+]/g, "")}` });
+    }
+  }
+  if (item.email?.trim() && !seen.has(`email:${item.email.trim()}`)) {
+    const value = item.email.trim();
+    contacts.push({ type: "Email", value, url: `mailto:${value}` });
+  }
+  if (item.website?.trim()) {
+    website = item.website.trim();
+  }
+
   return { contacts, website };
 }
 
 function mapItem(item: TwoGisItem, input: ParserInput): PublicBusiness | null {
   if (!item.id || !item.name?.trim()) return null;
   const { contacts, website } = extractContacts(item);
-  const rubric = item.rubrics?.find((entry) => entry.kind === "primary")?.name
-    ?? item.rubrics?.[0]?.name
-    ?? input.industry;
+  const rubric = item.rubrics?.find((entry) => typeof entry !== "string" && entry.kind === "primary")
+    ?? item.rubrics?.[0];
+  const industry = typeof rubric === "string" ? rubric : rubric?.name ?? item.category ?? input.industry;
   const city = item.adm_div?.find((entry) => entry.type === "city")?.name
+    ?? item.city
     ?? item.city_alias
     ?? input.city;
-  const reviewsCount = item.reviews?.general_review_count ?? item.reviews?.org_review_count ?? 0;
-  const rating = item.reviews?.general_rating ?? item.reviews?.org_rating ?? null;
+  const reviewsCount = Number(
+    item.reviews?.general_review_count ??
+    item.reviews?.org_review_count ??
+    item.reviews_count ??
+    0,
+  ) || 0;
+  const rawRating = item.reviews?.general_rating ?? item.reviews?.org_rating ?? item.rating;
+  const rating = rawRating === null || rawRating === undefined || rawRating === ""
+    ? null
+    : Number(rawRating) || null;
   const score = Math.min(
     98,
     58 + (website ? 8 : 24) + Math.min(contacts.length * 5, 14) + (rating ? Math.round(rating * 2) : 0),
@@ -164,7 +197,7 @@ function mapItem(item: TwoGisItem, input: ParserInput): PublicBusiness | null {
     sourceId: `2gis:${item.id}`,
     name: item.name.trim(),
     city,
-    industry: rubric,
+    industry,
     website,
     contacts,
     issues: website ? ["Требуется проверка скорости и мобильной версии"] : ["Сайт не найден"],
@@ -189,7 +222,7 @@ async function runParser(url: string, outputPath: string): Promise<void> {
     "-i", url,
     "-o", outputPath,
     "-f", "json",
-    "--parser.max-records", "20",
+    "--parser.max-records", "5",
     "--chrome.headless", "yes",
     "--chrome.silent-browser", "yes",
     "--chrome.binary_path", binaryPath,
@@ -243,7 +276,10 @@ export async function searchTwoGisBusinesses(input: ParserInput): Promise<Public
       await runParser(searchUrl(input), outputPath);
       await access(outputPath);
       const raw = await readFile(outputPath, "utf8");
-      const items = JSON.parse(raw.replace(/^\uFEFF/, "").trim()) as TwoGisItem[];
+      const parsed = JSON.parse(raw.replace(/^\uFEFF/, "").trim()) as
+        | TwoGisItem[]
+        | { items?: TwoGisItem[]; results?: TwoGisItem[] };
+      const items = Array.isArray(parsed) ? parsed : parsed.items ?? parsed.results ?? [];
       const results = items
         .map((item) => mapItem(item, input))
         .filter((item): item is PublicBusiness => Boolean(item));

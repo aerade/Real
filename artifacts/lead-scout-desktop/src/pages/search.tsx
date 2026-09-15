@@ -21,8 +21,36 @@ const POPULAR_CITIES = [
   { value: "Красноярск", aliases: ["krsk", "краснояр", "крас"] },
   { value: "Самара", aliases: ["samara", "самар"] },
   { value: "London", aliases: ["ldn", "лондон"] },
-  { value: "New York", aliases: ["ny", "nyc", "нью йорк"] }
+  { value: "New York", aliases: ["ny", "nyc", "нью йорк"] },
+  { value: "Berlin", aliases: ["берлин"] },
+  { value: "Paris", aliases: ["париж"] },
+  { value: "Amsterdam", aliases: ["амстердам"] },
+  { value: "Stockholm", aliases: ["стокгольм"] },
 ];
+
+const CITIES_BY_COUNTRY: Record<string, typeof POPULAR_CITIES> = {
+  россия: POPULAR_CITIES.filter(({ value }) => [
+    "Москва", "Санкт-Петербург", "Новосибирск", "Екатеринбург",
+    "Казань", "Нижний Новгород", "Красноярск", "Самара",
+  ].includes(value)),
+  russia: POPULAR_CITIES.filter(({ value }) => [
+    "Москва", "Санкт-Петербург", "Новосибирск", "Екатеринбург",
+    "Казань", "Нижний Новгород", "Красноярск", "Самара",
+  ].includes(value)),
+  сша: POPULAR_CITIES.filter(({ value }) => value === "New York"),
+  usa: POPULAR_CITIES.filter(({ value }) => value === "New York"),
+  германия: POPULAR_CITIES.filter(({ value }) => value === "Berlin"),
+  germany: POPULAR_CITIES.filter(({ value }) => value === "Berlin"),
+  франция: POPULAR_CITIES.filter(({ value }) => value === "Paris"),
+  france: POPULAR_CITIES.filter(({ value }) => value === "Paris"),
+  нидерланды: POPULAR_CITIES.filter(({ value }) => value === "Amsterdam"),
+  netherlands: POPULAR_CITIES.filter(({ value }) => value === "Amsterdam"),
+  швеция: POPULAR_CITIES.filter(({ value }) => value === "Stockholm"),
+  sweden: POPULAR_CITIES.filter(({ value }) => value === "Stockholm"),
+  "великобритания": POPULAR_CITIES.filter(({ value }) => value === "London"),
+  "united kingdom": POPULAR_CITIES.filter(({ value }) => value === "London"),
+  gb: POPULAR_CITIES.filter(({ value }) => value === "London"),
+};
 
 const POPULAR_INDUSTRIES = [
   { value: "СТО", aliases: ["car service", "автосервис", "авто сервис", "ремонт авто", "шин"] },
@@ -119,7 +147,7 @@ function SuggestionInput({
             onChange={handleInputChange} 
             onClick={() => setOpen(true)}
             onFocus={() => setOpen(true)}
-            className="pl-9 h-11 text-sm bg-background border-border/50 rounded-xl focus-visible:ring-2 focus-visible:ring-primary/50 shadow-sm transition-all" 
+            className="pl-9 h-11 text-sm bg-background border-border/50 rounded-xl shadow-sm"
             placeholder={placeholder}
             disabled={disabled}
           />
@@ -156,9 +184,18 @@ export function SearchPage() {
   const { data: countries } = useListCountries();
   const searchMutation = useSearchLeads();
 
-  // Reset city when country changes to Any or empty
+  const cityOptions = country === "any"
+    ? POPULAR_CITIES
+    : CITIES_BY_COUNTRY[country.trim().toLowerCase()] ?? [];
+
+  // Do not leave a city from the previous country selected.
   useEffect(() => {
-    if (!country || country === "any") {
+    if (!country) {
+      setCity("");
+      return;
+    }
+    if (country !== "any" && city && cityOptions.length > 0 &&
+      !cityOptions.some((option) => option.value.toLowerCase() === city.toLowerCase())) {
       setCity("");
     }
   }, [country]);
@@ -177,7 +214,7 @@ export function SearchPage() {
   };
 
   const results = searchMutation.data || [];
-  const cityDisabled = !country || country === "any";
+  const cityDisabled = !country;
 
   return (
     <AppLayout>
@@ -190,13 +227,16 @@ export function SearchPage() {
         </div>
 
         <div className="bg-card border border-card-border rounded-2xl p-5 shrink-0 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-          
           <form onSubmit={handleSearch} className="relative z-10 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
             <div className="flex flex-col gap-2">
               <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Country</Label>
-              <Select value={country} onValueChange={setCountry}>
-                <SelectTrigger className="h-11 text-sm bg-background border-border/50 rounded-xl focus:ring-2 focus:ring-primary/50 shadow-sm transition-all">
+              <Select value={country} onValueChange={(value) => {
+                setCountry(value);
+                requestAnimationFrame(() => {
+                  if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+                });
+              }}>
+                <SelectTrigger className="h-11 text-sm bg-background border-border/50 rounded-xl shadow-sm">
                   <SelectValue placeholder="Select Country" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-border/50 shadow-lg">
@@ -213,7 +253,7 @@ export function SearchPage() {
               <SuggestionInput 
                 value={city}
                 onChange={setCity}
-                options={POPULAR_CITIES}
+                options={cityOptions}
                 placeholder={cityDisabled ? "Select country first" : "e.g. London"}
                 icon={MapPin}
                 disabled={cityDisabled}
@@ -231,7 +271,7 @@ export function SearchPage() {
               />
             </div>
 
-            <Button type="submit" disabled={searchMutation.isPending} className="h-11 rounded-xl font-bold bg-primary text-primary-foreground hover:bg-primary/90 w-full shadow-md transition-all active:scale-[0.98]">
+            <Button type="submit" disabled={searchMutation.isPending} className="h-11 rounded-xl font-bold bg-primary text-primary-foreground w-full shadow-md">
               <SearchIcon className="w-4 h-4 mr-2" />
               Find Clients
             </Button>
@@ -263,8 +303,8 @@ export function SearchPage() {
                 </div>
               ) : (
                 <div className="divide-y divide-border/40 p-2 space-y-2">
-                  {results.map((lead) => (
-                    <Link key={lead.id} href={`/leads/${lead.id}`} className="flex items-center p-4 rounded-xl group cursor-pointer border border-transparent">
+                  {results.slice(0, 5).map((lead) => (
+                    <Link key={lead.id} href={`/leads/${lead.id}`} className="flex items-center p-4 rounded-xl cursor-pointer border border-transparent">
                       <div className="flex-1 min-w-0 pr-4">
                         <div className="flex items-center gap-3 mb-2">
                           <span className="text-base font-bold text-foreground truncate">{lead.name}</span>

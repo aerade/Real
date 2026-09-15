@@ -120,7 +120,7 @@ async function searchNominatimBusinesses(input: {
   const url = new URL(NOMINATIM_URL);
   url.searchParams.set("q", query);
   url.searchParams.set("format", "jsonv2");
-  url.searchParams.set("limit", "20");
+  url.searchParams.set("limit", "5");
   url.searchParams.set("addressdetails", "1");
   url.searchParams.set("extratags", "1");
   url.searchParams.set("namedetails", "1");
@@ -200,11 +200,11 @@ async function searchPublicBusinessesUncached(input: {
       countryResults.push(...cityResults.slice(0, 4));
       if (city !== popularCities.at(-1)) await new Promise((resolve) => setTimeout(resolve, 1_050));
     }
-    if (countryResults.length > 0) return countryResults.slice(0, 20);
+    if (countryResults.length > 0) return countryResults.slice(0, 5);
   }
 
   const directResults = await searchNominatimBusinesses(input);
-  if (directResults.length >= 10) return directResults.slice(0, 20);
+  if (directResults.length >= 5) return directResults.slice(0, 5);
 
   const location = [input.city, input.country === "any" ? "" : input.country].filter(Boolean).join(", ");
   if (!location) throw new Error("Для реального поиска укажите город или страну");
@@ -286,13 +286,13 @@ async function searchPublicBusinessesUncached(input: {
       };
     })
     .sort((a, b) => b.score - a.score)
-    .slice(0, 20);
+    .slice(0, 5);
 
   const merged = new Map<string, PublicBusiness>();
   for (const business of [...directResults, ...overpassResults]) {
     merged.set(business.sourceId, business);
   }
-  return [...merged.values()].sort((a, b) => b.score - a.score).slice(0, 20);
+  return [...merged.values()].sort((a, b) => b.score - a.score).slice(0, 5);
 }
 
 export async function searchPublicBusinesses(input: {

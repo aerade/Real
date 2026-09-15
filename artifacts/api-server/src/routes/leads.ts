@@ -125,7 +125,7 @@ router.post("/leads/search", async (req, res, next) => {
     const found = await Promise.all(
       businesses.map((business) => upsertSearchedLead(business, country, city)),
     );
-    return res.json(found.filter((lead) => lead.status === "new" && !lead.assignee).slice(0, 20));
+    return res.json(found.filter((lead) => lead.status === "new" && !lead.assignee).slice(0, 5));
   } catch (error) {
     req.log.error({ err: error }, "Public lead search failed");
     return res.status(502).json({

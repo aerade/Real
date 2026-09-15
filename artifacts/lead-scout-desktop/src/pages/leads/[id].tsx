@@ -27,6 +27,8 @@ export function LeadDetailsPage() {
   const claimLead = useClaimLead();
 
   const [note, setNote] = useState("");
+  const [rejectReason, setRejectReason] = useState("");
+  const [isRejecting, setIsRejecting] = useState(false);
   const initializedForId = useRef<number | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -58,8 +60,32 @@ export function LeadDetailsPage() {
         queryClient.setQueryData(getGetLeadQueryKey(leadId), (old: any) => 
           old ? { ...old, status: data.status, updatedAt: data.updatedAt } : old
         );
-        toast({ title: "Статус обновлен", description: statusMap[newStatus].label });
+         toast({ title: "Статус обновлен", description: statusMap[newStatus]?.label ?? newStatus });
       }
+    });
+  };
+
+  const handleReject = () => {
+    const reason = rejectReason.trim();
+    if (!reason) {
+      toast({ title: "Укажите причину отказа" });
+      return;
+    }
+
+    updateLead.mutate({
+      id: leadId,
+      data: {
+        status: "rejected",
+        note: `Отказ: ${reason}`,
+      },
+    }, {
+      onSuccess: (data) => {
+        queryClient.setQueryData(getGetLeadQueryKey(leadId), data);
+        setNote(data.note || "");
+        setRejectReason("");
+        setIsRejecting(false);
+        toast({ title: "Клиент отмечен как отказавшийся" });
+      },
     });
   };
 
@@ -159,11 +185,49 @@ export function LeadDetailsPage() {
                   ))}
                 </SelectContent>
               </Select>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsRejecting((value) => !value)}
+                disabled={updateLead.isPending}
+                className="h-7 text-[11px] border-destructive/40 text-destructive shrink-0"
+              >
+                Отказать
+              </Button>
             </>
           ) : (
             <p className="text-[11px] text-muted-foreground w-full text-center">Клиент в работе: {lead.assignee?.name}</p>
           )}
         </div>
+
+        {isRejecting && isAssignedToMe && (
+          <div className="flex flex-col gap-2 bg-destructive/5 p-3 rounded-lg border border-destructive/20">
+            <label htmlFor="reject-reason" className="text-[11px] font-medium text-foreground">
+              Почему клиент не подходит?
+            </label>
+            <Textarea
+              id="reject-reason"
+              value={rejectReason}
+              onChange={(event) => setRejectReason(event.target.value)}
+              placeholder="Например: уже работает с другим подрядчиком"
+              className="min-h-16 resize-none bg-background border-border/50 text-[11px]"
+              autoFocus
+            />
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="ghost" onClick={() => setIsRejecting(false)} className="h-7 text-[11px]">
+                Отмена
+              </Button>
+              <Button
+                type="button"
+                onClick={handleReject}
+                disabled={updateLead.isPending || !rejectReason.trim()}
+                className="h-7 text-[11px] bg-destructive text-destructive-foreground"
+              >
+                Подтвердить отказ
+              </Button>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-4">
@@ -232,7 +296,12 @@ export function LeadDetailsPage() {
               ) : (
                 <ul className="space-y-3">
                   {lead.contacts.map((contact, i) => {
-                    const Icon = contact.type === 'phone' ? Phone : contact.type === 'email' ? Mail : Globe;
+                           const contactType = contact.type.toLowerCase();
+                           const Icon = contactType.includes('phone') || contactType.includes('телефон')
+                             ? Phone
+                             : contactType.includes('email') || contactType.includes('почт')
+                               ? Mail
+                               : Globe;
                     return (
                       <li key={i} className="flex items-start gap-2.5 text-[11px]">
                         <Icon className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0 mt-0.5" />
@@ -260,11 +329,11 @@ export function LeadDetailsPage() {
               <div className="space-y-2.5">
                 <div className="flex justify-between items-center text-[11px] border-b border-border/30 pb-2">
                   <span className="text-muted-foreground">Рейтинг</span>
-                  <span className="font-semibold">{lead.rating ? `${lead.rating} / 5` : 'Нет'}</span>
+                   <span className="font-semibold">{lead.rating != null ? `${lead.rating} / 5` : 'Нет данных'}</span>
                 </div>
                 <div className="flex justify-between items-center text-[11px] border-b border-border/30 pb-2">
                   <span className="text-muted-foreground">Отзывов</span>
-                  <span className="font-semibold">{lead.reviewsCount}</span>
+                   <span className="font-semibold">{lead.reviewsCount > 0 ? lead.reviewsCount : 'Нет данных'}</span>
                 </div>
                 <div className="flex justify-between items-center text-[11px] border-b border-border/30 pb-2">
                   <span className="text-muted-foreground">Филиалов</span>
