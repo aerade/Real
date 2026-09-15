@@ -86,12 +86,12 @@ jobs:
             -not [String]::IsNullOrWhiteSpace($env:WIN_CSC_LINK)
           )
           $requireSignature = $env:IS_TAG_RELEASE -eq "true" -or $signingConfigured
-          $arguments = @(
-            "-InstallerPath", $installer.FullName,
-            "-ReportPath", $report
-          )
+          $arguments = @{
+            InstallerPath = $installer.FullName
+            ReportPath = $report
+          }
           if ($requireSignature) {
-            $arguments += "-RequireSignature"
+            $arguments.RequireSignature = $true
           }
 
           & .github/scripts/verify-authenticode.ps1 @arguments
@@ -132,6 +132,23 @@ jobs:
         with:
           name: Real-Windows
           path: artifacts/lead-scout-desktop/release
+      - name: Locate downloaded Windows installer
+        run: |
+          $releaseRoot = Join-Path $env:GITHUB_WORKSPACE "artifacts/lead-scout-desktop/release"
+          $installers = @(
+            Get-ChildItem -LiteralPath $releaseRoot -Recurse -File -Filter "Real-Setup-*.exe" |
+              Where-Object { $_.Name -notlike "*uninstaller*" } |
+              Sort-Object FullName
+          )
+          if ($installers.Count -eq 0) {
+            throw "Downloaded Real NSIS installer was not found below $releaseRoot."
+          }
+          if ($installers.Count -gt 1) {
+            throw "Expected one downloaded Real NSIS installer, but found $($installers.Count): $($installers.FullName -join ', ')"
+          }
+
+          "REAL_INSTALLER_PATH=$($installers[0].FullName)" |
+            Add-Content -LiteralPath $env:GITHUB_ENV -Encoding utf8
       - name: Configure desktop display scale
         env:
           DISPLAY_SCALE_PERCENT: ${{ matrix.display_scale_percent }}
@@ -153,22 +170,22 @@ jobs:
           VERIFY_IMAGE: ${{ matrix.os }}
           DISPLAY_SCALE_PERCENT: ${{ matrix.display_scale_percent }}
         run: |
-          $installer = Get-ChildItem artifacts/lead-scout-desktop/release -Recurse -Filter 'Real-Setup-*.exe' |
-            Where-Object { $_.Name -notlike '*uninstaller*' } |
-            Select-Object -First 1
-          if (-not $installer) { throw "Generated Real NSIS installer was not found on $env:VERIFY_IMAGE." }
+          if (-not $env:REAL_INSTALLER_PATH -or
+              -not (Test-Path -LiteralPath $env:REAL_INSTALLER_PATH -PathType Leaf)) {
+            throw "Downloaded Real NSIS installer path is not available on $env:VERIFY_IMAGE."
+          }
           .github/scripts/verify-real-installer.ps1 `
-            -InstallerPath $installer.FullName `
+            -InstallerPath $env:REAL_INSTALLER_PATH `
             -EnvironmentName $env:VERIFY_IMAGE `
             -DisplayScalePercent ([int]$env:DISPLAY_SCALE_PERCENT)
       - name: Smoke test installer lifecycle on the primary image
         if: matrix.os == 'windows-latest'
         run: |
-          $installer = Get-ChildItem artifacts/lead-scout-desktop/release -Recurse -Filter 'Real-Setup-*.exe' |
-            Where-Object { $_.Name -notlike '*uninstaller*' } |
-            Select-Object -First 1
-          if (-not $installer) { throw "Generated Real NSIS installer was not found for the lifecycle smoke test." }
-          .github/scripts/smoke-test-real-installer.ps1 -InstallerPath $installer.FullName
+          if (-not $env:REAL_INSTALLER_PATH -or
+              -not (Test-Path -LiteralPath $env:REAL_INSTALLER_PATH -PathType Leaf)) {
+            throw "Downloaded Real NSIS installer path is not available for the lifecycle smoke test."
+          }
+          .github/scripts/smoke-test-real-installer.ps1 -InstallerPath $env:REAL_INSTALLER_PATH
       - name: Upload installer UI evidence
         if: always()
         uses: actions/upload-artifact@v4
