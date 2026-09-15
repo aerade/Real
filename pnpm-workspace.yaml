@@ -68,6 +68,13 @@ catalog:
 
 autoInstallPeers: false
 
+supportedArchitectures:
+  os:
+    - linux
+    - win32
+  cpu:
+    - x64
+
 onlyBuiltDependencies:
   - '@swc/core'
   - electron
