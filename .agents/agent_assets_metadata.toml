@@ -140,3 +140,17 @@ mtime_ms = 1789400188131
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2929918a-2bad-485e-b0f1-dc67096566c8/cedbed65-ae68-474e-985d-c10f99528c25/aaf1b5fd-a847-4711-a3b1-b593d4f9a649"
 storage_version_token = "1789400377569349"
 content_type = "image/x-icon"
+
+[[outputs]]
+id = "jyCvCArWxHBTvRYMNsWxa"
+uri = "file://artifacts/lead-scout-desktop/release/Real-Setup-1.0.0-x64.exe"
+type = "unspecified"
+title = "Real Windows installer 1.0.0"
+description = "NSIS installer built on GitHub Actions Windows runner. Embedded API: https://api.real-clients.ru. SHA-512 matches latest.yml."
+logical_id = "46c53a84-d594-4cb2-b25e-2809c47a1a5e"
+content_hash = "sha256:20d36bc2faaeb28982d66a2e755c2fa90bde7508032baa2c1364fdcbebe6da22"
+size = 86678849
+mtime_ms = 1789474877208
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2929918a-2bad-485e-b0f1-dc67096566c8/46c53a84-d594-4cb2-b25e-2809c47a1a5e/0b21e77b-ed26-4531-9e01-b44afef76225"
+storage_version_token = "1789474891498475"
+content_type = "application/octet-stream"
