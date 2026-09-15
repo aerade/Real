@@ -1,5 +1,6 @@
 import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
 import { searchPublicBusinesses } from "../lib/osm-leads";
+import { searchTwoGisBusinesses } from "../lib/parser-2gis";
 
 type Role = "owner" | "manager";
 type Status = "new" | "claimed" | "contacted" | "replied" | "rejected" | "no_reply" | "deal";
@@ -161,7 +162,15 @@ router.post("/leads/search", async (req, res) => {
   if (!country && !city) return res.status(400).json({ error: "Укажите город или страну" });
 
   try {
-    const businesses = await searchPublicBusinesses({ country, city, industry });
+    let businesses: Awaited<ReturnType<typeof searchTwoGisBusinesses>> = [];
+    try {
+      businesses = await searchTwoGisBusinesses({ country, city, industry });
+    } catch (error) {
+      req.log.warn({ err: error }, "2GIS search failed, falling back to OpenStreetMap");
+    }
+    if (businesses.length === 0) {
+      businesses = await searchPublicBusinesses({ country, city, industry });
+    }
     const found = businesses.map((business) => {
       let id = externalLeadIds.get(business.sourceId);
       if (!id) {
@@ -183,11 +192,11 @@ router.post("/leads/search", async (req, res) => {
         score: business.score,
         scoreReasons: business.scoreReasons,
         issues: business.issues,
-        reviewsCount: 0,
-        rating: null,
+        reviewsCount: business.reviewsCount ?? 0,
+        rating: business.rating ?? null,
         branchesCount: 1,
         contacts: business.contacts,
-        source: "OpenStreetMap",
+        source: business.source ?? "OpenStreetMap",
         assignee: null,
         note: null,
         updatedAt: now(),

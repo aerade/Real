@@ -29,6 +29,9 @@ export type PublicBusiness = {
   issues: string[];
   score: number;
   scoreReasons: string[];
+  reviewsCount?: number;
+  rating?: number | null;
+  source?: string;
 };
 
 const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
