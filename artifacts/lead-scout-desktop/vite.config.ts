@@ -5,7 +5,7 @@ import { defineConfig } from 'vite';
 
 import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal';
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(async ({ mode }) => {
   const rawPort = process.env.PORT ?? (mode === 'desktop' ? '4173' : '5173');
   const port = Number(rawPort);
 
