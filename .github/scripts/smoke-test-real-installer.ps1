@@ -14,6 +14,22 @@ $installDirectory = Join-Path $env:RUNNER_TEMP (
 )
 $applicationPath = Join-Path $installDirectory "Real.exe"
 $uninstallerPath = Join-Path $installDirectory "Uninstall Real.exe"
+$desktopShortcutPath = Join-Path `
+  ([Environment]::GetFolderPath([Environment+SpecialFolder]::Desktop)) `
+  "Real.lnk"
+$startMenuShortcutPath = Join-Path `
+  ([Environment]::GetFolderPath([Environment+SpecialFolder]::StartMenu)) `
+  "Programs\Real.lnk"
+$shortcuts = @(
+  [pscustomobject]@{
+    Name = "desktop shortcut"
+    Path = $desktopShortcutPath
+  },
+  [pscustomobject]@{
+    Name = "Start Menu shortcut"
+    Path = $startMenuShortcutPath
+  }
+)
 
 function Invoke-InstallerCommand {
   param(
@@ -57,6 +73,34 @@ function Assert-InstalledFiles {
   if (-not (Test-Path -LiteralPath $uninstallerPath -PathType Leaf)) {
     throw "Real installer lifecycle smoke test failed after $($Description): expected uninstaller '$uninstallerPath' was not found."
   }
+
+  foreach ($shortcut in $shortcuts) {
+    if (-not (Test-Path -LiteralPath $shortcut.Path -PathType Leaf)) {
+      throw "Real installer lifecycle smoke test failed after $($Description): expected $($shortcut.Name) '$($shortcut.Path)' was not found."
+    }
+
+    $shell = $null
+    try {
+      $shell = New-Object -ComObject WScript.Shell
+      $shortcutTarget = $shell.CreateShortcut($shortcut.Path).TargetPath
+    }
+    catch {
+      throw "Real installer lifecycle smoke test failed after $($Description): could not read $($shortcut.Name) '$($shortcut.Path)': $($_.Exception.Message)"
+    }
+    finally {
+      if ($null -ne $shell) {
+        [void][Runtime.InteropServices.Marshal]::ReleaseComObject($shell)
+      }
+    }
+
+    if (-not [String]::Equals(
+        $shortcutTarget,
+        $applicationPath,
+        [StringComparison]::OrdinalIgnoreCase
+      )) {
+      throw "Real installer lifecycle smoke test failed after $($Description): $($shortcut.Name) '$($shortcut.Path)' targets '$shortcutTarget' instead of '$applicationPath'."
+    }
+  }
 }
 
 try {
@@ -84,7 +128,8 @@ try {
   while (
     (
       (Test-Path -LiteralPath $applicationPath -PathType Leaf) -or
-      (Test-Path -LiteralPath $uninstallerPath -PathType Leaf)
+      (Test-Path -LiteralPath $uninstallerPath -PathType Leaf) -or
+      ($shortcuts | Where-Object { Test-Path -LiteralPath $_.Path -PathType Leaf })
     ) -and
     ([DateTime]::UtcNow -lt $removalDeadline)
   ) {
@@ -97,6 +142,12 @@ try {
 
   if (Test-Path -LiteralPath $uninstallerPath -PathType Leaf) {
     throw "Real installer lifecycle smoke test failed after the silent uninstall: uninstaller '$uninstallerPath' still exists."
+  }
+
+  foreach ($shortcut in $shortcuts) {
+    if (Test-Path -LiteralPath $shortcut.Path -PathType Leaf) {
+      throw "Real installer lifecycle smoke test failed after the silent uninstall: $($shortcut.Name) '$($shortcut.Path)' still exists."
+    }
   }
 
   Write-Host "Real installer lifecycle smoke test passed: install, reinstall, and uninstall completed."
