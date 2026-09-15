@@ -24,30 +24,16 @@ export function StartupScreen({ onComplete }: { onComplete: () => void }) {
       setLabelIndex(prev => (prev + 1) % STARTUP_LABELS.length);
     }, 800);
 
-    async function checkUpdates() {
-      try {
-        if (window.realDesktop?.checkForUpdates) {
-          await window.realDesktop.checkForUpdates();
-        }
-      } catch (err) {
-        // Ignore errors silently for startup screen
-      }
-    }
-
-    checkUpdates().finally(() => {
-      if (!mounted) return;
-      
-      const elapsed = Date.now() - startTime;
-      const remaining = Math.max(0, TOTAL_DURATION - elapsed);
-      
-      setTimeout(() => {
-        if (mounted) onComplete();
-      }, remaining);
-    });
+    const elapsed = Date.now() - startTime;
+    const remaining = Math.max(0, TOTAL_DURATION - elapsed);
+    const completionTimer = setTimeout(() => {
+      if (mounted) onComplete();
+    }, remaining);
 
     return () => {
       mounted = false;
       clearInterval(interval);
+      clearTimeout(completionTimer);
     };
   }, [onComplete]);
 

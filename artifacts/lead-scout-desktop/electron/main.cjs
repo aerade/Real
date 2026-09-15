@@ -5,6 +5,8 @@ const fs = require("node:fs");
 
 app.setAppUserModelId("com.real.leadscout");
 
+let updateState = { configured: false, status: "idle" };
+
 function runtimeConfig() {
   const configPath = app.isPackaged
     ? path.join(process.resourcesPath, "runtime-config.json")
@@ -17,6 +19,9 @@ function runtimeConfig() {
 }
 
 function sendUpdateStatus(status) {
+  updateState = typeof status === "string"
+    ? { configured: true, status }
+    : { configured: true, ...status };
   for (const window of BrowserWindow.getAllWindows()) {
     window.webContents.send("real:update-status", status);
   }
@@ -24,7 +29,10 @@ function sendUpdateStatus(status) {
 
 function configureUpdates() {
   const { updateUrl } = runtimeConfig();
-  if (!app.isPackaged || !updateUrl || updateUrl.includes("example.invalid")) return;
+  if (!app.isPackaged || !updateUrl || updateUrl.includes("example.invalid")) {
+    updateState = { configured: false, status: "unconfigured" };
+    return;
+  }
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
   autoUpdater.setFeedURL({ provider: "generic", url: updateUrl });
@@ -39,6 +47,7 @@ function configureUpdates() {
 }
 
 ipcMain.handle("real:get-config", () => runtimeConfig());
+ipcMain.handle("real:get-update-status", () => updateState);
 ipcMain.handle("real:window-control", (event, action) => {
   const window = BrowserWindow.fromWebContents(event.sender);
   if (!window) return;
@@ -48,9 +57,17 @@ ipcMain.handle("real:window-control", (event, action) => {
 });
 ipcMain.handle("real:check-updates", async () => {
   const { updateUrl } = runtimeConfig();
-  if (!updateUrl || updateUrl.includes("example.invalid")) return { configured: false };
+  if (!app.isPackaged || !updateUrl || updateUrl.includes("example.invalid")) {
+    updateState = { configured: false, status: "unconfigured" };
+    return updateState;
+  }
   await autoUpdater.checkForUpdates();
-  return { configured: true };
+  return updateState;
+});
+ipcMain.handle("real:install-update", () => {
+  if (updateState.status !== "downloaded") return { started: false };
+  setImmediate(() => autoUpdater.quitAndInstall(false, true));
+  return { started: true };
 });
 ipcMain.handle("real:request", async (_event, request) => {
   const { apiBaseUrl } = runtimeConfig();

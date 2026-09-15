@@ -106,10 +106,15 @@ router.get("/leads", async (req, res, next) => {
 });
 
 router.post("/leads/search", async (req, res, next) => {
-  const country = String(req.body?.country ?? "").trim();
+  const requestedCountry = String(req.body?.country ?? "").trim();
   const city = String(req.body?.city ?? "").trim();
   const industry = String(req.body?.industry ?? "").trim();
-  if (!country && !city) return res.status(400).json({ error: "Укажите город или страну" });
+  const countryKey = requestedCountry.toLowerCase();
+  if (countryKey && !["россия", "russia", "ru"].includes(countryKey)) {
+    return res.status(400).json({ error: "Пока доступен поиск только по России" });
+  }
+  const country = "Россия";
+  if (!requestedCountry && !city && !industry) return res.status(400).json({ error: "Укажите город или отрасль" });
 
   try {
     let businesses: Awaited<ReturnType<typeof searchTwoGisBusinesses>> = [];

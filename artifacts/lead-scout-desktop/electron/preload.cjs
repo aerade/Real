@@ -3,7 +3,9 @@ const { contextBridge, ipcRenderer } = require("electron");
 contextBridge.exposeInMainWorld("realDesktop", {
   request: (request) => ipcRenderer.invoke("real:request", request),
   getConfig: () => ipcRenderer.invoke("real:get-config"),
+  getUpdateStatus: () => ipcRenderer.invoke("real:get-update-status"),
   checkForUpdates: () => ipcRenderer.invoke("real:check-updates"),
+  installUpdate: () => ipcRenderer.invoke("real:install-update"),
   windowControl: (action) => ipcRenderer.invoke("real:window-control", action),
   onUpdateStatus: (listener) => {
     const handler = (_event, value) => listener(value);

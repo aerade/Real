@@ -1,12 +1,11 @@
 import { useState, useRef, useEffect } from "react";
-import { useSearchLeads, useListCountries } from "@workspace/api-client-react";
+import { useSearchLeads } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
-import { Search as SearchIcon, AlertTriangle, Building2, Globe, MapPin, Target, Check } from "lucide-react";
+import { Search as SearchIcon, AlertTriangle, Building2, Globe, MapPin, Target, Check, LockKeyhole } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 
@@ -20,12 +19,6 @@ const POPULAR_CITIES = [
   { value: "Нижний Новгород", aliases: ["nn", "nizhny", "нижний", "нн"] },
   { value: "Красноярск", aliases: ["krsk", "краснояр", "крас"] },
   { value: "Самара", aliases: ["samara", "самар"] },
-  { value: "London", aliases: ["ldn", "лондон"] },
-  { value: "New York", aliases: ["ny", "nyc", "нью йорк"] },
-  { value: "Berlin", aliases: ["берлин"] },
-  { value: "Paris", aliases: ["париж"] },
-  { value: "Amsterdam", aliases: ["амстердам"] },
-  { value: "Stockholm", aliases: ["стокгольм"] },
 ];
 
 const CITIES_BY_COUNTRY: Record<string, typeof POPULAR_CITIES> = {
@@ -37,19 +30,6 @@ const CITIES_BY_COUNTRY: Record<string, typeof POPULAR_CITIES> = {
     "Москва", "Санкт-Петербург", "Новосибирск", "Екатеринбург",
     "Казань", "Нижний Новгород", "Красноярск", "Самара",
   ].includes(value)),
-  сша: POPULAR_CITIES.filter(({ value }) => value === "New York"),
-  usa: POPULAR_CITIES.filter(({ value }) => value === "New York"),
-  германия: POPULAR_CITIES.filter(({ value }) => value === "Berlin"),
-  germany: POPULAR_CITIES.filter(({ value }) => value === "Berlin"),
-  франция: POPULAR_CITIES.filter(({ value }) => value === "Paris"),
-  france: POPULAR_CITIES.filter(({ value }) => value === "Paris"),
-  нидерланды: POPULAR_CITIES.filter(({ value }) => value === "Amsterdam"),
-  netherlands: POPULAR_CITIES.filter(({ value }) => value === "Amsterdam"),
-  швеция: POPULAR_CITIES.filter(({ value }) => value === "Stockholm"),
-  sweden: POPULAR_CITIES.filter(({ value }) => value === "Stockholm"),
-  "великобритания": POPULAR_CITIES.filter(({ value }) => value === "London"),
-  "united kingdom": POPULAR_CITIES.filter(({ value }) => value === "London"),
-  gb: POPULAR_CITIES.filter(({ value }) => value === "London"),
 };
 
 const POPULAR_INDUSTRIES = [
@@ -176,45 +156,34 @@ function SuggestionInput({
 }
 
 export function SearchPage() {
-  const [country, setCountry] = useState("");
+  const country = "Россия";
   const [city, setCity] = useState("");
   const [industry, setIndustry] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
 
-  const { data: countries } = useListCountries();
   const searchMutation = useSearchLeads();
 
-  const cityOptions = country === "any"
-    ? POPULAR_CITIES
-    : CITIES_BY_COUNTRY[country.trim().toLowerCase()] ?? [];
+  const cityOptions = CITIES_BY_COUNTRY.россия;
 
-  // Do not leave a city from the previous country selected.
   useEffect(() => {
-    if (!country) {
-      setCity("");
-      return;
-    }
-    if (country !== "any" && city && cityOptions.length > 0 &&
+    if (city && cityOptions.length > 0 &&
       !cityOptions.some((option) => option.value.toLowerCase() === city.toLowerCase())) {
       setCity("");
     }
-  }, [country]);
+  }, [city, cityOptions]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!country && !city && !industry) return;
     
-    // Ensure we don't send "any" to the API
-    const searchCountry = country === "any" ? "" : country;
-    
     setHasSearched(true);
     searchMutation.mutate({
-      data: { country: searchCountry, city, industry }
+      data: { country, city, industry }
     });
   };
 
   const results = searchMutation.data || [];
-  const cityDisabled = !country;
+  const cityDisabled = false;
 
   return (
     <AppLayout>
@@ -230,22 +199,10 @@ export function SearchPage() {
           <form onSubmit={handleSearch} className="relative z-10 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
             <div className="flex flex-col gap-2">
               <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Country</Label>
-              <Select value={country} onValueChange={(value) => {
-                setCountry(value);
-                requestAnimationFrame(() => {
-                  if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-                });
-              }}>
-                <SelectTrigger className="h-11 text-sm bg-background border-border/50 rounded-xl shadow-sm">
-                  <SelectValue placeholder="Select Country" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl border-border/50 shadow-lg">
-                  <SelectItem value="any" className="font-bold">Any Country</SelectItem>
-                  {countries?.filter(c => c.enabled).map(c => (
-                    <SelectItem key={c.code} value={c.name} className="font-medium">{c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex h-11 items-center gap-2 rounded-xl border border-border/50 bg-background px-3 text-sm font-bold text-foreground shadow-sm">
+                <LockKeyhole className="h-4 w-4 text-muted-foreground" />
+                Россия
+              </div>
             </div>
 
             <div className="flex flex-col gap-2">
@@ -254,7 +211,7 @@ export function SearchPage() {
                 value={city}
                 onChange={setCity}
                 options={cityOptions}
-                placeholder={cityDisabled ? "Select country first" : "e.g. London"}
+                placeholder="например, Красноярск"
                 icon={MapPin}
                 disabled={cityDisabled}
               />

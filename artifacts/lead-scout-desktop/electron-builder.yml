@@ -21,6 +21,9 @@ nsis:
   differentialPackage: false
   allowToChangeInstallationDirectory: true
   perMachine: false
+  include: build/installer.nsh
+  installerHeader: build/installer-header.bmp
+  installerSidebar: build/installer-sidebar.bmp
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: Real
