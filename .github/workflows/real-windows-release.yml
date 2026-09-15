@@ -158,11 +158,93 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
+  summarize-installer-ui:
+    needs: verify-installer-ui
+    if: always()
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Download windows-latest installer UI evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: Real-installer-ui-evidence-windows-latest
+          path: release/installer-ui-summary/evidence/windows-latest
+      - name: Download windows-2022 installer UI evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: Real-installer-ui-evidence-windows-2022
+          path: release/installer-ui-summary/evidence/windows-2022
+      - name: Gather installer UI reports
+        run: |
+          $summaryDirectory = Join-Path (Get-Location) "release/installer-ui-summary"
+          $evidenceDirectory = Join-Path $summaryDirectory "evidence"
+          $images = @("windows-latest", "windows-2022")
+          $reports = foreach ($image in $images) {
+            $reportPath = Join-Path $evidenceDirectory "$image/real-installer-ui-report.json"
+            if (-not (Test-Path -LiteralPath $reportPath)) {
+              throw "Installer UI report was not found for $image at $reportPath."
+            }
+
+            $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+            if ([String]::IsNullOrWhiteSpace($report.installerSha256)) {
+              throw "Installer UI report for $image does not contain an installer SHA-256."
+            }
+
+            [PSCustomObject]@{
+              Image = $image
+              Report = $report
+              ReportPath = $reportPath
+            }
+          }
+
+          $hashes = @($reports | ForEach-Object { $_.Report.installerSha256 } | Sort-Object -Unique)
+          if ($hashes.Count -ne 1) {
+            throw "The Windows image checks did not use the same installer. SHA-256 values: $($hashes -join ', ')"
+          }
+
+          $summaryLines = @(
+            "# Real Windows installer UI verification"
+            ""
+            "Both Windows image checks used the same generated installer."
+            ""
+            "| Image | Installer SHA-256 | Branding screenshot | Minimize | Maximize | Restore after maximize | Close | Result |"
+            "| --- | --- | --- | --- | --- | --- | --- | --- |"
+          )
+
+          foreach ($entry in $reports) {
+            $report = $entry.Report
+            $controls = $report.controls
+            $brandingScreenshot = if ($report.brandingScreenshot) {
+              "[{0}](evidence/{1}/{0})" -f $report.brandingScreenshot, $entry.Image
+            } else {
+              "not-captured"
+            }
+            $summaryLines += "| $($entry.Image) | ``$($report.installerSha256)`` | $brandingScreenshot | $($controls.minimize) | $($controls.maximize) | $($controls.restoreAfterMaximize) | $($controls.close) | $($report.result) |"
+          }
+
+          $summaryLines += @(
+            ""
+            "The `evidence/<image>/` directories contain the complete report and captured screenshots for each image."
+          )
+          $summaryPath = Join-Path $summaryDirectory "real-installer-ui-summary.md"
+          $summaryLines -join [Environment]::NewLine | Set-Content -LiteralPath $summaryPath -Encoding utf8
+      - name: Upload installer UI summary and evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Real-installer-ui-summary
+          path: release/installer-ui-summary/
+          if-no-files-found: error
+          retention-days: 30
+
   publish:
     needs:
       - build
       - verify-authenticode
       - verify-installer-ui
+      - summarize-installer-ui
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: windows-latest
     defaults:
@@ -179,10 +261,15 @@ jobs:
         with:
           name: Real-authenticode-report
           path: artifacts/lead-scout-desktop/release
+      - name: Download installer UI summary
+        uses: actions/download-artifact@v4
+        with:
+          name: Real-installer-ui-summary
+          path: artifacts/lead-scout-desktop/release/installer-ui-summary
       - name: Publish tagged release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release view $env:GITHUB_REF_NAME 2>$null
           if ($LASTEXITCODE -ne 0) { gh release create $env:GITHUB_REF_NAME --title $env:GITHUB_REF_NAME --generate-notes }
-          gh release upload $env:GITHUB_REF_NAME artifacts/lead-scout-desktop/release/*.exe artifacts/lead-scout-desktop/release/latest.yml artifacts/lead-scout-desktop/release/*.blockmap artifacts/lead-scout-desktop/release/authenticode-report.json --clobber
+          gh release upload $env:GITHUB_REF_NAME artifacts/lead-scout-desktop/release/*.exe artifacts/lead-scout-desktop/release/latest.yml artifacts/lead-scout-desktop/release/*.blockmap artifacts/lead-scout-desktop/release/authenticode-report.json artifacts/lead-scout-desktop/release/installer-ui-summary/real-installer-ui-summary.md --clobber
