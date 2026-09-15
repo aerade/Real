@@ -117,9 +117,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - windows-latest
-          - windows-2022
+        include:
+          - os: windows-latest
+            display_scale_percent: 100
+          - os: windows-2022
+            display_scale_percent: 150
     defaults:
       run:
         shell: pwsh
@@ -130,9 +132,26 @@ jobs:
         with:
           name: Real-Windows
           path: artifacts/lead-scout-desktop/release
+      - name: Configure desktop display scale
+        env:
+          DISPLAY_SCALE_PERCENT: ${{ matrix.display_scale_percent }}
+        run: |
+          $scalePercent = [int]$env:DISPLAY_SCALE_PERCENT
+          $logPixels = [int][Math]::Round(96 * $scalePercent / 100)
+          $desktopKey = "HKCU:\Control Panel\Desktop"
+
+          New-ItemProperty -Path $desktopKey -Name LogPixels -PropertyType DWord -Value $logPixels -Force
+          New-ItemProperty -Path $desktopKey -Name Win8DpiScaling -PropertyType DWord -Value 1 -Force
+
+          # Refresh the current interactive desktop so the following UI process
+          # observes the configured scale without requiring a runner logoff.
+          & "$env:SystemRoot\System32\rundll32.exe" user32.dll,UpdatePerUserSystemParameters
+          Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
+          Start-Sleep -Seconds 2
       - name: Verify installer and uninstaller window controls
         env:
           VERIFY_IMAGE: ${{ matrix.os }}
+          DISPLAY_SCALE_PERCENT: ${{ matrix.display_scale_percent }}
         run: |
           $installer = Get-ChildItem artifacts/lead-scout-desktop/release -Recurse -Filter 'Real-Setup-*.exe' |
             Where-Object { $_.Name -notlike '*uninstaller*' } |
@@ -140,7 +159,8 @@ jobs:
           if (-not $installer) { throw "Generated Real NSIS installer was not found on $env:VERIFY_IMAGE." }
           .github/scripts/verify-real-installer.ps1 `
             -InstallerPath $installer.FullName `
-            -EnvironmentName $env:VERIFY_IMAGE
+            -EnvironmentName $env:VERIFY_IMAGE `
+            -DisplayScalePercent ([int]$env:DISPLAY_SCALE_PERCENT)
       - name: Smoke test installer lifecycle on the primary image
         if: matrix.os == 'windows-latest'
         run: |
@@ -209,8 +229,8 @@ jobs:
             ""
             "Both Windows image checks used the same generated installer."
             ""
-            "| Image | Installer SHA-256 | Branding screenshot | Minimize | Maximize | Restore after maximize | Close | Result |"
-            "| --- | --- | --- | --- | --- | --- | --- | --- |"
+            "| Image | Scale | Installer SHA-256 | Branding screenshot | Minimize | Maximize | Restore after maximize | Close | Result |"
+            "| --- | ---: | --- | --- | --- | --- | --- | --- | --- |"
           )
 
           foreach ($entry in $reports) {
@@ -221,7 +241,7 @@ jobs:
             } else {
               "not-captured"
             }
-            $summaryLines += "| $($entry.Image) | ``$($report.installerSha256)`` | $brandingScreenshot | $($controls.minimize) | $($controls.maximize) | $($controls.restoreAfterMaximize) | $($controls.close) | $($report.result) |"
+            $summaryLines += "| $($entry.Image) | $($report.environment.displayScalePercent)% | ``$($report.installerSha256)`` | $brandingScreenshot | $($controls.minimize) | $($controls.maximize) | $($controls.restoreAfterMaximize) | $($controls.close) | $($report.result) |"
           }
 
           $summaryLines += @(

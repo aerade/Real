@@ -2,7 +2,10 @@ param(
   [Parameter(Mandatory = $true)]
   [string]$InstallerPath,
 
-  [string]$EnvironmentName = $null
+  [string]$EnvironmentName = $null,
+
+  [ValidateSet(100, 125, 150, 175, 200)]
+  [int]$DisplayScalePercent = 100
 )
 
 $ErrorActionPreference = "Stop"
@@ -31,6 +34,12 @@ public static class RealInstallerWindow {
 
   [DllImport("user32.dll")]
   public static extern bool IsZoomed(IntPtr hWnd);
+
+  [DllImport("user32.dll")]
+  public static extern uint GetDpiForSystem();
+
+  [DllImport("user32.dll")]
+  public static extern uint GetDpiForWindow(IntPtr hWnd);
 
   public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
 
@@ -212,6 +221,14 @@ $nextButtonId = 1
 $cancelButtonId = 2
 $installDirectory = Join-Path $env:RUNNER_TEMP "real-installer-ui-install"
 $uninstallerPath = Join-Path $installDirectory "Uninstall Real.exe"
+$displayScaleLogPixels = [int][Math]::Round(96 * $DisplayScalePercent / 100)
+$desktopSettings = Get-ItemProperty -Path "HKCU:\Control Panel\Desktop"
+$configuredLogPixels = if ($null -ne $desktopSettings.LogPixels) {
+  [int]$desktopSettings.LogPixels
+} else {
+  96
+}
+$configuredDisplayScalePercent = [int][Math]::Round(100 * $configuredLogPixels / 96)
 
 $process = $null
 $uninstallerProcess = $null
@@ -223,6 +240,14 @@ $report = [ordered]@{
     imageOs = $env:ImageOS
     workflowJob = $env:GITHUB_JOB
     runId = $env:GITHUB_RUN_ID
+    displayScalePercent = $DisplayScalePercent
+    expectedDpi = $displayScaleLogPixels
+    configuredLogPixels = $configuredLogPixels
+    configuredDisplayScalePercent = $configuredDisplayScalePercent
+    systemDpi = $null
+    systemScalePercent = $null
+    windowDpi = $null
+    windowScalePercent = $null
   }
   installer = $resolvedInstallerPath
   installerSha256 = $installerSha256
@@ -427,6 +452,16 @@ function Find-VisibleWindowByTitle {
 }
 
 try {
+  $systemDpi = [RealInstallerWindow]::GetDpiForSystem()
+  $report.environment.systemDpi = $systemDpi
+  $report.environment.systemScalePercent = [int][Math]::Round(100 * $systemDpi / 96)
+  if ($configuredLogPixels -ne $displayScaleLogPixels) {
+    throw "The desktop registry is configured for $configuredDisplayScalePercent% scaling, expected $DisplayScalePercent%."
+  }
+  if ($systemDpi -ne $displayScaleLogPixels) {
+    throw "The active Windows system DPI is $systemDpi, expected $displayScaleLogPixels ($DisplayScalePercent%)."
+  }
+
   $process = Start-Process `
     -FilePath $resolvedInstallerPath `
     -ArgumentList "/D=$installDirectory" `
@@ -451,6 +486,9 @@ try {
   $report.windowHandle = $handle.ToInt64()
   $report.windowTitle = $titleBuilder.ToString()
   $report.windowStyle = "0x{0:X}" -f $style
+  $windowDpi = [RealInstallerWindow]::GetDpiForWindow($handle)
+  $report.environment.windowDpi = $windowDpi
+  $report.environment.windowScalePercent = [int][Math]::Round(100 * $windowDpi / 96)
 
   if (-not [RealInstallerWindow]::IsWindowVisible($handle)) {
     throw "The installer window is not visible."
@@ -465,7 +503,7 @@ try {
     throw "The installer window is missing WS_THICKFRAME."
   }
 
-  $initialScreenshot = Join-Path $evidenceDirectory "real-installer-initial.bmp"
+  $initialScreenshot = Join-Path $evidenceDirectory "real-installer-initial-$DisplayScalePercent-pct.bmp"
   [RealInstallerWindow]::Capture($handle, $initialScreenshot)
   $report.screenshots += (Split-Path $initialScreenshot -Leaf)
 
@@ -488,7 +526,7 @@ try {
   } "restore after maximize"
   $report.controls.restoreAfterMaximize = "passed"
 
-  $restoredScreenshot = Join-Path $evidenceDirectory "real-installer-restored.bmp"
+  $restoredScreenshot = Join-Path $evidenceDirectory "real-installer-restored-$DisplayScalePercent-pct.bmp"
   [RealInstallerWindow]::Capture($handle, $restoredScreenshot)
   $report.screenshots += (Split-Path $restoredScreenshot -Leaf)
 
@@ -554,7 +592,7 @@ try {
     throw "The installer did not reach its branded finish page."
   }
 
-  $finishScreenshot = Join-Path $evidenceDirectory "real-installer-finish.bmp"
+  $finishScreenshot = Join-Path $evidenceDirectory "real-installer-finish-$DisplayScalePercent-pct.bmp"
   [RealInstallerWindow]::Capture($handle, $finishScreenshot)
   $report.screenshots += (Split-Path $finishScreenshot -Leaf)
   $report.brandingScreenshot = (Split-Path $finishScreenshot -Leaf)
@@ -653,7 +691,7 @@ try {
     throw "The Real uninstaller window is not visible."
   }
 
-  $uninstallerInitialScreenshot = Join-Path $evidenceDirectory "real-uninstaller-initial.bmp"
+  $uninstallerInitialScreenshot = Join-Path $evidenceDirectory "real-uninstaller-initial-$DisplayScalePercent-pct.bmp"
   [RealInstallerWindow]::Capture($uninstallerHandle, $uninstallerInitialScreenshot)
   $report.uninstaller.screenshots += (Split-Path $uninstallerInitialScreenshot -Leaf)
   $report.uninstaller.brandingScreenshot = (Split-Path $uninstallerInitialScreenshot -Leaf)
@@ -694,7 +732,7 @@ try {
     $report.uninstaller.controls.restoreAfterMaximize = "not-available"
   }
 
-  $uninstallerRestoredScreenshot = Join-Path $evidenceDirectory "real-uninstaller-restored.bmp"
+  $uninstallerRestoredScreenshot = Join-Path $evidenceDirectory "real-uninstaller-restored-$DisplayScalePercent-pct.bmp"
   [RealInstallerWindow]::Capture($uninstallerHandle, $uninstallerRestoredScreenshot)
   $report.uninstaller.screenshots += (Split-Path $uninstallerRestoredScreenshot -Leaf)
 
