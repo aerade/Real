@@ -28,6 +28,14 @@ public static class RealInstallerWindow {
   [DllImport("user32.dll")]
   public static extern bool IsZoomed(IntPtr hWnd);
 
+  public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+  [DllImport("user32.dll")]
+  public static extern bool EnumWindows(EnumWindowsProc callback, IntPtr lParam);
+
+  [DllImport("user32.dll")]
+  public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+
   [DllImport("user32.dll")]
   public static extern bool PostMessage(IntPtr hWnd, uint message, IntPtr wParam, IntPtr lParam);
 
@@ -199,8 +207,10 @@ $buttonClicked = 0
 $nextButtonId = 1
 $cancelButtonId = 2
 $installDirectory = Join-Path $env:RUNNER_TEMP "real-installer-ui-install"
+$uninstallerPath = Join-Path $installDirectory "Uninstall Real.exe"
 
 $process = $null
+$uninstallerProcess = $null
 $report = [ordered]@{
   installer = (Resolve-Path $InstallerPath).Path
   result = "failed"
@@ -214,6 +224,27 @@ $report = [ordered]@{
     maximize = "not-run"
     restoreAfterMaximize = "not-run"
     close = "not-run"
+  }
+  uninstaller = [ordered]@{
+    path = $null
+    result = "not-run"
+    processId = $null
+    processName = $null
+    processPath = $null
+    processExited = $null
+    processExitCode = $null
+    windowTitle = $null
+    windowHandle = $null
+    windowStyle = $null
+    screenshots = @()
+    brandingScreenshot = $null
+    controls = [ordered]@{
+      minimize = "not-run"
+      restoreAfterMinimize = "not-run"
+      maximize = "not-run"
+      restoreAfterMaximize = "not-run"
+      close = "not-run"
+    }
   }
   error = $null
 }
@@ -279,6 +310,107 @@ function Click-InstallerButton {
     [IntPtr]($buttonClicked -shl 16 -bor $ControlId),
     $control
   )
+}
+
+function Find-VisibleWindowForExecutable {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$ExecutablePath
+  )
+
+  $script:realWindowCandidate = [IntPtr]::Zero
+  $script:realWindowProcessId = 0
+  $callback = [RealInstallerWindow+EnumWindowsProc] {
+    param(
+      [IntPtr]$CandidateHandle,
+      [IntPtr]$Unused
+    )
+
+    if (-not [RealInstallerWindow]::IsWindowVisible($CandidateHandle)) {
+      return $true
+    }
+
+    [uint32]$candidateProcessId = 0
+    [void][RealInstallerWindow]::GetWindowThreadProcessId(
+      $CandidateHandle,
+      [ref]$candidateProcessId
+    )
+    try {
+      $candidateProcess = Get-Process -Id $candidateProcessId -ErrorAction Stop
+      if ($candidateProcess.Path -ieq $ExecutablePath) {
+        $script:realWindowCandidate = $CandidateHandle
+        $script:realWindowProcessId = $candidateProcessId
+        return $false
+      }
+    }
+    catch {
+      return $true
+    }
+
+    return $true
+  }
+
+  [void][RealInstallerWindow]::EnumWindows($callback, [IntPtr]::Zero)
+  if ($script:realWindowCandidate -eq [IntPtr]::Zero) {
+    return $null
+  }
+
+  return [pscustomobject]@{
+    Handle = $script:realWindowCandidate
+    ProcessId = $script:realWindowProcessId
+  }
+}
+
+function Find-VisibleWindowByTitle {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$TitlePattern
+  )
+
+  $script:realWindowCandidate = [IntPtr]::Zero
+  $script:realWindowProcessId = 0
+  $script:realWindowTitle = $null
+  $callback = [RealInstallerWindow+EnumWindowsProc] {
+    param(
+      [IntPtr]$CandidateHandle,
+      [IntPtr]$Unused
+    )
+
+    if (-not [RealInstallerWindow]::IsWindowVisible($CandidateHandle)) {
+      return $true
+    }
+
+    $captionBuilder = New-Object System.Text.StringBuilder 256
+    [void][RealInstallerWindow]::GetWindowText(
+      $CandidateHandle,
+      $captionBuilder,
+      $captionBuilder.Capacity
+    )
+    if ($captionBuilder.ToString() -notmatch $TitlePattern) {
+      return $true
+    }
+
+    [uint32]$candidateProcessId = 0
+    [void][RealInstallerWindow]::GetWindowThreadProcessId(
+      $CandidateHandle,
+      [ref]$candidateProcessId
+    )
+    $script:realWindowCandidate = $CandidateHandle
+    $script:realWindowProcessId = $candidateProcessId
+    $script:realWindowTitle = $captionBuilder.ToString()
+    return $false
+  }
+
+  [void][RealInstallerWindow]::EnumWindows($callback, [IntPtr]::Zero)
+  if ($script:realWindowCandidate -eq [IntPtr]::Zero) {
+    return $null
+  }
+
+  return [pscustomobject]@{
+    Handle = $script:realWindowCandidate
+    ProcessId = $script:realWindowProcessId
+    Title = $script:realWindowTitle
+  }
 }
 
 try {
@@ -376,7 +508,7 @@ try {
   }
 
   $finishPageReached = $false
-  for ($page = 0; $page -lt 6; $page++) {
+  for ($page = 0; $page -lt 10; $page++) {
     $nextCaption = Get-ControlCaption $handle $nextButtonId
     if ($nextCaption -match "Finish") {
       $finishPageReached = $true
@@ -395,7 +527,7 @@ try {
   }
 
   if (-not $finishPageReached) {
-    $finishDeadline = [DateTime]::UtcNow.AddSeconds(15)
+    $finishDeadline = [DateTime]::UtcNow.AddSeconds(45)
     do {
       $nextCaption = Get-ControlCaption $handle $nextButtonId
       if ($nextCaption -match "Finish") {
@@ -414,6 +546,159 @@ try {
   $report.screenshots += (Split-Path $finishScreenshot -Leaf)
   $report.brandingScreenshot = (Split-Path $finishScreenshot -Leaf)
 
+  Click-InstallerButton $handle $nextButtonId
+  $finishDeadline = [DateTime]::UtcNow.AddSeconds(30)
+  do {
+    $process.Refresh()
+    if ($process.HasExited) {
+      break
+    }
+    Start-Sleep -Milliseconds 250
+  } while ([DateTime]::UtcNow -lt $finishDeadline)
+  if (-not $process.HasExited) {
+    throw "The installer did not exit after its branded finish page was completed."
+  }
+
+  if (-not (Test-Path -LiteralPath $uninstallerPath -PathType Leaf)) {
+    throw "The installed Real uninstaller was not found at '$uninstallerPath'."
+  }
+  $report.uninstaller.path = $uninstallerPath
+
+  $applicationPath = Join-Path $installDirectory "Real.exe"
+  Get-Process | ForEach-Object {
+    try {
+      if ($_.Path -ieq $applicationPath) {
+        Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
+      }
+    }
+    catch {
+      # The process may exit between enumeration and the path lookup.
+    }
+  }
+  Start-Sleep -Seconds 1
+
+  $uninstallerProcess = Start-Process `
+    -FilePath $uninstallerPath `
+    -WorkingDirectory $installDirectory `
+    -PassThru
+  $uninstallerWindowProcess = $null
+  $report.uninstaller.processId = $uninstallerProcess.Id
+  $report.uninstaller.processName = $uninstallerProcess.ProcessName
+  try {
+    $report.uninstaller.processPath = $uninstallerProcess.Path
+  }
+  catch {
+    $report.uninstaller.processPath = $null
+  }
+  $deadline = [DateTime]::UtcNow.AddSeconds(30)
+  do {
+    $uninstallerProcess.Refresh()
+    $report.uninstaller.processExited = $uninstallerProcess.HasExited
+    if ($uninstallerProcess.HasExited) {
+      $report.uninstaller.processExitCode = $uninstallerProcess.ExitCode
+    }
+    $uninstallerHandle = $uninstallerProcess.MainWindowHandle
+    if ($uninstallerHandle -eq [IntPtr]::Zero) {
+      $window = Find-VisibleWindowForExecutable -ExecutablePath $uninstallerPath
+      if ($window) {
+        $uninstallerHandle = $window.Handle
+        $uninstallerWindowProcess = Get-Process -Id $window.ProcessId -ErrorAction Stop
+      }
+    }
+    if ($uninstallerHandle -eq [IntPtr]::Zero) {
+      $window = Find-VisibleWindowByTitle -TitlePattern "Real|Uninstall"
+      if ($window) {
+        $uninstallerHandle = $window.Handle
+        $uninstallerWindowProcess = Get-Process -Id $window.ProcessId -ErrorAction Stop
+      }
+    }
+    if ($uninstallerHandle -ne [IntPtr]::Zero) {
+      break
+    }
+    Start-Sleep -Milliseconds 250
+  } while ([DateTime]::UtcNow -lt $deadline)
+
+  if ($uninstallerHandle -eq [IntPtr]::Zero) {
+    throw "The Real uninstaller did not expose a top-level window within 30 seconds."
+  }
+
+  $uninstallerTitleBuilder = New-Object System.Text.StringBuilder 256
+  [void][RealInstallerWindow]::GetWindowText(
+    $uninstallerHandle,
+    $uninstallerTitleBuilder,
+    $uninstallerTitleBuilder.Capacity
+  )
+  $uninstallerStyle = [uint64][RealInstallerWindow]::GetWindowLongPtr(
+    $uninstallerHandle,
+    $windowStyleIndex
+  ).ToInt64()
+  $report.uninstaller.windowHandle = $uninstallerHandle.ToInt64()
+  $report.uninstaller.windowTitle = $uninstallerTitleBuilder.ToString()
+  $report.uninstaller.windowStyle = "0x{0:X}" -f $uninstallerStyle
+
+  if (-not [RealInstallerWindow]::IsWindowVisible($uninstallerHandle)) {
+    throw "The Real uninstaller window is not visible."
+  }
+
+  $uninstallerInitialScreenshot = Join-Path $evidenceDirectory "real-uninstaller-initial.bmp"
+  [RealInstallerWindow]::Capture($uninstallerHandle, $uninstallerInitialScreenshot)
+  $report.uninstaller.screenshots += (Split-Path $uninstallerInitialScreenshot -Leaf)
+  $report.uninstaller.brandingScreenshot = (Split-Path $uninstallerInitialScreenshot -Leaf)
+
+  if (($uninstallerStyle -band $wsMinimizeBox) -eq $wsMinimizeBox) {
+    Send-SystemCommand $uninstallerHandle $scMinimize "minimize the Real uninstaller"
+    Wait-ForWindowState $uninstallerHandle {
+      [RealInstallerWindow]::IsIconic($uninstallerHandle)
+    } "Real uninstaller minimize"
+    $report.uninstaller.controls.minimize = "passed"
+
+    Send-SystemCommand $uninstallerHandle $scRestore "restore the Real uninstaller after minimize"
+    Wait-ForWindowState $uninstallerHandle {
+      [RealInstallerWindow]::IsWindowVisible($uninstallerHandle) -and
+        -not [RealInstallerWindow]::IsIconic($uninstallerHandle)
+    } "Real uninstaller restore after minimize"
+    $report.uninstaller.controls.restoreAfterMinimize = "passed"
+  } else {
+    $report.uninstaller.controls.minimize = "not-available"
+    $report.uninstaller.controls.restoreAfterMinimize = "not-available"
+  }
+
+  if (($uninstallerStyle -band $wsMaximizeBox) -eq $wsMaximizeBox) {
+    Send-SystemCommand $uninstallerHandle $scMaximize "maximize the Real uninstaller"
+    Wait-ForWindowState $uninstallerHandle {
+      [RealInstallerWindow]::IsZoomed($uninstallerHandle)
+    } "Real uninstaller maximize"
+    $report.uninstaller.controls.maximize = "passed"
+
+    Send-SystemCommand $uninstallerHandle $scRestore "restore the Real uninstaller after maximize"
+    Wait-ForWindowState $uninstallerHandle {
+      [RealInstallerWindow]::IsWindowVisible($uninstallerHandle) -and
+        -not [RealInstallerWindow]::IsZoomed($uninstallerHandle)
+    } "Real uninstaller restore after maximize"
+    $report.uninstaller.controls.restoreAfterMaximize = "passed"
+  } else {
+    $report.uninstaller.controls.maximize = "not-available"
+    $report.uninstaller.controls.restoreAfterMaximize = "not-available"
+  }
+
+  $uninstallerRestoredScreenshot = Join-Path $evidenceDirectory "real-uninstaller-restored.bmp"
+  [RealInstallerWindow]::Capture($uninstallerHandle, $uninstallerRestoredScreenshot)
+  $report.uninstaller.screenshots += (Split-Path $uninstallerRestoredScreenshot -Leaf)
+
+  Send-SystemCommand $uninstallerHandle $scClose "close the Real uninstaller"
+  Wait-ForWindowState $uninstallerHandle {
+    if ($uninstallerWindowProcess) {
+      $uninstallerWindowProcess.Refresh()
+    } else {
+      $uninstallerProcess.Refresh()
+    }
+    ($uninstallerWindowProcess -and $uninstallerWindowProcess.HasExited) -or
+      (-not $uninstallerWindowProcess -and $uninstallerProcess.HasExited) -or
+      -not [RealInstallerWindow]::IsWindowVisible($uninstallerHandle)
+  } "Real uninstaller close"
+  $report.uninstaller.controls.close = "passed"
+  $report.uninstaller.result = "passed"
+
   $report.result = "passed"
 }
 catch {
@@ -423,6 +708,12 @@ catch {
 finally {
   if ($process -and -not $process.HasExited) {
     Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+  }
+  if ($uninstallerProcess -and -not $uninstallerProcess.HasExited) {
+    Stop-Process -Id $uninstallerProcess.Id -Force -ErrorAction SilentlyContinue
+  }
+  if ($uninstallerWindowProcess -and -not $uninstallerWindowProcess.HasExited) {
+    Stop-Process -Id $uninstallerWindowProcess.Id -Force -ErrorAction SilentlyContinue
   }
   if (Test-Path $installDirectory) {
     Remove-Item -Path $installDirectory -Recurse -Force -ErrorAction SilentlyContinue

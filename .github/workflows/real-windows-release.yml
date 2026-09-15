@@ -40,7 +40,7 @@ jobs:
           $current.updateUrl = "https://github.com/$env:REPOSITORY/releases/latest/download/"
           $current | ConvertTo-Json | Set-Content artifacts/lead-scout-desktop/electron/runtime-config.json
       - run: pnpm --filter @workspace/lead-scout-desktop run build:desktop
-      - name: Verify installer window controls
+      - name: Verify installer and uninstaller window controls
         shell: pwsh
         run: |
           $installer = Get-ChildItem artifacts/lead-scout-desktop/release -Filter 'Real-Setup-*.exe' |
