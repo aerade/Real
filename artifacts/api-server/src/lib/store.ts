@@ -229,6 +229,13 @@ export async function initializeDatabase(): Promise<void> {
   // Keep the dashboard limited to live data. These are the only known demo rows
   // and demo activities; searched clients and user-generated activity are preserved.
   await db.delete(leadsTable).where(like(leadsTable.sourceId, "demo:%"));
+  // Remove only unassigned OSM results created by the old fallback search.
+  // Claimed or updated records remain available as user history.
+  await db.delete(leadsTable).where(and(
+    like(leadsTable.sourceId, "osm:%"),
+    eq(leadsTable.status, "new"),
+    isNull(leadsTable.assigneeId),
+  ));
   await db.delete(activitiesTable).where(or(
     eq(activitiesTable.text, "Анна взяла в работу Atelier Lumière"),
     eq(activitiesTable.text, "Максим написал Hudson Smile Studio"),
@@ -345,6 +352,7 @@ export async function upsertSearchedLead(
 
 export async function getDashboard(user: AuthUser) {
   const visible = await listLeads(user);
+  const mine = await listLeads(user, undefined, true);
   const statuses: LeadStatus[] = ["new", "claimed", "contacted", "replied", "rejected", "no_reply", "deal"];
   const recentQuery = db.select().from(activitiesTable)
     .orderBy(desc(activitiesTable.at))
@@ -354,13 +362,13 @@ export async function getDashboard(user: AuthUser) {
     : await recentQuery.where(eq(activitiesTable.userId, user.id));
 
   return {
-    available: visible.filter((lead) => lead.status === "new").length,
-    inWork: visible.filter((lead) => ["claimed", "contacted"].includes(lead.status)).length,
-    replies: visible.filter((lead) => lead.status === "replied").length,
-    deals: visible.filter((lead) => lead.status === "deal").length,
+    available: visible.filter((lead) => lead.status === "new" && !lead.assignee).length,
+    inWork: mine.filter((lead) => ["claimed", "contacted"].includes(lead.status)).length,
+    replies: mine.filter((lead) => lead.status === "replied").length,
+    deals: mine.filter((lead) => lead.status === "deal").length,
     stages: statuses.map((status) => ({
       status,
-      count: visible.filter((lead) => lead.status === status).length,
+      count: mine.filter((lead) => lead.status === status).length,
     })),
     recent: recent.map((activity) => ({ id: activity.id, text: activity.text, at: activity.at })),
   };

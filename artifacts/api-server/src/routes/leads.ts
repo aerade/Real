@@ -1,5 +1,4 @@
 import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
-import { searchPublicBusinesses } from "../lib/osm-leads";
 import { searchTwoGisBusinesses } from "../lib/parser-2gis";
 import {
   authenticate,
@@ -117,14 +116,14 @@ router.post("/leads/search", async (req, res, next) => {
   if (!requestedCountry && !city && !industry) return res.status(400).json({ error: "Укажите город или отрасль" });
 
   try {
-    let businesses: Awaited<ReturnType<typeof searchTwoGisBusinesses>> = [];
+    let businesses: Awaited<ReturnType<typeof searchTwoGisBusinesses>>;
     try {
       businesses = await searchTwoGisBusinesses({ country, city, industry });
     } catch (error) {
-      req.log.warn({ err: error }, "2GIS search failed, falling back to OpenStreetMap");
-    }
-    if (businesses.length === 0) {
-      businesses = await searchPublicBusinesses({ country, city, industry });
+      req.log.error({ err: error }, "2GIS search failed");
+      return res.status(502).json({
+        error: "Источник 2ГИС временно недоступен. Результаты из OpenStreetMap отключены.",
+      });
     }
 
     const found = await Promise.all(

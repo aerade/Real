@@ -48,8 +48,8 @@ export function Dashboard() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-          <div className="lg:col-span-2 bg-card border border-card-border rounded-xl p-5">
+        <div className="grid grid-cols-1 gap-3">
+          <div className="bg-card border border-card-border rounded-xl p-5">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-5 flex items-center gap-2">
               <Activity className="w-3.5 h-3.5" /> Воронка клиентов
             </h3>
@@ -76,33 +76,6 @@ export function Dashboard() {
             </div>
           </div>
 
-          <div className="bg-card border border-card-border rounded-xl p-5 flex flex-col">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-5 flex items-center gap-2">
-              <Inbox className="w-3.5 h-3.5" /> Последние действия
-            </h3>
-            
-            <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-4">
-              {data.recent.length === 0 ? (
-                <div className="text-[11px] text-muted-foreground/50 py-8 text-center">
-                  Нет действий
-                </div>
-              ) : (
-                data.recent.map((activity) => (
-                  <div key={activity.id} className="relative flex gap-3 group">
-                    <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-border shrink-0" />
-                    <div>
-                      <p className="text-[11px] leading-tight text-foreground/80 mb-0.5">{activity.text}</p>
-                      <p className="text-[9px] text-muted-foreground/60 font-mono">
-                        {new Date(activity.at).toLocaleString('ru-RU', { 
-                          hour: '2-digit', minute:'2-digit', day: 'numeric', month: 'short' 
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
         </div>
       </div>
     </AppLayout>

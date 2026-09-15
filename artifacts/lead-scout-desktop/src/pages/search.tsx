@@ -91,6 +91,15 @@ function SuggestionInput({
     onChange(e.target.value); // keep parent state in sync for free text
   };
 
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      setOpen(false);
+    }
+    if (e.key === "Escape") {
+      setOpen(false);
+    }
+  };
+
   const handleSelect = (selectedValue: string) => {
     setInputVal(selectedValue);
     onChange(selectedValue);
@@ -126,6 +135,8 @@ function SuggestionInput({
             ref={inputRef}
             value={inputVal} 
             onChange={handleInputChange} 
+             onKeyDown={handleInputKeyDown}
+             type="text"
             onClick={() => setOpen(true)}
             onFocus={() => setOpen(true)}
             className="pl-9 h-11 text-sm bg-background border-border/50 rounded-xl shadow-sm"
@@ -136,7 +147,14 @@ function SuggestionInput({
       </PopoverAnchor>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-1 rounded-xl shadow-lg border-border/50" align="start">
         {filteredOptions.length === 0 ? (
-          <div className="p-2 text-xs text-muted-foreground text-center">Press Enter to use "{inputVal}"</div>
+          <button
+            type="button"
+            className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium hover:bg-accent"
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => handleSelect(inputVal.trim())}
+          >
+            Использовать «{inputVal.trim()}»
+          </button>
         ) : (
           <div className="max-h-[200px] overflow-y-auto">
             {filteredOptions.map((opt) => (
@@ -188,16 +206,9 @@ export function SearchPage() {
     }
   }, [session?.user?.login]);
 
-  useEffect(() => {
-    if (city && cityOptions.length > 0 &&
-      !cityOptions.some((option) => option.value.toLowerCase() === city.toLowerCase())) {
-      setCity("");
-    }
-  }, [city, cityOptions]);
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!country && !city && !industry) return;
+    if (!city.trim() || !industry.trim()) return;
     
     setHasSearched(true);
     searchMutation.mutate({

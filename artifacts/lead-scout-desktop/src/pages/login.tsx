@@ -46,8 +46,8 @@ export function Login() {
     }
 
     loginMutation.mutate({ data: { login, password } }, {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getGetSessionQueryKey() });
+      onSuccess: (session) => {
+        queryClient.setQueryData(getGetSessionQueryKey(), session);
         setLocation("/");
       },
       onError: () => {
@@ -61,7 +61,7 @@ export function Login() {
       <div className="noise-bg" />
       
       {/* Top Bar Decorative */}
-      <header className="h-14 flex items-center px-4 shrink-0 absolute top-0 left-0 w-full z-10 pointer-events-none" style={{ WebkitAppRegion: "drag" } as React.CSSProperties}>
+      <header className="relative z-50 h-14 flex items-center px-4 shrink-0 absolute top-0 left-0 w-full pointer-events-auto" style={{ WebkitAppRegion: "drag" } as React.CSSProperties}>
         <div className="pointer-events-auto h-full" style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}>
           <WindowControls />
         </div>

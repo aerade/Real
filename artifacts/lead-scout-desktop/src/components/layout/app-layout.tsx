@@ -3,7 +3,6 @@ import { Link, useLocation } from "wouter";
 import { Home, Search, Target, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { WindowControls } from "./window-controls";
-import { UpdateStatus } from "@/components/update-status";
 import realMarkWhite from "@/assets/real-mark-white.svg";
 
 export function AppLayout({ children }: { children: ReactNode }) {
@@ -48,8 +47,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           })}
         </nav>
         
-        <div className="flex w-[220px] shrink-0 items-center justify-end gap-2">
-          <UpdateStatus />
+        <div className="flex w-[100px] shrink-0 items-center justify-end gap-2">
           <img src={realMarkWhite} alt="Real" className="h-5 w-5 object-contain opacity-90" />
         </div>
       </header>
