@@ -185,7 +185,7 @@ export function SearchPage() {
         <div className="flex items-center justify-between pb-2 shrink-0">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Search</h1>
-            <p className="text-sm font-medium text-muted-foreground mt-1">Discover new leads and opportunities</p>
+            <p className="text-sm font-medium text-muted-foreground mt-1">Discover new clients and opportunities</p>
           </div>
         </div>
 
@@ -233,7 +233,7 @@ export function SearchPage() {
 
             <Button type="submit" disabled={searchMutation.isPending} className="h-11 rounded-xl font-bold bg-primary text-primary-foreground hover:bg-primary/90 w-full shadow-md transition-all active:scale-[0.98]">
               <SearchIcon className="w-4 h-4 mr-2" />
-              Find Leads
+              Find Clients
             </Button>
           </form>
         </div>
@@ -258,7 +258,7 @@ export function SearchPage() {
                   <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
                     <SearchIcon className="w-8 h-8 text-muted-foreground/50" />
                   </div>
-                  <h3 className="text-lg font-bold text-foreground mb-2">No leads found</h3>
+                  <h3 className="text-lg font-bold text-foreground mb-2">No clients found</h3>
                   <p className="text-sm font-medium text-muted-foreground">Try adjusting your search criteria. Selecting a broader geography or industry might yield more results.</p>
                 </div>
               ) : (

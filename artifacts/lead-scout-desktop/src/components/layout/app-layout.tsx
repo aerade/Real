@@ -11,7 +11,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const navItems = [
     { href: "/", label: "Overview", icon: Home },
     { href: "/search", label: "Search", icon: Search },
-    { href: "/leads", label: "Pipeline", icon: Target },
+    { href: "/leads", label: "Clients", icon: Target },
     { href: "/admin", label: "Settings", icon: Settings },
   ];
 

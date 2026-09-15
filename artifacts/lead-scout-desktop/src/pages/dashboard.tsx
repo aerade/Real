@@ -18,7 +18,7 @@ export function Dashboard() {
   }
 
   const statCards = [
-    { title: "Доступно лидов", value: data.available, icon: Target },
+    { title: "Доступно клиентов", value: data.available, icon: Target },
     { title: "В работе", value: data.inWork, icon: Briefcase },
     { title: "Ответили", value: data.replies, icon: Inbox },
     { title: "Сделки", value: data.deals, icon: Activity },
@@ -57,7 +57,7 @@ export function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           <div className="lg:col-span-2 bg-card border border-card-border rounded-xl p-5">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-5 flex items-center gap-2">
-              <Activity className="w-3.5 h-3.5" /> Воронка лидов
+              <Activity className="w-3.5 h-3.5" /> Воронка клиентов
             </h3>
             
             <div className="space-y-4">

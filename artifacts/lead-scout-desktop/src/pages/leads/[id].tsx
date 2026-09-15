@@ -67,7 +67,7 @@ export function LeadDetailsPage() {
     claimLead.mutate({ id: leadId }, {
       onSuccess: (data) => {
         queryClient.setQueryData(getGetLeadQueryKey(leadId), data);
-        toast({ title: "Лид взят в работу" });
+        toast({ title: "Клиент взят в работу" });
       }
     });
   };
@@ -141,14 +141,14 @@ export function LeadDetailsPage() {
         <div className="flex items-center gap-3 bg-accent/20 p-3 rounded-lg border border-border/40">
           {canClaim ? (
             <>
-              <p className="text-[11px] flex-1 text-muted-foreground">Лид свободен. Закрепите его за собой.</p>
+              <p className="text-[11px] flex-1 text-muted-foreground">Клиент свободен. Закрепите его за собой.</p>
               <Button onClick={handleClaim} disabled={claimLead.isPending} className="h-7 text-xs bg-foreground text-background hover:bg-foreground/90 shrink-0">
                 Взять в работу
               </Button>
             </>
           ) : isAssignedToMe ? (
             <>
-              <p className="text-[11px] flex-1 font-medium text-foreground/80">Ваш лид. Обновите статус:</p>
+              <p className="text-[11px] flex-1 font-medium text-foreground/80">Ваш клиент. Обновите статус:</p>
               <Select value={lead.status} onValueChange={handleStatusChange}>
                 <SelectTrigger className="w-40 h-7 text-[11px] bg-background border-border/50 shadow-sm">
                   <SelectValue />
@@ -161,7 +161,7 @@ export function LeadDetailsPage() {
               </Select>
             </>
           ) : (
-            <p className="text-[11px] text-muted-foreground w-full text-center">Лид в работе: {lead.assignee?.name}</p>
+            <p className="text-[11px] text-muted-foreground w-full text-center">Клиент в работе: {lead.assignee?.name}</p>
           )}
         </div>
 

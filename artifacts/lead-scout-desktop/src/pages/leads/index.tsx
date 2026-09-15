@@ -21,7 +21,7 @@ export function LeadsPage() {
       <div className="space-y-6 flex flex-col h-full">
         <div className="flex items-center justify-between pb-2 shrink-0">
           <div>
-            <h1 className="text-lg font-bold tracking-tight">Мои лиды</h1>
+            <h1 className="text-lg font-bold tracking-tight">Мои клиенты</h1>
             <p className="text-xs text-muted-foreground mt-0.5">Ваши компании в работе</p>
           </div>
           
@@ -45,15 +45,15 @@ export function LeadsPage() {
             <div className="flex-1 flex items-center justify-center">
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <div className="w-3 h-3 rounded-full border-2 border-foreground/30 border-t-foreground animate-spin" />
-                Загрузка лидов...
+                Загрузка клиентов...
               </div>
             </div>
           ) : !leads || leads.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
               <Target className="w-8 h-8 text-muted-foreground/30 mb-3" />
-              <h3 className="text-sm font-medium">Нет лидов</h3>
+              <h3 className="text-sm font-medium">Нет клиентов</h3>
               <p className="text-xs text-muted-foreground mt-1 mb-4 max-w-[250px]">
-                У вас нет лидов с выбранными фильтрами.
+                У вас нет клиентов с выбранными фильтрами.
               </p>
               <Link href="/search" className="h-8 inline-flex items-center justify-center rounded-lg bg-foreground px-4 text-xs font-medium text-background hover:bg-foreground/90 transition-colors shadow-sm">
                 Перейти к поиску
