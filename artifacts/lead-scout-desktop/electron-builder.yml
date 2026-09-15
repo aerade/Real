@@ -24,6 +24,7 @@ nsis:
   include: build/installer.nsh
   installerHeader: build/installer-header.bmp
   installerSidebar: build/installer-sidebar.bmp
+  uninstallerName: Uninstall Real.exe
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: Real

@@ -48,6 +48,14 @@ jobs:
             Select-Object -First 1
           if (-not $installer) { throw "Generated Real NSIS installer was not found." }
           .github/scripts/verify-real-installer.ps1 -InstallerPath $installer.FullName
+      - name: Smoke test installer lifecycle
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem artifacts/lead-scout-desktop/release -Filter 'Real-Setup-*.exe' |
+            Where-Object { $_.Name -notlike '*uninstaller*' } |
+            Select-Object -First 1
+          if (-not $installer) { throw "Generated Real NSIS installer was not found for the lifecycle smoke test." }
+          .github/scripts/smoke-test-real-installer.ps1 -InstallerPath $installer.FullName
       - name: Upload installer UI evidence
         if: always()
         uses: actions/upload-artifact@v4
