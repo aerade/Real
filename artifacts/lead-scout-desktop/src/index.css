@@ -105,6 +105,30 @@
   --shadow-md: 0 8px 22px -5px rgb(0 0 0 / 0.65);
 }
 
+:root[data-settings-accent="slate"] {
+  --primary: 210 18% 86%;
+  --primary-foreground: 220 18% 8%;
+}
+
+:root[data-settings-accent="copper"] {
+  --primary: 28 82% 62%;
+  --primary-foreground: 20 25% 8%;
+}
+
+html[data-settings-reduce-motion="true"] *,
+html[data-settings-reduce-motion="true"] *::before,
+html[data-settings-reduce-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  scroll-behavior: auto !important;
+  transition-duration: 0.01ms !important;
+}
+
+html[data-settings-compact="true"] .settings-workspace .setting-row {
+  padding-bottom: 0.55rem;
+  padding-top: 0.55rem;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

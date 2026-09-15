@@ -8,6 +8,7 @@ import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover"
 import { Search as SearchIcon, AlertTriangle, Building2, Globe, MapPin, Target, Check, LockKeyhole } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
 
 // Static local suggestions catalog
 const POPULAR_CITIES = [
@@ -162,8 +163,30 @@ export function SearchPage() {
   const [hasSearched, setHasSearched] = useState(false);
 
   const searchMutation = useSearchLeads();
+  const { session } = useAuth();
 
   const cityOptions = CITIES_BY_COUNTRY.россия;
+
+  useEffect(() => {
+    const login = session?.user?.login;
+    if (login) {
+      try {
+        const saved = window.localStorage.getItem(`lead-scout:search-defaults:${login.toLowerCase()}`);
+        if (saved) {
+          const defaults = JSON.parse(saved) as { city?: string; industry?: string };
+          setCity(defaults.city ?? "");
+          setIndustry(defaults.industry ?? "");
+        } else {
+          setCity("");
+          setIndustry("");
+        }
+      } catch {
+        // Invalid local defaults are ignored.
+        setCity("");
+        setIndustry("");
+      }
+    }
+  }, [session?.user?.login]);
 
   useEffect(() => {
     if (city && cityOptions.length > 0 &&

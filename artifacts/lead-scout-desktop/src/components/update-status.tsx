@@ -32,12 +32,24 @@ function statusLabel(update: UpdateStatus) {
 
 export function UpdateStatus() {
   const [update, setUpdate] = useState<UpdateStatus | null>(null);
+  const [visible, setVisible] = useState(true);
 
   useEffect(() => {
     const desktop = window.realDesktop;
     if (!desktop?.getUpdateStatus) return;
 
     let active = true;
+    const syncVisibility = () => {
+      try {
+        const saved = window.localStorage.getItem("lead-scout:settings");
+        const settings = saved ? JSON.parse(saved) as { showUpdates?: boolean } : {};
+        setVisible(settings.showUpdates !== false);
+      } catch {
+        setVisible(true);
+      }
+    };
+    syncVisibility();
+    window.addEventListener("lead-scout:settings-changed", syncVisibility);
     const unsubscribe = desktop.onUpdateStatus?.((value) => {
       if (!active) return;
       if (typeof value === "string") {
@@ -59,11 +71,12 @@ export function UpdateStatus() {
 
     return () => {
       active = false;
+      window.removeEventListener("lead-scout:settings-changed", syncVisibility);
       unsubscribe?.();
     };
   }, []);
 
-  if (!update?.configured) return null;
+  if (!visible || !update?.configured) return null;
 
   const isBusy = update.status === "checking" || update.status === "downloading";
   const isReady = update.status === "downloaded";

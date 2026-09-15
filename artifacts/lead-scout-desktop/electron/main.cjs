@@ -47,6 +47,14 @@ function configureUpdates() {
 }
 
 ipcMain.handle("real:get-config", () => runtimeConfig());
+ipcMain.handle("real:get-app-info", () => ({
+  version: app.getVersion(),
+  platform: process.platform,
+  arch: process.arch,
+  electronVersion: process.versions.electron,
+  packaged: app.isPackaged,
+  updateConfigured: Boolean(runtimeConfig().updateUrl),
+}));
 ipcMain.handle("real:get-update-status", () => updateState);
 ipcMain.handle("real:window-control", (event, action) => {
   const window = BrowserWindow.fromWebContents(event.sender);

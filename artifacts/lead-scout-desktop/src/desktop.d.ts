@@ -16,6 +16,14 @@ interface Window {
   realDesktop?: {
     request(request: DesktopRequest): Promise<DesktopResponse>;
     getConfig(): Promise<{ apiBaseUrl: string; updateUrl: string }>;
+    getAppInfo(): Promise<{
+      version: string;
+      platform: string;
+      arch: string;
+      electronVersion: string;
+      packaged: boolean;
+      updateConfigured: boolean;
+    }>;
     getUpdateStatus(): Promise<{
       configured: boolean;
       status: string;
