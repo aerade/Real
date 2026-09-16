@@ -1,0 +1,178 @@
+Windows PowerShell
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+PS C:\Users\aerade> ssh root@samojlenko0604.fvds.ru
+The authenticity of host 'samojlenko0604.fvds.ru (82.146.62.118)' can't be established.
+ED25519 key fingerprint is SHA256:gorb1JVDjjRmz9lzhIZbpCXfuPmIKZjr3LWX7j4p89w.
+This host key is known by the following other names/addresses:
+    C:\Users\aerade/.ssh/known_hosts:4: 82.146.62.118
+Are you sure you want to continue connecting (yes/no/[fingerprint])? y
+Please type 'yes', 'no' or the fingerprint: yes
+Warning: Permanently added 'samojlenko0604.fvds.ru' (ED25519) to the list of known hosts.
+root@samojlenko0604.fvds.ru's password:
+Welcome to Ubuntu 24.04.5 LTS (GNU/Linux 6.8.0-139-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/pro
+Last login: Tue Sep 15 13:14:55 2026 from 95.170.183.60
+root@samojlenko0604:~# export PATH="/root/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+cd /opt/real
+git pull --ff-only
+
+uv sync --locked
+pnpm run --filter @workspace/api-server build
+
+systemctl restart real-api
+systemctl status real-api --no-pager -l
+remote: Enumerating objects: 441, done.
+remote: Counting objects: 100% (441/441), done.
+remote: Compressing objects: 100% (221/221), done.
+remote: Total 391 (delta 217), reused 344 (delta 170), pack-reused 0 (from 0)
+Receiving objects: 100% (391/391), 1.94 MiB | 3.27 MiB/s, done.
+Resolving deltas: 100% (217/217), completed with 37 local objects.
+From github-real:aerade/Real
+   fe3cccf..13c9c19  main                   -> origin/main
+ * [new branch]      task-14-installer-ui   -> origin/task-14-installer-ui
+ * [new branch]      task-15-uninstaller-ui -> origin/task-15-uninstaller-ui
+Updating fe3cccf..13c9c19
+error: Your local changes to the following files would be overwritten by merge:
+        pnpm-workspace.yaml
+Please commit your changes or stash them before you merge.
+Aborting
+Resolved 14 packages in 11ms
+Checked 13 packages in 203ms
+
+$ node ./build.mjs
+
+  dist/index.mjs                       2.2mb ⚠️
+  dist/pino-worker.mjs               153.5kb
+  dist/pino-file.mjs                 142.1kb
+  dist/pino-pretty.mjs               115.3kb
+  dist/thread-stream-worker.mjs        7.4kb
+  dist/index.mjs.map                   3.8mb
+  dist/pino-worker.mjs.map           256.9kb
+  dist/pino-file.mjs.map             229.0kb
+  dist/pino-pretty.mjs.map           209.5kb
+  dist/thread-stream-worker.mjs.map   12.0kb
+
+⚡ Done in 9295ms
+● real-api.service - Real API Server
+     Loaded: loaded (/etc/systemd/system/real-api.service; enabled; preset: enabled)
+     Active: active (running) since Wed 2026-09-16 07:00:13 MSK; 49ms ago
+   Main PID: 48299 (9)
+      Tasks: 1 (limit: 1046)
+     Memory: 428.0K (peak: 652.0K)
+        CPU: 6ms
+     CGroup: /system.slice/real-api.service
+             └─48299 /usr/lib/systemd/systemd-executor --deserialize 37 --log-level info --log-target journal-or-kmsg
+
+Sep 16 07:00:13 samojlenko0604.fvds.ru systemd[1]: Started real-api.service - Real API Server.
+root@samojlenko0604:/opt/real# python3 --version
+command -v uv
+command -v chromium || command -v chromium-browser || command -v google-chrome
+Python 3.12.3
+/root/.local/bin/uv
+/usr/bin/chromium-browser
+root@samojlenko0604:/opt/real# journalctl -u real-api -n 100 --no-pager
+Sep 16 06:07:08 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528028492,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8386,"method":"GET","url":"/api/auth/session"},"res":{"statusCode":304},"responseTime":19,"msg":"request completed"}
+Sep 16 06:07:08 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528028593,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8387,"method":"GET","url":"/api/dashboard"},"res":{"statusCode":304},"responseTime":34,"msg":"request completed"}
+Sep 16 06:07:41 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528061994,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8388,"method":"GET","url":"/api/auth/session"},"res":{"statusCode":304},"responseTime":26,"msg":"request completed"}
+Sep 16 06:07:42 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528062072,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8389,"method":"GET","url":"/api/dashboard"},"res":{"statusCode":304},"responseTime":25,"msg":"request completed"}
+Sep 16 06:07:52 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528072887,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8390,"method":"GET","url":"/api/auth/session"},"res":{"statusCode":304},"responseTime":35,"msg":"request completed"}
+Sep 16 06:07:52 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528072911,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8391,"method":"GET","url":"/api/dashboard"},"res":{"statusCode":304},"responseTime":53,"msg":"request completed"}
+Sep 16 06:07:54 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528074468,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8392,"method":"GET","url":"/api/countries"},"res":{"statusCode":304},"responseTime":4,"msg":"request completed"}
+Sep 16 06:07:54 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528074477,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8393,"method":"GET","url":"/api/users"},"res":{"statusCode":304},"responseTime":6,"msg":"request completed"}
+Sep 16 06:08:10 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528090899,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8394,"method":"GET","url":"/api/users"},"res":{"statusCode":304},"responseTime":58,"msg":"request completed"}
+Sep 16 06:08:10 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528090907,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8395,"method":"GET","url":"/api/auth/session"},"res":{"statusCode":304},"responseTime":59,"msg":"request completed"}
+Sep 16 06:08:10 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528090958,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8396,"method":"GET","url":"/api/countries"},"res":{"statusCode":304},"responseTime":6,"msg":"request completed"}
+Sep 16 06:08:34 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528114670,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8397,"method":"GET","url":"/api/auth/session"},"res":{"statusCode":304},"responseTime":88,"msg":"request completed"}
+Sep 16 06:08:34 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528114699,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8399,"method":"GET","url":"/api/countries"},"res":{"statusCode":304},"responseTime":97,"msg":"request completed"}
+Sep 16 06:08:34 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528114717,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8398,"method":"GET","url":"/api/users"},"res":{"statusCode":304},"responseTime":129,"msg":"request completed"}
+Sep 16 06:08:57 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528137652,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8401,"method":"GET","url":"/api/countries"},"res":{"statusCode":304},"responseTime":32,"msg":"request completed"}
+Sep 16 06:08:57 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528137656,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8400,"method":"GET","url":"/api/users"},"res":{"statusCode":304},"responseTime":41,"msg":"request completed"}
+Sep 16 06:09:26 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528166979,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8402,"method":"GET","url":"/api/countries"},"res":{"statusCode":304},"responseTime":71,"msg":"request completed"}
+Sep 16 06:09:27 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528167064,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8404,"method":"GET","url":"/api/auth/session"},"res":{"statusCode":304},"responseTime":143,"msg":"request completed"}
+Sep 16 06:09:27 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528167066,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8403,"method":"GET","url":"/api/users"},"res":{"statusCode":304},"responseTime":150,"msg":"request completed"}
+Sep 16 06:09:32 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528172686,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8405,"method":"GET","url":"/"},"res":{"statusCode":404},"responseTime":4,"msg":"request completed"}
+Sep 16 06:09:32 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528172829,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8406,"method":"GET","url":"/ui/login"},"res":{"statusCode":404},"responseTime":3,"msg":"request completed"}
+Sep 16 06:09:32 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528172990,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8407,"method":"GET","url":"/vpn/index.html"},"res":{"statusCode":404},"responseTime":1,"msg":"request completed"}
+Sep 16 06:09:33 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528173063,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8408,"method":"GET","url":"/api/countries"},"res":{"statusCode":304},"responseTime":4,"msg":"request completed"}
+Sep 16 06:09:33 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528173071,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8409,"method":"GET","url":"/api/auth/session"},"res":{"statusCode":304},"responseTime":4,"msg":"request completed"}
+Sep 16 06:09:33 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528173087,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8410,"method":"GET","url":"/api/users"},"res":{"statusCode":304},"responseTime":14,"msg":"request completed"}
+Sep 16 06:09:33 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528173120,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8411,"method":"GET","url":"/global-protect/login.esp"},"res":{"statusCode":404},"responseTime":1,"msg":"request completed"}
+Sep 16 06:09:33 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528173249,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8412,"method":"GET","url":"/cgi-bin/welcome"},"res":{"statusCode":404},"responseTime":1,"msg":"request completed"}
+Sep 16 06:09:33 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528173379,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8413,"method":"GET","url":"/dms/login"},"res":{"statusCode":404},"responseTime":1,"msg":"request completed"}
+Sep 16 06:09:33 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528173506,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8414,"method":"GET","url":"/app"},"res":{"statusCode":404},"responseTime":1,"msg":"request completed"}
+Sep 16 06:09:33 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528173635,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8415,"method":"GET","url":"/goanywhere/"},"res":{"statusCode":404},"responseTime":1,"msg":"request completed"}
+Sep 16 06:09:33 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528173763,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8416,"method":"GET","url":"/main"},"res":{"statusCode":404},"responseTime":1,"msg":"request completed"}
+Sep 16 06:09:33 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528173901,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8417,"method":"GET","url":"/_layouts/15/SignIn.aspx"},"res":{"statusCode":404},"responseTime":1,"msg":"request completed"}
+Sep 16 06:09:34 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528174033,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8418,"method":"GET","url":"/magento_version"},"res":{"statusCode":404},"responseTime":1,"msg":"request completed"}
+Sep 16 06:09:34 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528174165,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8419,"method":"GET","url":"/ajaxpro/whatever.ashx"},"res":{"statusCode":404},"responseTime":0,"msg":"request completed"}
+Sep 16 06:09:54 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528194859,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8420,"method":"GET","url":"/api/countries"},"res":{"statusCode":304},"responseTime":71,"msg":"request completed"}
+Sep 16 06:09:54 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528194874,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8422,"method":"GET","url":"/api/auth/session"},"res":{"statusCode":304},"responseTime":73,"msg":"request completed"}
+Sep 16 06:09:54 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528194883,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8421,"method":"GET","url":"/api/users"},"res":{"statusCode":304},"responseTime":89,"msg":"request completed"}
+Sep 16 06:09:59 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528199395,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8423,"method":"GET","url":"/api/countries"},"res":{"statusCode":304},"responseTime":6,"msg":"request completed"}
+Sep 16 06:09:59 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528199406,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8425,"method":"GET","url":"/api/auth/session"},"res":{"statusCode":304},"responseTime":5,"msg":"request completed"}
+Sep 16 06:09:59 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528199411,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8424,"method":"GET","url":"/api/users"},"res":{"statusCode":304},"responseTime":15,"msg":"request completed"}
+Sep 16 06:10:13 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528213176,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8426,"method":"GET","url":"/api/countries"},"res":{"statusCode":304},"responseTime":44,"msg":"request completed"}
+Sep 16 06:10:13 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528213191,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8428,"method":"GET","url":"/api/auth/session"},"res":{"statusCode":304},"responseTime":53,"msg":"request completed"}
+Sep 16 06:10:13 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528213196,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8427,"method":"GET","url":"/api/users"},"res":{"statusCode":304},"responseTime":61,"msg":"request completed"}
+Sep 16 06:10:34 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528234632,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8429,"method":"GET","url":"/api/countries"},"res":{"statusCode":304},"responseTime":47,"msg":"request completed"}
+Sep 16 06:10:34 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528234649,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8431,"method":"GET","url":"/api/auth/session"},"res":{"statusCode":304},"responseTime":54,"msg":"request completed"}
+Sep 16 06:10:34 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528234655,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8430,"method":"GET","url":"/api/users"},"res":{"statusCode":304},"responseTime":65,"msg":"request completed"}
+Sep 16 06:11:48 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528308179,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8432,"method":"GET","url":"/api/countries"},"res":{"statusCode":304},"responseTime":62,"msg":"request completed"}
+Sep 16 06:11:48 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528308186,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8433,"method":"GET","url":"/api/auth/session"},"res":{"statusCode":304},"responseTime":64,"msg":"request completed"}
+Sep 16 06:11:48 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528308194,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8434,"method":"GET","url":"/api/users"},"res":{"statusCode":304},"responseTime":68,"msg":"request completed"}
+Sep 16 06:12:14 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528334065,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8435,"method":"GET","url":"/api/countries"},"res":{"statusCode":304},"responseTime":90,"msg":"request completed"}
+Sep 16 06:12:14 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528334085,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8437,"method":"GET","url":"/api/auth/session"},"res":{"statusCode":304},"responseTime":96,"msg":"request completed"}
+Sep 16 06:12:14 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528334090,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8436,"method":"GET","url":"/api/users"},"res":{"statusCode":304},"responseTime":109,"msg":"request completed"}
+Sep 16 06:12:49 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528369022,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8438,"method":"GET","url":"/api/countries"},"res":{"statusCode":304},"responseTime":75,"msg":"request completed"}
+Sep 16 06:12:49 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528369031,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8440,"method":"GET","url":"/api/auth/session"},"res":{"statusCode":304},"responseTime":72,"msg":"request completed"}
+Sep 16 06:12:49 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528369036,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8439,"method":"GET","url":"/api/users"},"res":{"statusCode":304},"responseTime":83,"msg":"request completed"}
+Sep 16 06:14:24 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528464609,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8441,"method":"GET","url":"/api/auth/session"},"res":{"statusCode":304},"responseTime":24,"msg":"request completed"}
+Sep 16 06:14:24 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528464630,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8442,"method":"GET","url":"/api/users"},"res":{"statusCode":304},"responseTime":17,"msg":"request completed"}
+Sep 16 06:14:24 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528464648,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8443,"method":"GET","url":"/api/countries"},"res":{"statusCode":304},"responseTime":30,"msg":"request completed"}
+Sep 16 06:14:41 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528481409,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8444,"method":"GET","url":"/api/auth/session"},"res":{"statusCode":304},"responseTime":82,"msg":"request completed"}
+Sep 16 06:14:41 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528481425,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8445,"method":"GET","url":"/api/users"},"res":{"statusCode":304},"responseTime":90,"msg":"request completed"}
+Sep 16 06:14:41 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528481429,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8446,"method":"GET","url":"/api/countries"},"res":{"statusCode":304},"responseTime":89,"msg":"request completed"}
+Sep 16 06:14:59 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528499179,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8447,"method":"GET","url":"/api/countries"},"res":{"statusCode":304},"responseTime":58,"msg":"request completed"}
+Sep 16 06:14:59 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528499203,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8448,"method":"GET","url":"/api/auth/session"},"res":{"statusCode":304},"responseTime":75,"msg":"request completed"}
+Sep 16 06:14:59 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528499206,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8449,"method":"GET","url":"/api/users"},"res":{"statusCode":304},"responseTime":70,"msg":"request completed"}
+Sep 16 06:15:13 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528513185,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8450,"method":"GET","url":"/api/countries"},"res":{"statusCode":304},"responseTime":18,"msg":"request completed"}
+Sep 16 06:15:13 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528513192,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8451,"method":"GET","url":"/api/auth/session"},"res":{"statusCode":304},"responseTime":4,"msg":"request completed"}
+Sep 16 06:15:13 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528513198,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8452,"method":"GET","url":"/api/users"},"res":{"statusCode":304},"responseTime":6,"msg":"request completed"}
+Sep 16 06:15:16 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528516446,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8453,"method":"GET","url":"/api/auth/session"},"res":{"statusCode":304},"responseTime":3,"msg":"request completed"}
+Sep 16 06:15:16 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528516458,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8454,"method":"GET","url":"/api/users"},"res":{"statusCode":304},"responseTime":9,"msg":"request completed"}
+Sep 16 06:15:16 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528516475,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8455,"method":"GET","url":"/api/countries"},"res":{"statusCode":304},"responseTime":23,"msg":"request completed"}
+Sep 16 06:15:37 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528537709,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8456,"method":"GET","url":"/api/countries"},"res":{"statusCode":304},"responseTime":51,"msg":"request completed"}
+Sep 16 06:15:37 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528537711,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8458,"method":"GET","url":"/api/auth/session"},"res":{"statusCode":304},"responseTime":43,"msg":"request completed"}
+Sep 16 06:15:37 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528537716,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8457,"method":"GET","url":"/api/users"},"res":{"statusCode":304},"responseTime":51,"msg":"request completed"}
+Sep 16 06:16:10 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528570557,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8460,"method":"GET","url":"/api/auth/session"},"res":{"statusCode":304},"responseTime":72,"msg":"request completed"}
+Sep 16 06:16:10 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528570559,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8459,"method":"GET","url":"/api/users"},"res":{"statusCode":304},"responseTime":81,"msg":"request completed"}
+Sep 16 06:16:10 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528570560,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8461,"method":"GET","url":"/api/countries"},"res":{"statusCode":304},"responseTime":70,"msg":"request completed"}
+Sep 16 06:16:27 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528587518,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8462,"method":"GET","url":"/api/auth/session"},"res":{"statusCode":304},"responseTime":169,"msg":"request completed"}
+Sep 16 06:16:27 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528587534,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8464,"method":"GET","url":"/api/countries"},"res":{"statusCode":304},"responseTime":156,"msg":"request completed"}
+Sep 16 06:16:27 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528587554,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8463,"method":"GET","url":"/api/users"},"res":{"statusCode":304},"responseTime":192,"msg":"request completed"}
+Sep 16 06:16:52 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528612192,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8466,"method":"GET","url":"/api/auth/session"},"res":{"statusCode":304},"responseTime":61,"msg":"request completed"}
+Sep 16 06:16:52 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528612199,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8467,"method":"GET","url":"/api/countries"},"res":{"statusCode":304},"responseTime":62,"msg":"request completed"}
+Sep 16 06:16:52 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528612205,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8465,"method":"GET","url":"/api/users"},"res":{"statusCode":304},"responseTime":81,"msg":"request completed"}
+Sep 16 06:17:23 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528643763,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8468,"method":"GET","url":"/api/auth/session"},"res":{"statusCode":304},"responseTime":65,"msg":"request completed"}
+Sep 16 06:17:23 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528643766,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8469,"method":"GET","url":"/api/users"},"res":{"statusCode":304},"responseTime":63,"msg":"request completed"}
+Sep 16 06:17:23 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789528643767,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8470,"method":"GET","url":"/api/countries"},"res":{"statusCode":304},"responseTime":58,"msg":"request completed"}
+Sep 16 06:27:07 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789529227331,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8471,"method":"GET","url":"/"},"res":{"statusCode":404},"responseTime":1,"msg":"request completed"}
+Sep 16 06:27:38 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789529258038,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8472,"method":"GET","url":"/api/auth/session"},"res":{"statusCode":304},"responseTime":50,"msg":"request completed"}
+Sep 16 06:27:38 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789529258065,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8473,"method":"GET","url":"/api/users"},"res":{"statusCode":304},"responseTime":63,"msg":"request completed"}
+Sep 16 06:27:38 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789529258120,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8474,"method":"GET","url":"/api/countries"},"res":{"statusCode":304},"responseTime":78,"msg":"request completed"}
+Sep 16 06:49:43 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789530583434,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8475,"method":"GET","url":"/api/auth/session"},"res":{"statusCode":304},"responseTime":30,"msg":"request completed"}
+Sep 16 06:49:43 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789530583480,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8476,"method":"GET","url":"/api/users"},"res":{"statusCode":304},"responseTime":24,"msg":"request completed"}
+Sep 16 06:49:43 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789530583507,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8477,"method":"GET","url":"/api/countries"},"res":{"statusCode":304},"responseTime":38,"msg":"request completed"}
+Sep 16 06:52:47 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789530767817,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8478,"method":"GET","url":"/api/healthz"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+Sep 16 06:52:48 samojlenko0604.fvds.ru node[15178]: {"level":30,"time":1789530768863,"pid":15178,"hostname":"samojlenko0604.fvds.ru","req":{"id":8479,"method":"POST","url":"/api/leads/search"},"res":{"statusCode":401},"responseTime":4,"msg":"request completed"}
+Sep 16 07:00:12 samojlenko0604.fvds.ru systemd[1]: Stopping real-api.service - Real API Server...
+Sep 16 07:00:12 samojlenko0604.fvds.ru systemd[1]: real-api.service: Deactivated successfully.
+Sep 16 07:00:12 samojlenko0604.fvds.ru systemd[1]: Stopped real-api.service - Real API Server.
+Sep 16 07:00:12 samojlenko0604.fvds.ru systemd[1]: real-api.service: Consumed 40.956s CPU time, 47.5M memory peak, 0B memory swap peak.
+Sep 16 07:00:13 samojlenko0604.fvds.ru systemd[1]: Started real-api.service - Real API Server.
+Sep 16 07:00:14 samojlenko0604.fvds.ru node[48299]: {"level":30,"time":1789531214306,"pid":48299,"hostname":"samojlenko0604.fvds.ru","port":8080,"msg":"Server listening"}
