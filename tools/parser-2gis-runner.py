@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import sys
 import time
 
@@ -102,11 +103,19 @@ def main() -> None:
                 parser._wait_requests_finished = wait_requests_finished
 
                 last_document = None
-                original_get_links = parser._get_links
-
                 def get_links():
                     trace("reading result links from DOM")
-                    result = original_get_links()
+                    document = parser._chrome_remote.get_document()
+                    result = document.search(
+                        lambda node: (
+                            node.local_name == "a"
+                            and "href" in node.attributes
+                            and re.search(
+                                r"/(?:firm|station)/[^/?#]+(?:[/?#]|$)",
+                                node.attributes["href"],
+                            ) is not None
+                        )
+                    )
                     trace(f"result links read: {len(result)}")
                     if not result and last_document is not None:
                         anchors = last_document.search(
