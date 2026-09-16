@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import argparse
 import os
+import sys
+import time
 
 from parser_2gis.chrome import browser as chrome_browser
 from parser_2gis.config import Configuration
@@ -59,6 +61,12 @@ def patch_chrome_launch_flags():
 
 def main() -> None:
     args = parse_args()
+    started_at = time.monotonic()
+
+    def trace(message: str) -> None:
+        elapsed = time.monotonic() - started_at
+        print(f"[parser2gis +{elapsed:.1f}s] {message}", file=sys.stderr, flush=True)
+
     chrome_options = {
         "headless": args.headless,
         "silent_browser": args.silent_browser,
@@ -73,38 +81,64 @@ def main() -> None:
 
     restore_chrome_flags = patch_chrome_launch_flags()
     try:
+        trace("starting writer")
         with get_writer(args.output_path, args.format, config.writer) as writer:
+            trace("starting ChromeRemote")
             with get_parser(
                 args.url,
                 chrome_options=config.chrome,
                 parser_options=config.parser,
             ) as parser:
+                trace("ChromeRemote connected")
                 # The upstream parser waits up to two minutes for every 2GIS XHR.
                 # Some VPS requests never close, although the result links are ready.
                 original_wait = type(parser)._wait_requests_finished
-                parser._wait_requests_finished = lambda: original_wait(
-                    parser,
-                    timeout=15,
-                    throw_exception=False,
-                )
+
+                def wait_requests_finished():
+                    trace("waiting for page XHR")
+                    result = original_wait(
+                        parser,
+                        timeout=15,
+                        throw_exception=False,
+                    )
+                    trace(f"page XHR wait finished: {result}")
+                    return result
+
+                parser._wait_requests_finished = wait_requests_finished
 
                 # Keep one slow or missing item response from multiplying into minutes:
                 # the upstream parser retries each item three times with a 30-second
                 # wait, and max_records only limits successful records.
                 original_wait_response = parser._chrome_remote.wait_response
-                parser._chrome_remote.wait_response = lambda pattern: original_wait_response(
-                    pattern,
-                    timeout=5,
-                    throw_exception=False,
-                )
+
+                def wait_response(pattern):
+                    trace("waiting for item response")
+                    result = original_wait_response(
+                        pattern,
+                        timeout=5,
+                        throw_exception=False,
+                    )
+                    trace(f"item response received: {bool(result)}")
+                    return result
+
+                parser._chrome_remote.wait_response = wait_response
 
                 original_navigate = parser._chrome_remote.navigate
-                parser._chrome_remote.navigate = lambda url, referer="", timeout=60: original_navigate(
-                    url,
-                    referer=referer,
-                    timeout=min(timeout, 30),
-                )
+                
+                def navigate(url, referer="", timeout=60):
+                    trace("starting 2GIS navigation")
+                    result = original_navigate(
+                        url,
+                        referer=referer,
+                        timeout=min(timeout, 30),
+                    )
+                    trace("2GIS navigation finished")
+                    return result
+
+                parser._chrome_remote.navigate = navigate
+                trace("starting parser.parse")
                 parser.parse(writer)
+                trace("parser.parse finished")
     finally:
         restore_chrome_flags()
 
