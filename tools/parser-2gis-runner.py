@@ -57,6 +57,23 @@ def main() -> None:
                 timeout=15,
                 throw_exception=False,
             )
+
+            # Keep one slow or missing item response from multiplying into minutes:
+            # the upstream parser retries each item three times with a 30-second
+            # wait, and max_records only limits successful records.
+            original_wait_response = parser._chrome_remote.wait_response
+            parser._chrome_remote.wait_response = lambda pattern: original_wait_response(
+                pattern,
+                timeout=5,
+                throw_exception=False,
+            )
+
+            original_navigate = parser._chrome_remote.navigate
+            parser._chrome_remote.navigate = lambda url, referer="", timeout=60: original_navigate(
+                url,
+                referer=referer,
+                timeout=min(timeout, 30),
+            )
             parser.parse(writer)
 
 

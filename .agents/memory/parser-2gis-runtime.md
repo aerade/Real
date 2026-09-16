@@ -66,3 +66,12 @@ the inherited service environment produced repeated DBus parsing errors and dela
 
 **How to apply:** Delete those two environment keys for the snap Chromium child process, while
 keeping the snap and host library directories in `LD_LIBRARY_PATH`.
+
+Parser2GIS's `max_records` limit counts only successfully captured item responses; failed
+responses still consume the parser's per-item retry waits and can keep it walking result pages.
+
+**Why:** A missing item XHR could trigger three upstream 30-second waits per link and exceed the
+API request limit even though the requested record count was only five.
+
+**How to apply:** Override item-response and navigation waits in the VPS wrapper, and keep a
+short process-level deadline so one broken 2GIS endpoint cannot block the desktop search.
