@@ -121,6 +121,30 @@ function findProjectRoot(): string {
   return process.cwd();
 }
 
+function parserEnvironment(binaryPath: string | null): NodeJS.ProcessEnv {
+  const environment: NodeJS.ProcessEnv = {
+    ...process.env,
+    PYTHONUNBUFFERED: "1",
+  };
+  if (!binaryPath?.startsWith("/snap/chromium/")) return environment;
+
+  const snapRoot = binaryPath.split("/usr/")[0];
+  const libraryPaths = [
+    path.join(snapRoot, "usr", "lib", "chromium-browser"),
+    path.join(snapRoot, "usr", "lib", "x86_64-linux-gnu"),
+    path.join(snapRoot, "lib", "x86_64-linux-gnu"),
+    path.join(snapRoot, "usr", "lib"),
+    path.join(snapRoot, "lib"),
+    "/usr/lib/x86_64-linux-gnu",
+    "/lib/x86_64-linux-gnu",
+    "/usr/lib",
+    "/lib",
+    environment.LD_LIBRARY_PATH,
+  ].filter((value): value is string => Boolean(value));
+  environment.LD_LIBRARY_PATH = [...new Set(libraryPaths)].join(path.delimiter);
+  return environment;
+}
+
 function searchUrl(input: ParserInput): string {
   const alias = cityToAlias(input.city);
   if (!alias) throw new Error("Не удалось определить город 2ГИС");
@@ -350,7 +374,7 @@ async function runParser(url: string, outputPath: string): Promise<void> {
   await new Promise<void>((resolve, reject) => {
     const child = spawn(parserCommand, args, {
       cwd,
-      env: { ...process.env, PYTHONUNBUFFERED: "1" },
+      env: parserEnvironment(binaryPath),
       stdio: ["ignore", "ignore", "pipe"],
     });
     let stderr = "";
