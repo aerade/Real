@@ -8,7 +8,6 @@ import os
 import re
 import sys
 import time
-from urllib.parse import urljoin
 
 from parser_2gis.chrome import browser as chrome_browser
 from parser_2gis.config import Configuration
