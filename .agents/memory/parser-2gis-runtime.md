@@ -38,3 +38,12 @@ at about 60 seconds without producing the API's own parser-timeout error.
 
 **How to apply:** Raise the existing API proxy location's read/send timeout above three minutes,
 then reload Nginx and retest the same search.
+
+On some VPS networks, Parser2GIS can leave a background 2GIS XHR open indefinitely even after
+the search-result links are available, causing its hard-coded request wait to time out.
+
+**Why:** The same Parser2GIS revision returned five Krasnoyarsk cards locally but stalled in the
+VPS browser until its internal `_wait_requests_finished` timeout.
+
+**How to apply:** Run Parser2GIS through the project wrapper, which gives pending requests a
+short grace period and continues with the loaded result DOM instead of waiting indefinitely.
