@@ -1,0 +1,28 @@
+appId: com.real.installer
+productName: Real Installer
+copyright: Copyright © 2026 Real
+directories:
+  output: release
+  buildResources: build
+extraMetadata:
+  name: real-installer
+  version: 1.0.0
+  main: installer/main.cjs
+files:
+  - installer/**/*
+extraResources:
+  - from: build/installer-payload/win-unpacked
+    to: real-app
+  - from: ../../attached_assets/real-logo/real-mark-white.ico
+    to: installer-icon.ico
+  - from: ../../attached_assets/image_1789523796333.png
+    to: installer-bg.png
+win:
+  icon: ../../attached_assets/real-logo/real-mark-white.ico
+  target:
+    - target: portable
+      arch:
+        - x64
+  artifactName: Real-Installer-${version}-${arch}.${ext}
+portable:
+  requestExecutionLevel: user

@@ -7,10 +7,14 @@ type UpdateStatus = {
   status: string;
   percent?: number;
   message?: string;
+  currentVersion?: string;
+  latestVersion?: string;
+  releaseName?: string;
 };
 
 function mergeUpdateStatus(previous: UpdateStatus | null, patch: Partial<UpdateStatus>): UpdateStatus {
   return {
+    ...previous,
     configured: patch.configured ?? previous?.configured ?? true,
     status: patch.status ?? previous?.status ?? "idle",
     percent: patch.percent ?? previous?.percent,
@@ -19,11 +23,11 @@ function mergeUpdateStatus(previous: UpdateStatus | null, patch: Partial<UpdateS
 }
 
 function statusLabel(update: UpdateStatus) {
-  if (update.status === "downloaded") return "Restart to update";
+  if (update.status === "downloaded") return `Restart for v${update.latestVersion ?? "update"}`;
   if (update.status === "downloading") {
     return `Downloading${typeof update.percent === "number" ? ` ${Math.round(update.percent)}%` : "..."}`;
   }
-  if (update.status === "available") return "Update available";
+  if (update.status === "available") return `Update to v${update.latestVersion ?? "latest"}`;
   if (update.status === "checking") return "Checking...";
   if (update.status === "current") return "Up to date";
   if (update.status === "error") return "Retry update check";
@@ -41,7 +45,7 @@ export function UpdateStatus() {
     let active = true;
     const syncVisibility = () => {
       try {
-        const saved = window.localStorage.getItem("lead-scout:settings");
+        const saved = window.localStorage.getItem("real:settings") ?? window.localStorage.getItem("lead-scout:settings");
         const settings = saved ? JSON.parse(saved) as { showUpdates?: boolean } : {};
         setVisible(settings.showUpdates !== false);
       } catch {
@@ -49,7 +53,7 @@ export function UpdateStatus() {
       }
     };
     syncVisibility();
-    window.addEventListener("lead-scout:settings-changed", syncVisibility);
+    window.addEventListener("real:settings-changed", syncVisibility);
     const unsubscribe = desktop.onUpdateStatus?.((value) => {
       if (!active) return;
       if (typeof value === "string") {
@@ -71,7 +75,7 @@ export function UpdateStatus() {
 
     return () => {
       active = false;
-      window.removeEventListener("lead-scout:settings-changed", syncVisibility);
+      window.removeEventListener("real:settings-changed", syncVisibility);
       unsubscribe?.();
     };
   }, []);
@@ -87,7 +91,12 @@ export function UpdateStatus() {
       await window.realDesktop?.installUpdate();
       return;
     }
-    await window.realDesktop?.checkForUpdates();
+    if (update.status === "available") {
+      const downloaded = await window.realDesktop?.downloadUpdate();
+      if (downloaded) setUpdate((previous) => mergeUpdateStatus(previous, downloaded));
+    } else {
+      await window.realDesktop?.checkForUpdates();
+    }
   };
 
   return (

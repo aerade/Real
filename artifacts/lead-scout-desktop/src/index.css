@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&family=Spline+Sans+Mono:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;600&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @plugin "@tailwindcss/typography";
@@ -103,6 +103,50 @@
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.35);
   --shadow: 0 2px 4px 0 rgb(0 0 0 / 0.45);
   --shadow-md: 0 8px 22px -5px rgb(0 0 0 / 0.65);
+}
+
+:root[data-settings-theme="blue"] { --primary: 199 88% 62%; --primary-foreground: 210 36% 8%; --accent: 198 48% 16%; }
+:root[data-settings-theme="purple"] { --primary: 269 79% 74%; --primary-foreground: 270 30% 9%; --accent: 270 35% 18%; }
+:root[data-settings-theme="red"] { --primary: 0 78% 67%; --primary-foreground: 0 35% 9%; --accent: 0 32% 17%; }
+:root[data-settings-theme="orange"] { --primary: 28 82% 68%; --primary-foreground: 24 36% 9%; --accent: 25 34% 17%; }
+:root[data-settings-theme="pink"] { --primary: 333 66% 72%; --primary-foreground: 330 36% 9%; --accent: 330 30% 18%; }
+:root[data-settings-theme="sakura"] { --primary: 340 44% 91%; --primary-foreground: 340 38% 12%; --accent: 340 28% 20%; }
+:root[data-settings-theme="green"] { --primary: 151 58% 68%; --primary-foreground: 152 36% 8%; --accent: 150 32% 16%; }
+:root[data-settings-theme="teal"] { --primary: 177 55% 66%; --primary-foreground: 180 34% 8%; --accent: 178 32% 16%; }
+:root[data-settings-theme="cyan"] { --primary: 191 72% 67%; --primary-foreground: 193 35% 8%; --accent: 192 34% 16%; }
+:root[data-settings-theme="yellow"] { --primary: 44 84% 69%; --primary-foreground: 43 36% 9%; --accent: 43 34% 17%; }
+:root[data-settings-theme="indigo"] { --primary: 231 72% 76%; --primary-foreground: 232 35% 9%; --accent: 231 32% 18%; }
+:root[data-settings-theme="light"] {
+  --background: 40 20% 96%; --foreground: 220 24% 14%; --card: 40 24% 99%; --card-foreground: 220 24% 14%;
+  --card-border: 35 15% 85%; --popover: 40 24% 99%; --popover-foreground: 220 24% 14%; --popover-border: 35 15% 82%;
+  --border: 35 15% 84%; --input: 35 15% 84%; --muted: 38 17% 91%; --muted-foreground: 220 10% 43%;
+  --sidebar: 40 20% 94%; --sidebar-foreground: 220 24% 14%; --sidebar-border: 35 15% 84%; --accent: 38 19% 90%;
+  --primary: 220 38% 28%; --primary-foreground: 40 20% 98%; --ring: 220 38% 28%;
+}
+
+:root[data-settings-font="dm-sans"] { --app-font-sans: 'DM Sans', sans-serif; }
+:root[data-settings-font="plus-jakarta"] { --app-font-sans: 'Plus Jakarta Sans', sans-serif; }
+:root[data-settings-font="space-mono"] { --app-font-sans: 'Spline Sans Mono', monospace; }
+:root[data-settings-font="system"] { --app-font-sans: ui-sans-serif, system-ui, sans-serif; }
+:root[data-settings-radius] { --radius: calc(var(--settings-radius, 12) * 1px); }
+:root[data-settings-border] { --settings-border-width: calc(var(--settings-border, 1) * 1px); }
+html[data-settings-border-color="red"] { --border: 0 62% 46%; }
+html[data-settings-border-color="blue"] { --border: 205 70% 55%; }
+html[data-settings-border-color="green"] { --border: 145 48% 48%; }
+html[data-settings-border-color="gold"] { --border: 42 75% 55%; }
+html[data-settings-rainbow="true"] #root { border-image: linear-gradient(90deg, #ef5350, #f6c945, #55c878, #56b9e8, #a978e8) 1; }
+html[data-settings-icons="true"] svg { color: hsl(var(--primary)); }
+html[data-settings-icon-shift] svg { filter: hue-rotate(calc(var(--settings-icon-shift) * 1deg)); }
+html[data-settings-nav-style="icons"] nav a > div > span { display: none; }
+html[data-settings-nav-style="icons"] nav a { padding-left: 10px; padding-right: 10px; }
+html[data-settings-navbar-position="bottom"] #root > div > header { order: 2; }
+html[data-settings-navbar-position="bottom"] #root > div > main { order: 1; }
+html[data-settings-mac-buttons="true"] #root > div > header > div:first-child { order: -1; }
+html[data-settings-animation-style="snappy"] * { transition-timing-function: cubic-bezier(.2,.9,.2,1) !important; }
+html[data-settings-animation-style="minimal"] * { transition-duration: 80ms !important; }
+html[data-settings-animation-speed] * { transition-duration: calc(180ms / var(--settings-animation-speed, 1)); }
+html[data-settings-animations="false"] *, html[data-settings-animations="false"] *::before, html[data-settings-animations="false"] *::after {
+  animation: none !important; transition: none !important;
 }
 
 :root[data-settings-accent="slate"] {

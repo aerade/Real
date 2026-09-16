@@ -1,11 +1,12 @@
 const { app, BrowserWindow, ipcMain, session, shell } = require("electron");
-const { autoUpdater } = require("electron-updater");
+const { spawn } = require("node:child_process");
 const path = require("node:path");
 const fs = require("node:fs");
 
 app.setAppUserModelId("com.real.leadscout");
 
-let updateState = { configured: false, status: "idle" };
+let updateState = { configured: false, status: "idle", currentVersion: app.getVersion() };
+let downloadedInstallerPath = "";
 
 function runtimeConfig() {
   const configPath = app.isPackaged
@@ -20,30 +21,82 @@ function runtimeConfig() {
 
 function sendUpdateStatus(status) {
   updateState = typeof status === "string"
-    ? { configured: true, status }
-    : { configured: true, ...status };
+    ? { ...updateState, configured: true, status }
+    : { ...updateState, configured: true, ...status };
   for (const window of BrowserWindow.getAllWindows()) {
-    window.webContents.send("real:update-status", status);
+    window.webContents.send("real:update-status", updateState);
   }
+}
+
+function compareVersions(left, right) {
+  const parse = (value) => String(value || "0").split(/[.+-]/)[0].split(".").map((part) => Number(part) || 0);
+  const a = parse(left);
+  const b = parse(right);
+  for (let index = 0; index < Math.max(a.length, b.length); index += 1) {
+    if ((a[index] || 0) !== (b[index] || 0)) return (a[index] || 0) > (b[index] || 0) ? 1 : -1;
+  }
+  return 0;
+}
+
+function manifestUrl(baseUrl) {
+  if (baseUrl.endsWith(".json")) return baseUrl;
+  return `${baseUrl.replace(/\/?$/, "/")}real-update.json`;
+}
+
+async function checkForUpdates() {
+  const { updateUrl } = runtimeConfig();
+  if (!app.isPackaged || !updateUrl || updateUrl.includes("example.invalid")) {
+    updateState = { configured: false, status: "unconfigured", currentVersion: app.getVersion() };
+    return updateState;
+  }
+
+  sendUpdateStatus("checking");
+  try {
+    const response = await fetch(manifestUrl(updateUrl), { cache: "no-store" });
+    if (!response.ok) throw new Error(`Update manifest returned ${response.status}`);
+    const manifest = await response.json();
+    const latestVersion = String(manifest.version || "");
+    if (!latestVersion || !manifest.installerUrl) throw new Error("Update manifest is incomplete");
+    if (compareVersions(latestVersion, app.getVersion()) > 0) {
+      sendUpdateStatus({
+        status: "available",
+        latestVersion,
+        installerUrl: new URL(manifest.installerUrl, manifestUrl(updateUrl)).toString(),
+        releaseName: manifest.releaseName || "",
+      });
+    } else {
+      sendUpdateStatus({ status: "current", latestVersion: app.getVersion() });
+    }
+  } catch (error) {
+    sendUpdateStatus({ status: "error", message: error instanceof Error ? error.message : String(error) });
+  }
+  return updateState;
+}
+
+async function downloadUpdate() {
+  if (updateState.status !== "available" || !updateState.installerUrl) return updateState;
+  try {
+    sendUpdateStatus({ status: "downloading", percent: 0 });
+    const response = await fetch(updateState.installerUrl);
+    if (!response.ok) throw new Error(`Installer download returned ${response.status}`);
+    const buffer = Buffer.from(await response.arrayBuffer());
+    downloadedInstallerPath = path.join(app.getPath("temp"), `Real-Installer-${updateState.latestVersion}.exe`);
+    fs.writeFileSync(downloadedInstallerPath, buffer);
+    sendUpdateStatus({ status: "downloaded", percent: 100 });
+  } catch (error) {
+    sendUpdateStatus({ status: "error", message: error instanceof Error ? error.message : String(error) });
+  }
+  return updateState;
 }
 
 function configureUpdates() {
   const { updateUrl } = runtimeConfig();
   if (!app.isPackaged || !updateUrl || updateUrl.includes("example.invalid")) {
-    updateState = { configured: false, status: "unconfigured" };
+    updateState = { configured: false, status: "unconfigured", currentVersion: app.getVersion() };
     return;
   }
-  autoUpdater.autoDownload = true;
-  autoUpdater.autoInstallOnAppQuit = true;
-  autoUpdater.setFeedURL({ provider: "generic", url: updateUrl });
-  autoUpdater.on("checking-for-update", () => sendUpdateStatus("checking"));
-  autoUpdater.on("update-available", () => sendUpdateStatus("available"));
-  autoUpdater.on("update-not-available", () => sendUpdateStatus("current"));
-  autoUpdater.on("download-progress", (value) => sendUpdateStatus({ status: "downloading", percent: value.percent }));
-  autoUpdater.on("update-downloaded", () => sendUpdateStatus("downloaded"));
-  autoUpdater.on("error", (error) => sendUpdateStatus({ status: "error", message: error.message }));
-  autoUpdater.checkForUpdates().catch(() => {});
-  setInterval(() => autoUpdater.checkForUpdates().catch(() => {}), 4 * 60 * 60 * 1000).unref();
+  checkForUpdates().catch(() => undefined);
+  setInterval(() => checkForUpdates().catch(() => undefined), 4 * 60 * 60 * 1000).unref();
 }
 
 ipcMain.handle("real:get-config", () => runtimeConfig());
@@ -63,18 +116,19 @@ ipcMain.handle("real:window-control", (event, action) => {
   if (action === "maximize") window.isMaximized() ? window.unmaximize() : window.maximize();
   if (action === "close") window.close();
 });
-ipcMain.handle("real:check-updates", async () => {
-  const { updateUrl } = runtimeConfig();
-  if (!app.isPackaged || !updateUrl || updateUrl.includes("example.invalid")) {
-    updateState = { configured: false, status: "unconfigured" };
-    return updateState;
-  }
-  await autoUpdater.checkForUpdates();
-  return updateState;
-});
+ipcMain.handle("real:check-updates", () => checkForUpdates());
+ipcMain.handle("real:download-update", () => downloadUpdate());
 ipcMain.handle("real:install-update", () => {
-  if (updateState.status !== "downloaded") return { started: false };
-  setImmediate(() => autoUpdater.quitAndInstall(false, true));
+  if (updateState.status !== "downloaded" || !downloadedInstallerPath || !fs.existsSync(downloadedInstallerPath)) {
+    return { started: false };
+  }
+  const installDirectory = path.dirname(process.execPath);
+  spawn(downloadedInstallerPath, ["--target", installDirectory], {
+    detached: true,
+    stdio: "ignore",
+    windowsHide: false,
+  }).unref();
+  setTimeout(() => app.quit(), 250);
   return { started: true };
 });
 ipcMain.handle("real:request", async (_event, request) => {

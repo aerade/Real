@@ -12,21 +12,6 @@ extraResources:
 win:
   icon: ../../attached_assets/real-logo/real-mark-white.ico
   target:
-    - target: nsis
+    - target: dir
       arch:
         - x64
-  artifactName: Real-Setup-${version}-${arch}.${ext}
-nsis:
-  oneClick: false
-  differentialPackage: false
-  allowToChangeInstallationDirectory: true
-  perMachine: false
-  include: build/installer.nsh
-  installerHeader: build/installer-header.bmp
-  installerSidebar: build/installer-sidebar.bmp
-  createDesktopShortcut: true
-  createStartMenuShortcut: true
-  shortcutName: Real
-publish:
-  provider: generic
-  url: https://updates.example.invalid/real/windows

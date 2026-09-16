@@ -25,6 +25,10 @@ import {
   User as UserIcon,
   Users,
   X,
+  Palette as PaletteIcon,
+  Volume2,
+  LayoutPanelTop,
+  Play,
 } from "lucide-react";
 import {
   getListCountriesQueryKey,
@@ -42,9 +46,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { Slider } from "@/components/ui/slider";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import realMarkWhite from "@/assets/real-mark-white.svg";
 
 type SettingsSection = "profile" | "appearance" | "window" | "search" | "workspace" | "about";
 
@@ -53,6 +60,24 @@ type Preferences = {
   reduceMotion: boolean;
   showUpdates: boolean;
   accent: "signal" | "slate" | "copper";
+  theme: string;
+  font: string;
+  colorfulIcons: boolean;
+  iconColorShift: number;
+  macButtons: boolean;
+  titleVersion: boolean;
+  radius: number;
+  borderThickness: number;
+  borderColor: string;
+  rainbowBorder: boolean;
+  animations: boolean;
+  animationSpeed: number;
+  animationStyle: "smooth" | "snappy" | "minimal";
+  buttonSound: string;
+  topBarStyle: "icons" | "labels";
+  startupTab: string;
+  toolbarPosition: "top" | "bottom";
+  navbarPosition: "top" | "bottom";
 };
 
 const defaultPreferences: Preferences = {
@@ -60,6 +85,24 @@ const defaultPreferences: Preferences = {
   reduceMotion: false,
   showUpdates: true,
   accent: "signal",
+  theme: "dark",
+  font: "bricolage",
+  colorfulIcons: false,
+  iconColorShift: 285,
+  macButtons: false,
+  titleVersion: false,
+  radius: 12,
+  borderThickness: 1,
+  borderColor: "default",
+  rainbowBorder: false,
+  animations: true,
+  animationSpeed: 1,
+  animationStyle: "smooth",
+  buttonSound: "off",
+  topBarStyle: "labels",
+  startupTab: "overview",
+  toolbarPosition: "top",
+  navbarPosition: "top",
 };
 
 const sections: Array<{
@@ -78,7 +121,7 @@ const sections: Array<{
 
 function readPreferences(): Preferences {
   try {
-    const saved = window.localStorage.getItem("lead-scout:settings");
+    const saved = window.localStorage.getItem("real:settings") ?? window.localStorage.getItem("lead-scout:settings");
     return saved ? { ...defaultPreferences, ...JSON.parse(saved) } : defaultPreferences;
   } catch {
     return defaultPreferences;
@@ -86,7 +129,7 @@ function readPreferences(): Preferences {
 }
 
 function avatarKey(login?: string) {
-  return login ? `lead-scout:avatar:${login.toLowerCase()}` : "";
+  return login ? `real:avatar:${login.toLowerCase()}` : "";
 }
 
 function SettingRow({
@@ -145,7 +188,7 @@ export function AdminPage() {
   const { session, logout } = useAuth();
   const isOwner = session?.user?.role === "owner";
   const login = session?.user?.login;
-  const userName = session?.user?.name ?? "Lead Scout user";
+  const userName = session?.user?.name ?? "Real user";
   const initials = userName
     .split(" ")
     .map((part) => part[0])
@@ -188,8 +231,8 @@ export function AdminPage() {
     if (login) {
       setAvatar(window.localStorage.getItem(avatarKey(login)));
       try {
-        const savedSearch = window.localStorage.getItem(`lead-scout:search-defaults:${login.toLowerCase()}`);
-        const savedNote = window.localStorage.getItem(`lead-scout:profile-note:${login.toLowerCase()}`);
+        const savedSearch = window.localStorage.getItem(`real:search-defaults:${login.toLowerCase()}`) ?? window.localStorage.getItem(`lead-scout:search-defaults:${login.toLowerCase()}`);
+        const savedNote = window.localStorage.getItem(`real:profile-note:${login.toLowerCase()}`) ?? window.localStorage.getItem(`lead-scout:profile-note:${login.toLowerCase()}`);
         if (savedSearch) {
           const parsed = JSON.parse(savedSearch) as { city?: string; industry?: string };
           setSearchCity(parsed.city ?? "");
@@ -211,12 +254,44 @@ export function AdminPage() {
     document.documentElement.dataset.settingsCompact = String(preferences.compact);
     document.documentElement.dataset.settingsReduceMotion = String(preferences.reduceMotion);
     document.documentElement.dataset.settingsAccent = preferences.accent;
+    document.documentElement.dataset.settingsTheme = preferences.theme;
+    document.documentElement.dataset.settingsFont = preferences.font;
+    document.documentElement.dataset.settingsIcons = String(preferences.colorfulIcons);
+    document.documentElement.dataset.settingsIconShift = String(preferences.iconColorShift);
+    document.documentElement.dataset.settingsMacButtons = String(preferences.macButtons);
+    document.documentElement.dataset.settingsTitleVersion = String(preferences.titleVersion);
+    document.documentElement.dataset.settingsToolbarPosition = preferences.toolbarPosition;
+    document.documentElement.dataset.settingsNavbarPosition = preferences.navbarPosition;
+    document.documentElement.dataset.settingsAnimationStyle = preferences.animationStyle;
+    document.documentElement.dataset.settingsAnimations = String(preferences.animations);
+    document.documentElement.dataset.settingsAnimationSpeed = String(preferences.animationSpeed);
+    document.documentElement.dataset.settingsNavStyle = preferences.topBarStyle;
+    document.documentElement.dataset.settingsBorderColor = preferences.borderColor;
+    document.documentElement.dataset.settingsRainbow = String(preferences.rainbowBorder);
+    document.documentElement.style.setProperty("--settings-radius", String(preferences.radius));
+    document.documentElement.style.setProperty("--settings-border", String(preferences.borderThickness));
+    document.documentElement.style.setProperty("--settings-icon-shift", String(preferences.iconColorShift));
+    document.documentElement.style.setProperty("--settings-animation-speed", String(preferences.animationSpeed));
     return () => {
       delete document.documentElement.dataset.settingsCompact;
       delete document.documentElement.dataset.settingsReduceMotion;
       delete document.documentElement.dataset.settingsAccent;
+      delete document.documentElement.dataset.settingsTheme;
+      delete document.documentElement.dataset.settingsFont;
+      delete document.documentElement.dataset.settingsIcons;
+      delete document.documentElement.dataset.settingsIconShift;
+      delete document.documentElement.dataset.settingsMacButtons;
+      delete document.documentElement.dataset.settingsTitleVersion;
+      delete document.documentElement.dataset.settingsToolbarPosition;
+      delete document.documentElement.dataset.settingsNavbarPosition;
+      delete document.documentElement.dataset.settingsAnimationStyle;
+      delete document.documentElement.dataset.settingsAnimations;
+      delete document.documentElement.dataset.settingsAnimationSpeed;
+      delete document.documentElement.dataset.settingsNavStyle;
+      delete document.documentElement.dataset.settingsBorderColor;
+      delete document.documentElement.dataset.settingsRainbow;
     };
-  }, [preferences.compact, preferences.reduceMotion, preferences.accent]);
+  }, [preferences]);
 
   const filteredSections = useMemo(() => {
     const query = navQuery.trim().toLowerCase();
@@ -229,8 +304,8 @@ export function AdminPage() {
   const updatePreference = <K extends keyof Preferences>(key: K, value: Preferences[K]) => {
     setPreferences((current) => {
       const next = { ...current, [key]: value };
-      window.localStorage.setItem("lead-scout:settings", JSON.stringify(next));
-      window.dispatchEvent(new Event("lead-scout:settings-changed"));
+      window.localStorage.setItem("real:settings", JSON.stringify(next));
+      window.dispatchEvent(new Event("real:settings-changed"));
       return next;
     });
   };
@@ -291,7 +366,7 @@ export function AdminPage() {
     event.preventDefault();
     if (login) {
       window.localStorage.setItem(
-        `lead-scout:search-defaults:${login.toLowerCase()}`,
+        `real:search-defaults:${login.toLowerCase()}`,
         JSON.stringify({ city: searchCity, industry: searchIndustry }),
       );
     }
@@ -300,17 +375,17 @@ export function AdminPage() {
 
   const resetPreferences = () => {
     setPreferences(defaultPreferences);
-    window.localStorage.setItem("lead-scout:settings", JSON.stringify(defaultPreferences));
+    window.localStorage.setItem("real:settings", JSON.stringify(defaultPreferences));
     if (login) {
       const key = login.toLowerCase();
-      window.localStorage.removeItem(`lead-scout:search-defaults:${key}`);
-      window.localStorage.removeItem(`lead-scout:profile-note:${key}`);
+      window.localStorage.removeItem(`real:search-defaults:${key}`);
+      window.localStorage.removeItem(`real:profile-note:${key}`);
     }
     setSearchCity("");
     setSearchIndustry("");
     setProfileNote("");
-    window.dispatchEvent(new Event("lead-scout:settings-changed"));
-    toast({ title: "Preferences reset", description: "Lead Scout is back to its default workspace behavior." });
+    window.dispatchEvent(new Event("real:settings-changed"));
+    toast({ title: "Preferences reset", description: "Real is back to its default workspace behavior." });
   };
 
   const renderProfile = () => (
@@ -333,7 +408,6 @@ export function AdminPage() {
               <Badge variant="outline" className="h-5 border-primary/30 px-2 text-[10px] uppercase tracking-wider text-primary">
                 {session?.user?.role ?? "member"}
               </Badge>
-              <span className="text-[11px] text-muted-foreground">Local profile image</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -352,7 +426,7 @@ export function AdminPage() {
         </div>
       </div>
       <div className="mt-5 rounded-lg border border-border/70 px-5">
-        <SettingRow icon={KeyRound} title="Login identity" description="Managed by your Lead Scout account. Contact an owner to change access.">
+         <SettingRow icon={KeyRound} title="Login identity" description="Managed by your Real account. Contact an owner to change access.">
           <span className="font-mono text-xs text-muted-foreground">{login ?? "—"}</span>
         </SettingRow>
         <SettingRow icon={Shield} title="Access level" description="Your current workspace permissions are controlled by your account role.">
@@ -362,14 +436,14 @@ export function AdminPage() {
           <Input value={profileNote} onChange={(event) => {
             const value = event.target.value;
             setProfileNote(value);
-            if (login) window.localStorage.setItem(`lead-scout:profile-note:${login.toLowerCase()}`, value);
+             if (login) window.localStorage.setItem(`real:profile-note:${login.toLowerCase()}`, value);
           }} placeholder="Optional" className="h-8 w-44 text-xs" />
         </SettingRow>
       </div>
       <div className="mt-7 flex items-center justify-between rounded-lg border border-destructive/25 bg-destructive/5 p-4">
         <div>
           <p className="text-sm font-semibold text-foreground">End this session</p>
-          <p className="mt-1 text-xs text-muted-foreground">Sign out of Lead Scout on this device.</p>
+           <p className="mt-1 text-xs text-muted-foreground">Sign out of Real on this device.</p>
         </div>
         <Button type="button" variant="outline" onClick={logout} className="border-destructive/30 text-destructive hover:bg-destructive hover:text-destructive-foreground">
           <LogOut className="h-3.5 w-3.5" />
@@ -384,37 +458,55 @@ export function AdminPage() {
       <SectionHeader
         eyebrow="Interface"
         title="Appearance"
-        description="Tune the density and feedback of the workspace for long research sessions."
+        description="Shape Real around the way you investigate: color, type, motion, and window details."
       />
-      <div className="mt-6 rounded-lg border border-border/70 px-5">
-        <SettingRow icon={SlidersHorizontal} title="Compact workspace" description="Reduce row height and secondary spacing across lead lists.">
-          <Switch checked={preferences.compact} onCheckedChange={(value) => updatePreference("compact", value)} />
-        </SettingRow>
-        <SettingRow icon={Sparkles} title="Motion" description="Use restrained transitions when moving between workspace areas.">
-          <div className="flex items-center gap-3">
-            <span className="text-[11px] text-muted-foreground">{preferences.reduceMotion ? "Reduced" : "Standard"}</span>
-            <Switch checked={!preferences.reduceMotion} onCheckedChange={(value) => updatePreference("reduceMotion", !value)} />
+      <div className="mt-6 space-y-5">
+        <div className="rounded-lg border border-border/70 p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <div><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Theme</p><p className="mt-1 text-xs text-muted-foreground">The color language applied across the workspace.</p></div>
+            <Select value={preferences.theme} onValueChange={(value) => updatePreference("theme", value)}>
+              <SelectTrigger className="h-8 w-36 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>{["dark", "light"].map((item) => <SelectItem key={item} value={item}>{item[0].toUpperCase() + item.slice(1)}</SelectItem>)}</SelectContent>
+            </Select>
           </div>
-        </SettingRow>
-        <SettingRow icon={Eye} title="Update status" description="Show desktop update availability in the title bar.">
-          <Switch checked={preferences.showUpdates} onCheckedChange={(value) => updatePreference("showUpdates", value)} />
-        </SettingRow>
-      </div>
-      <div className="mt-6">
-        <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Accent signal</p>
-        <div className="grid grid-cols-3 gap-3">
-          {(["Signal", "Slate", "Copper"] as const).map((name) => (
-            <button
-              key={name}
-              type="button"
-              onClick={() => updatePreference("accent", name.toLowerCase() as Preferences["accent"])}
-              className="group flex items-center gap-3 rounded-lg border border-border/70 bg-background/40 p-3 text-left transition-colors hover:border-primary/50"
-            >
-              <span className={cn("h-5 w-5 rounded-md border border-white/10", name === "Signal" ? "bg-primary" : name === "Slate" ? "bg-slate-400" : "bg-orange-300")} />
-              <span className="text-xs font-medium text-foreground">{name}</span>
-              {preferences.accent === name.toLowerCase() && <Check className="ml-auto h-3.5 w-3.5 text-primary" />}
-            </button>
-          ))}
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {[
+              ["dark", "Dark", "bg-[#0b0d0d]"], ["blue", "Blue", "bg-[#6db5e6]"], ["purple", "Purple", "bg-[#bda4ec]"],
+              ["red", "Red", "bg-[#eb7479]"], ["orange", "Orange", "bg-[#dfae83]"], ["pink", "Pink", "bg-[#dba5be]"],
+              ["sakura", "Sakura", "bg-[#eadfe3]"], ["green", "Green", "bg-[#73d59d]"], ["teal", "Teal", "bg-[#6cd0ca]"],
+              ["cyan", "Cyan", "bg-[#65c6df]"], ["yellow", "Yellow", "bg-[#f2cf69]"], ["indigo", "Indigo", "bg-[#9ba7ef]"],
+              ["light", "Light", "bg-[#f2f1ee]"],
+            ].map(([value, label, swatch]) => (
+              <button key={value} type="button" onClick={() => updatePreference("theme", value)} className={cn("rounded-md border p-2 text-left transition-colors", preferences.theme === value ? "border-primary bg-primary/10" : "border-border/70 hover:border-primary/50")}>
+                <span className="flex h-5 overflow-hidden rounded-sm"><span className={cn("w-1/2", swatch)} /><span className="w-1/4 bg-foreground/50" /><span className="w-1/4 bg-card" /></span>
+                <span className="mt-2 flex items-center justify-between text-[11px] font-semibold">{label}{preferences.theme === value && <Check className="h-3.5 w-3.5 text-primary" />}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-lg border border-border/70 px-5">
+          <SettingRow icon={PaletteIcon} title="Font" description="Choose the voice of labels, lists, and controls.">
+            <Select value={preferences.font} onValueChange={(value) => updatePreference("font", value)}><SelectTrigger className="h-8 w-40 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="bricolage">Bricolage Grotesque</SelectItem><SelectItem value="dm-sans">DM Sans</SelectItem><SelectItem value="plus-jakarta">Plus Jakarta Sans</SelectItem><SelectItem value="space-mono">Spline Mono</SelectItem><SelectItem value="system">System</SelectItem></SelectContent></Select>
+          </SettingRow>
+          <SettingRow icon={Sparkles} title="Colorful icons" description="Give interface icons a more expressive color treatment."><Switch checked={preferences.colorfulIcons} onCheckedChange={(value) => updatePreference("colorfulIcons", value)} /></SettingRow>
+          <SettingRow icon={PaletteIcon} title="Icon color shift" description={`Shift the icon palette while keeping it multi-colored.`}>
+            <div className="flex w-44 items-center gap-3"><Slider value={[preferences.iconColorShift]} min={0} max={360} step={1} onValueChange={([value]) => updatePreference("iconColorShift", value)} /><span className="w-8 text-right font-mono text-[10px] text-muted-foreground">{preferences.iconColorShift}°</span></div>
+          </SettingRow>
+          <SettingRow icon={SlidersHorizontal} title="Compact workspace" description="Reduce row height and secondary spacing across lead lists."><Switch checked={preferences.compact} onCheckedChange={(value) => updatePreference("compact", value)} /></SettingRow>
+        </div>
+        <div className="rounded-lg border border-border/70 px-5">
+          <SettingRow icon={Laptop} title="macOS button layout" description="Use the familiar left-aligned window controls."><Switch checked={preferences.macButtons} onCheckedChange={(value) => updatePreference("macButtons", value)} /></SettingRow>
+          <SettingRow icon={Eye} title="App version in title bar" description="Show the installed Real version next to the app name."><Switch checked={preferences.titleVersion} onCheckedChange={(value) => updatePreference("titleVersion", value)} /></SettingRow>
+          <SettingRow icon={MonitorCog} title="Window corner radius" description={`${preferences.radius}px rounding on the desktop frame.`}><div className="flex w-44 items-center gap-3"><Slider value={[preferences.radius]} min={0} max={24} step={1} onValueChange={([value]) => updatePreference("radius", value)} /><span className="w-8 text-right font-mono text-[10px] text-muted-foreground">{preferences.radius}</span></div></SettingRow>
+          <SettingRow icon={SlidersHorizontal} title="Window border thickness" description={`${preferences.borderThickness}px outline thickness.`}><div className="flex w-44 items-center gap-3"><Slider value={[preferences.borderThickness]} min={0} max={3} step={0.5} onValueChange={([value]) => updatePreference("borderThickness", value)} /><span className="w-8 text-right font-mono text-[10px] text-muted-foreground">{preferences.borderThickness}</span></div></SettingRow>
+          <SettingRow icon={PaletteIcon} title="Window border color" description="Override the theme border color."><Select value={preferences.borderColor} onValueChange={(value) => updatePreference("borderColor", value)}><SelectTrigger className="h-8 w-32 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="default">Theme default</SelectItem><SelectItem value="red">Red</SelectItem><SelectItem value="blue">Blue</SelectItem><SelectItem value="green">Green</SelectItem><SelectItem value="gold">Gold</SelectItem></SelectContent></Select></SettingRow>
+          <SettingRow icon={Sparkles} title="Rainbow border" description="Animate the desktop outline through the color spectrum."><Switch checked={preferences.rainbowBorder} onCheckedChange={(value) => updatePreference("rainbowBorder", value)} /></SettingRow>
+        </div>
+        <div className="rounded-lg border border-border/70 px-5">
+          <SettingRow icon={Sparkles} title="Enable animations" description="Turn interface motion on or off across the app."><Switch checked={preferences.animations} onCheckedChange={(value) => updatePreference("animations", value)} /></SettingRow>
+          <SettingRow icon={SlidersHorizontal} title="Animation speed" description={`${preferences.animationSpeed.toFixed(1)}× transition speed.`}><div className="flex w-44 items-center gap-3"><Slider value={[preferences.animationSpeed]} min={0.5} max={2} step={0.1} onValueChange={([value]) => updatePreference("animationSpeed", value)} /><span className="w-8 text-right font-mono text-[10px] text-muted-foreground">{preferences.animationSpeed.toFixed(1)}×</span></div></SettingRow>
+          <SettingRow icon={Play} title="Animation style" description="Choose the feel of transitions."><div className="flex rounded-md bg-muted p-0.5">{[["smooth", "Smooth"], ["snappy", "Snappy"], ["minimal", "Minimal"]].map(([value, label]) => <button key={value} type="button" onClick={() => updatePreference("animationStyle", value as Preferences["animationStyle"])} className={cn("rounded px-2.5 py-1.5 text-[10px] font-semibold", preferences.animationStyle === value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground")}>{label}</button>)}</div></SettingRow>
+          <SettingRow icon={Volume2} title="Button sound" description="Play a short sound when a button is pressed."><Select value={preferences.buttonSound} onValueChange={(value) => updatePreference("buttonSound", value)}><SelectTrigger className="h-8 w-32 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="off">Off</SelectItem><SelectItem value="tap">Tap</SelectItem><SelectItem value="soft">Soft click</SelectItem><SelectItem value="pop">Pop</SelectItem></SelectContent></Select></SettingRow>
         </div>
       </div>
     </>
@@ -422,7 +514,7 @@ export function AdminPage() {
 
   const renderWindow = () => (
     <>
-      <SectionHeader eyebrow="Desktop shell" title="Window" description="Control how Lead Scout behaves when you open and return to the desktop app." />
+       <SectionHeader eyebrow="Desktop shell" title="Window" description="Control how Real behaves when you open and return to the desktop app." />
       <div className="mt-6 rounded-lg border border-border/70 px-5">
         <SettingRow icon={Laptop} title="Native desktop frame" description="Real uses a frameless desktop window with application controls in the top bar.">
           <span className="text-xs font-semibold text-emerald-400">Enabled</span>
@@ -440,12 +532,33 @@ export function AdminPage() {
           <p className="text-xs leading-5 text-muted-foreground">Window preferences are local to this desktop installation and do not change your account or workspace permissions.</p>
         </div>
       </div>
+      <div className="mt-6">
+        <SectionHeader eyebrow="Navigation" title="Navigation" description="Choose how Real opens and where its workspace controls live." />
+        <div className="mt-5 rounded-lg border border-border/70 px-5">
+          <SettingRow icon={LayoutPanelTop} title="Top bar style" description="Choose how tabs are displayed in the navigation bar.">
+            <div className="flex rounded-md bg-muted p-0.5">
+              {([["icons", "Icon only"], ["labels", "Icon + label"]] as const).map(([value, label]) => (
+                <button key={value} type="button" onClick={() => updatePreference("topBarStyle", value)} className={cn("rounded px-3 py-2 text-[10px] font-semibold", preferences.topBarStyle === value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground")}>{label}</button>
+              ))}
+            </div>
+          </SettingRow>
+          <SettingRow icon={Play} title="Startup tab" description="Choose which workspace opens when Real starts.">
+            <Select value={preferences.startupTab} onValueChange={(value) => updatePreference("startupTab", value)}><SelectTrigger className="h-8 w-32 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="overview">Overview</SelectItem><SelectItem value="search">Search</SelectItem><SelectItem value="leads">Clients</SelectItem><SelectItem value="admin">Settings</SelectItem></SelectContent></Select>
+          </SettingRow>
+          <SettingRow icon={SlidersHorizontal} title="Toolbar position" description="Where action controls sit around the editor.">
+            <Select value={preferences.toolbarPosition} onValueChange={(value) => updatePreference("toolbarPosition", value as Preferences["toolbarPosition"])}><SelectTrigger className="h-8 w-32 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="top">Top</SelectItem><SelectItem value="bottom">Bottom</SelectItem></SelectContent></Select>
+          </SettingRow>
+          <SettingRow icon={LayoutPanelTop} title="Navbar position" description="Where the main navigation tabs sit.">
+            <Select value={preferences.navbarPosition} onValueChange={(value) => updatePreference("navbarPosition", value as Preferences["navbarPosition"])}><SelectTrigger className="h-8 w-32 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="top">Top</SelectItem><SelectItem value="bottom">Bottom</SelectItem></SelectContent></Select>
+          </SettingRow>
+        </div>
+      </div>
     </>
   );
 
   const renderSearch = () => (
     <>
-      <SectionHeader eyebrow="Lead discovery" title="Search" description="Set the defaults that make repeated lead discovery faster and more consistent." />
+       <SectionHeader eyebrow="Lead discovery" title="Search" description="Set the defaults that make repeated lead discovery faster and more consistent." />
       <form onSubmit={saveSearchDefaults} className="mt-6 rounded-lg border border-border/70 p-5">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
@@ -542,16 +655,16 @@ export function AdminPage() {
 
   const renderAbout = () => (
     <>
-      <SectionHeader eyebrow="System" title="About Lead Scout" description="A focused desktop workspace for finding, qualifying, and moving the right leads forward." />
+       <SectionHeader eyebrow="System" title="About Real" description="A focused desktop workspace for finding, qualifying, and moving the right leads forward." />
       <div className="mt-6 overflow-hidden rounded-lg border border-border/70">
         <div className="flex items-center gap-4 border-b border-border/70 bg-background/50 p-5">
-          <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary text-primary-foreground"><Settings2 className="h-5 w-5" /></div>
-          <div className="flex-1"><p className="text-sm font-semibold text-foreground">Real Lead Scout</p><p className="mt-1 text-xs text-muted-foreground">Desktop edition</p></div>
+           <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary p-2"><img src={realMarkWhite} alt="Real" className="h-full w-full object-contain" /></div>
+           <div className="flex-1"><p className="text-sm font-semibold text-foreground">Real</p><p className="mt-1 text-xs text-muted-foreground">Desktop edition</p></div>
            <Badge variant="outline" className="font-mono text-[10px]">v{appInfo.version}</Badge>
         </div>
         <div className="px-5">
            <SettingRow icon={Info} title="Build channel" description="The current stable desktop build for your workspace."><span className="font-mono text-xs text-muted-foreground">{appInfo.packaged ? "stable" : "development"}</span></SettingRow>
-           <SettingRow icon={Laptop} title="Runtime" description="The platform and CPU architecture hosting this Lead Scout build."><span className="font-mono text-xs text-muted-foreground">{appInfo.platform} · {appInfo.arch}</span></SettingRow>
+            <SettingRow icon={Laptop} title="Runtime" description="The platform and CPU architecture hosting this Real build."><span className="font-mono text-xs text-muted-foreground">{appInfo.platform} · {appInfo.arch}</span></SettingRow>
            <SettingRow icon={Settings2} title="Desktop engine" description="Electron runtime used by the installed desktop build."><span className="font-mono text-xs text-muted-foreground">{appInfo.electronVersion}</span></SettingRow>
            <SettingRow icon={Download} title="Updates" description="Whether this installation has a configured release feed."><span className={cn("text-xs font-semibold", appInfo.updateConfigured ? "text-emerald-400" : "text-muted-foreground")}>{appInfo.updateConfigured ? "Configured" : "Not configured"}</span></SettingRow>
            <SettingRow icon={CircleHelp} title="Workspace support" description="Reach out to your workspace owner for access or configuration questions."><span className="text-xs text-muted-foreground">Contact your owner</span></SettingRow>
@@ -580,11 +693,7 @@ export function AdminPage() {
           <div>
             <p className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-primary"><Settings2 className="h-3.5 w-3.5" />Workspace configuration</p>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">Settings</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Configure your Lead Scout desktop workspace.</p>
-          </div>
-          <div className="hidden items-center gap-2 rounded-md border border-border/70 bg-background/40 px-3 py-2 text-[10px] font-medium text-muted-foreground md:flex">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            Local preferences enabled
+            <p className="mt-1 text-sm text-muted-foreground">Configure your Real desktop workspace.</p>
           </div>
         </div>
         <div className="grid min-h-[640px] flex-1 grid-cols-1 overflow-hidden rounded-lg border border-border/70 bg-card/40 md:grid-cols-[220px_minmax(0,1fr)]">

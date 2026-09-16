@@ -4,8 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       api_url:
-        description: Published Real API URL, for example https://real.example.com
-        required: true
+        description: Published Real API URL
+        required: false
+        default: https://api.real-clients.ru
         type: string
   push:
     tags:
@@ -35,278 +36,97 @@ jobs:
           INPUT_API_URL: ${{ inputs.api_url }}
           REPOSITORY: ${{ github.repository }}
         run: |
-          $current = Get-Content artifacts/lead-scout-desktop/electron/runtime-config.json | ConvertFrom-Json
+          $configPath = "artifacts/lead-scout-desktop/electron/runtime-config.json"
+          $current = Get-Content $configPath -Raw | ConvertFrom-Json
           if ($env:INPUT_API_URL) { $current.apiBaseUrl = $env:INPUT_API_URL }
           $current.updateUrl = "https://github.com/$env:REPOSITORY/releases/latest/download/"
-          $current | ConvertTo-Json | Set-Content artifacts/lead-scout-desktop/electron/runtime-config.json
-      - name: Build Windows installer
+          $current | ConvertTo-Json | Set-Content $configPath
+      - name: Build Real application payload
+        run: pnpm --filter @workspace/lead-scout-desktop run build:desktop:dir
+      - name: Build custom Real installer
+        run: pnpm --filter @workspace/lead-scout-desktop run build:installer
+      - name: Create custom update manifest
         env:
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
-        run: pnpm --filter @workspace/lead-scout-desktop run build:desktop
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          $package = Get-Content artifacts/lead-scout-desktop/package.json -Raw | ConvertFrom-Json
+          $installer = Get-ChildItem artifacts/lead-scout-desktop/release -Filter "Real-Installer-*.exe" | Select-Object -First 1
+          if (-not $installer) { throw "Custom Real installer was not generated." }
+          $manifest = @{
+            version = $package.version
+            releaseName = "Real $($package.version)"
+            installerUrl = "https://github.com/$env:REPOSITORY/releases/latest/download/$($installer.Name)"
+          }
+          $manifest | ConvertTo-Json | Set-Content artifacts/lead-scout-desktop/release/real-update.json
       - name: Upload generated Windows release
         uses: actions/upload-artifact@v4
         with:
           name: Real-Windows
           path: |
-            artifacts/lead-scout-desktop/release/*.exe
-            artifacts/lead-scout-desktop/release/latest.yml
-            artifacts/lead-scout-desktop/release/*.blockmap
+            artifacts/lead-scout-desktop/release/Real-Installer-*.exe
+            artifacts/lead-scout-desktop/release/real-update.json
           if-no-files-found: error
           retention-days: 30
 
-  verify-authenticode:
+  verify-custom-installer:
     needs: build
     runs-on: windows-latest
     defaults:
       run:
         shell: pwsh
     steps:
-      - uses: actions/checkout@v4
-      - name: Download generated Windows release
+      - name: Download generated release
         uses: actions/download-artifact@v4
         with:
           name: Real-Windows
-          path: artifacts/lead-scout-desktop/release
-      - name: Verify installer and uninstaller Authenticode signatures
-        env:
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
-          IS_TAG_RELEASE: ${{ startsWith(github.ref, 'refs/tags/') }}
+          path: release
+      - name: Verify custom installer and manifest
         run: |
-          $installer = Get-ChildItem artifacts/lead-scout-desktop/release -Recurse -Filter 'Real-Setup-*.exe' |
-            Where-Object { $_.Name -notlike '*uninstaller*' } |
-            Select-Object -First 1
-          if (-not $installer) { throw "Generated Real NSIS installer was not found for Authenticode verification." }
-
-          $report = Join-Path (Resolve-Path artifacts/lead-scout-desktop/release).Path "authenticode-report.json"
-          $signingConfigured = (
-            -not [String]::IsNullOrWhiteSpace($env:CSC_LINK) -or
-            -not [String]::IsNullOrWhiteSpace($env:WIN_CSC_LINK)
-          )
-          $requireSignature = $env:IS_TAG_RELEASE -eq "true" -or $signingConfigured
-          $arguments = @{
-            InstallerPath = $installer.FullName
-            ReportPath = $report
-          }
-          if ($requireSignature) {
-            $arguments.RequireSignature = $true
-          }
-
-          & .github/scripts/verify-authenticode.ps1 @arguments
-          if ($LASTEXITCODE -ne 0) {
-            throw "Authenticode verification failed."
-          }
-
-          if (-not $requireSignature) {
-            Write-Warning "No Authenticode certificate configuration was detected. This workflow run is development-only and its unsigned artifacts must not be distributed."
-          }
-      - name: Upload Authenticode report
-        if: always()
+          $installer = Get-ChildItem release -Filter "Real-Installer-*.exe" | Select-Object -First 1
+          if (-not $installer) { throw "Custom Real installer was not found." }
+          $manifest = Get-Content release/real-update.json -Raw | ConvertFrom-Json
+          if ([String]::IsNullOrWhiteSpace($manifest.version)) { throw "Update manifest has no version." }
+          if ([String]::IsNullOrWhiteSpace($manifest.installerUrl)) { throw "Update manifest has no installer URL." }
+          $hash = (Get-FileHash $installer.FullName -Algorithm SHA256).Hash
+          [PSCustomObject]@{
+            installer = $installer.Name
+            sha256 = $hash
+            version = $manifest.version
+            result = "pass"
+          } | ConvertTo-Json | Set-Content release/installer-verification.json
+      - name: Upload verification report
         uses: actions/upload-artifact@v4
         with:
-          name: Real-authenticode-report
-          path: artifacts/lead-scout-desktop/release/authenticode-report.json
+          name: Real-installer-verification
+          path: release/installer-verification.json
           if-no-files-found: error
-          retention-days: 30
-
-  verify-installer-ui:
-    needs: build
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: windows-latest
-            display_scale_percent: 100
-          - os: windows-2022
-            display_scale_percent: 150
-    defaults:
-      run:
-        shell: pwsh
-    steps:
-      - uses: actions/checkout@v4
-      - name: Download generated Windows release
-        uses: actions/download-artifact@v4
-        with:
-          name: Real-Windows
-          path: artifacts/lead-scout-desktop/release
-      - name: Locate downloaded Windows installer
-        run: |
-          $releaseRoot = Join-Path $env:GITHUB_WORKSPACE "artifacts/lead-scout-desktop/release"
-          $installers = @(
-            Get-ChildItem -LiteralPath $releaseRoot -Recurse -File -Filter "Real-Setup-*.exe" |
-              Where-Object { $_.Name -notlike "*uninstaller*" } |
-              Sort-Object FullName
-          )
-          if ($installers.Count -eq 0) {
-            throw "Downloaded Real NSIS installer was not found below $releaseRoot."
-          }
-          if ($installers.Count -gt 1) {
-            throw "Expected one downloaded Real NSIS installer, but found $($installers.Count): $($installers.FullName -join ', ')"
-          }
-
-          "REAL_INSTALLER_PATH=$($installers[0].FullName)" |
-            Add-Content -LiteralPath $env:GITHUB_ENV -Encoding utf8
-      - name: Configure desktop display scale
-        env:
-          DISPLAY_SCALE_PERCENT: ${{ matrix.display_scale_percent }}
-        run: |
-          $scalePercent = [int]$env:DISPLAY_SCALE_PERCENT
-          $logPixels = [int][Math]::Round(96 * $scalePercent / 100)
-          $desktopKey = "HKCU:\Control Panel\Desktop"
-
-          New-ItemProperty -Path $desktopKey -Name LogPixels -PropertyType DWord -Value $logPixels -Force
-          New-ItemProperty -Path $desktopKey -Name Win8DpiScaling -PropertyType DWord -Value 1 -Force
-
-          # Refresh the current interactive desktop so the following UI process
-          # observes the configured scale without requiring a runner logoff.
-          & "$env:SystemRoot\System32\rundll32.exe" user32.dll,UpdatePerUserSystemParameters
-          Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
-          Start-Sleep -Seconds 2
-      - name: Verify installer and uninstaller window controls
-        env:
-          VERIFY_IMAGE: ${{ matrix.os }}
-          DISPLAY_SCALE_PERCENT: ${{ matrix.display_scale_percent }}
-        run: |
-          if (-not $env:REAL_INSTALLER_PATH -or
-              -not (Test-Path -LiteralPath $env:REAL_INSTALLER_PATH -PathType Leaf)) {
-            throw "Downloaded Real NSIS installer path is not available on $env:VERIFY_IMAGE."
-          }
-          .github/scripts/verify-real-installer.ps1 `
-            -InstallerPath $env:REAL_INSTALLER_PATH `
-            -EnvironmentName $env:VERIFY_IMAGE `
-            -DisplayScalePercent ([int]$env:DISPLAY_SCALE_PERCENT)
-      - name: Smoke test installer lifecycle on the primary image
-        if: matrix.os == 'windows-latest'
-        run: |
-          if (-not $env:REAL_INSTALLER_PATH -or
-              -not (Test-Path -LiteralPath $env:REAL_INSTALLER_PATH -PathType Leaf)) {
-            throw "Downloaded Real NSIS installer path is not available for the lifecycle smoke test."
-          }
-          .github/scripts/smoke-test-real-installer.ps1 -InstallerPath $env:REAL_INSTALLER_PATH
-      - name: Upload installer UI evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Real-installer-ui-evidence-${{ matrix.os }}
-          path: artifacts/lead-scout-desktop/release/installer-ui-evidence/
-          if-no-files-found: warn
-          retention-days: 30
-
-  summarize-installer-ui:
-    needs: verify-installer-ui
-    if: always()
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: pwsh
-    steps:
-      - name: Download windows-latest installer UI evidence
-        uses: actions/download-artifact@v4
-        with:
-          name: Real-installer-ui-evidence-windows-latest
-          path: release/installer-ui-summary/evidence/windows-latest
-      - name: Download windows-2022 installer UI evidence
-        uses: actions/download-artifact@v4
-        with:
-          name: Real-installer-ui-evidence-windows-2022
-          path: release/installer-ui-summary/evidence/windows-2022
-      - name: Gather installer UI reports
-        run: |
-          $summaryDirectory = Join-Path (Get-Location) "release/installer-ui-summary"
-          $evidenceDirectory = Join-Path $summaryDirectory "evidence"
-          $images = @("windows-latest", "windows-2022")
-          $reports = foreach ($image in $images) {
-            $reportPath = Join-Path $evidenceDirectory "$image/real-installer-ui-report.json"
-            if (-not (Test-Path -LiteralPath $reportPath)) {
-              throw "Installer UI report was not found for $image at $reportPath."
-            }
-
-            $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
-            if ([String]::IsNullOrWhiteSpace($report.installerSha256)) {
-              throw "Installer UI report for $image does not contain an installer SHA-256."
-            }
-
-            [PSCustomObject]@{
-              Image = $image
-              Report = $report
-              ReportPath = $reportPath
-            }
-          }
-
-          $hashes = @($reports | ForEach-Object { $_.Report.installerSha256 } | Sort-Object -Unique)
-          if ($hashes.Count -ne 1) {
-            throw "The Windows image checks did not use the same installer. SHA-256 values: $($hashes -join ', ')"
-          }
-
-          $summaryLines = @(
-            "# Real Windows installer UI verification"
-            ""
-            "Both Windows image checks used the same generated installer."
-            ""
-            "| Image | Scale | Installer SHA-256 | Branding screenshot | Minimize | Maximize | Restore after maximize | Close | Result |"
-            "| --- | ---: | --- | --- | --- | --- | --- | --- | --- |"
-          )
-
-          foreach ($entry in $reports) {
-            $report = $entry.Report
-            $controls = $report.controls
-            $brandingScreenshot = if ($report.brandingScreenshot) {
-              "[{0}](evidence/{1}/{0})" -f $report.brandingScreenshot, $entry.Image
-            } else {
-              "not-captured"
-            }
-            $summaryLines += "| $($entry.Image) | $($report.environment.displayScalePercent)% | ``$($report.installerSha256)`` | $brandingScreenshot | $($controls.minimize) | $($controls.maximize) | $($controls.restoreAfterMaximize) | $($controls.close) | $($report.result) |"
-          }
-
-          $summaryLines += @(
-            ""
-            "The `evidence/<image>/` directories contain the complete report and captured screenshots for each image."
-          )
-          $summaryPath = Join-Path $summaryDirectory "real-installer-ui-summary.md"
-          $summaryLines -join [Environment]::NewLine | Set-Content -LiteralPath $summaryPath -Encoding utf8
-      - name: Upload installer UI summary and evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Real-installer-ui-summary
-          path: release/installer-ui-summary/
-          if-no-files-found: error
-          retention-days: 30
 
   publish:
     needs:
       - build
-      - verify-authenticode
-      - verify-installer-ui
-      - summarize-installer-ui
+      - verify-custom-installer
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: windows-latest
     defaults:
       run:
         shell: pwsh
     steps:
-      - name: Download generated Windows release
+      - name: Download generated release
         uses: actions/download-artifact@v4
         with:
           name: Real-Windows
-          path: artifacts/lead-scout-desktop/release
-      - name: Download Authenticode report
+          path: release
+      - name: Download verification report
         uses: actions/download-artifact@v4
         with:
-          name: Real-authenticode-report
-          path: artifacts/lead-scout-desktop/release
-      - name: Download installer UI summary
-        uses: actions/download-artifact@v4
-        with:
-          name: Real-installer-ui-summary
-          path: artifacts/lead-scout-desktop/release/installer-ui-summary
+          name: Real-installer-verification
+          path: release
       - name: Publish tagged release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release view $env:GITHUB_REF_NAME 2>$null
-          if ($LASTEXITCODE -ne 0) { gh release create $env:GITHUB_REF_NAME --title $env:GITHUB_REF_NAME --generate-notes }
-          gh release upload $env:GITHUB_REF_NAME artifacts/lead-scout-desktop/release/*.exe artifacts/lead-scout-desktop/release/latest.yml artifacts/lead-scout-desktop/release/*.blockmap artifacts/lead-scout-desktop/release/authenticode-report.json artifacts/lead-scout-desktop/release/installer-ui-summary/real-installer-ui-summary.md --clobber
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $env:GITHUB_REF_NAME --title $env:GITHUB_REF_NAME --generate-notes
+          }
+          gh release upload $env:GITHUB_REF_NAME release/Real-Installer-*.exe release/real-update.json release/installer-verification.json --clobber

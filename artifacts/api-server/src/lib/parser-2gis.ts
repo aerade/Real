@@ -91,6 +91,8 @@ function transliterate(value: string): string {
 }
 
 function findProjectRoot(): string {
+  const configuredRoot = process.env.REAL_PARSER_CWD?.trim();
+  if (configuredRoot) return configuredRoot;
   let current = process.cwd();
   while (current !== path.dirname(current)) {
     try {

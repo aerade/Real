@@ -76,6 +76,45 @@ function App() {
   const [startupComplete, setStartupComplete] = useState(hasRunStartupScreen);
 
   useEffect(() => {
+    let audioContext: AudioContext | null = null;
+    const playButtonSound = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const button = target.closest("button,[role='button']");
+      if (!(button instanceof HTMLElement) || button.getAttribute("aria-disabled") === "true" || button.hasAttribute("disabled")) return;
+      let sound = "off";
+      try {
+        const raw = window.localStorage.getItem("real:settings");
+        sound = raw ? JSON.parse(raw).buttonSound ?? "off" : "off";
+      } catch {
+        sound = "off";
+      }
+      if (sound === "off") return;
+      const AudioContextConstructor = window.AudioContext;
+      if (!AudioContextConstructor) return;
+      audioContext ??= new AudioContextConstructor();
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      const now = audioContext.currentTime;
+      const frequency = sound === "pop" ? 640 : sound === "soft" ? 420 : 520;
+      oscillator.type = sound === "pop" ? "sine" : "triangle";
+      oscillator.frequency.setValueAtTime(frequency, now);
+      oscillator.frequency.exponentialRampToValueAtTime(frequency * 0.72, now + (sound === "tap" ? 0.06 : 0.11));
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(sound === "pop" ? 0.045 : 0.025, now + 0.008);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + (sound === "tap" ? 0.07 : 0.13));
+      oscillator.connect(gain).connect(audioContext.destination);
+      oscillator.start(now);
+      oscillator.stop(now + (sound === "tap" ? 0.08 : 0.14));
+    };
+    document.addEventListener("click", playButtonSound);
+    return () => {
+      document.removeEventListener("click", playButtonSound);
+      audioContext?.close().catch(() => undefined);
+    };
+  }, []);
+
+  useEffect(() => {
     if (startupComplete) {
       hasRunStartupScreen = true;
     }

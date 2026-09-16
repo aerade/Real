@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld("realDesktop", {
   getAppInfo: () => ipcRenderer.invoke("real:get-app-info"),
   getUpdateStatus: () => ipcRenderer.invoke("real:get-update-status"),
   checkForUpdates: () => ipcRenderer.invoke("real:check-updates"),
+  downloadUpdate: () => ipcRenderer.invoke("real:download-update"),
   installUpdate: () => ipcRenderer.invoke("real:install-update"),
   windowControl: (action) => ipcRenderer.invoke("real:window-control", action),
   onUpdateStatus: (listener) => {

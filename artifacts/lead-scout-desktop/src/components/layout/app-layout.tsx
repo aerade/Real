@@ -1,12 +1,30 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Home, Search, Target, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { WindowControls } from "./window-controls";
+import { UpdateStatus } from "@/components/update-status";
 import realMarkWhite from "@/assets/real-mark-white.svg";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const [location] = useLocation();
+  const [titleVersion, setTitleVersion] = useState(false);
+  const [version, setVersion] = useState("");
+  useEffect(() => {
+    const readSettings = () => {
+      try {
+        const raw = window.localStorage.getItem("real:settings") ?? window.localStorage.getItem("lead-scout:settings");
+        setTitleVersion(Boolean(raw && JSON.parse(raw).titleVersion));
+      } catch {
+        setTitleVersion(false);
+      }
+    };
+    readSettings();
+    const handler = () => readSettings();
+    window.addEventListener("real:settings-changed", handler);
+    window.realDesktop?.getAppInfo().then((info) => setVersion(info.version)).catch(() => undefined);
+    return () => window.removeEventListener("real:settings-changed", handler);
+  }, []);
   
   const navItems = [
     { href: "/", label: "Overview", icon: Home },
@@ -16,7 +34,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   ];
 
   return (
-    <div className="flex flex-col h-full w-full bg-background text-foreground overflow-hidden rounded-[24px] border border-border/40 select-none shadow-2xl relative">
+    <div className="flex flex-col h-full w-full bg-background text-foreground overflow-hidden rounded-[24px] border border-border/40 select-none shadow-2xl relative" style={{ borderRadius: "calc(var(--settings-radius, 12) * 1px)", borderWidth: "calc(var(--settings-border, 1) * 1px)" }}>
       {/* Top Titlebar / Navbar */}
       <header 
         className="h-14 flex items-center justify-between px-4 shrink-0 bg-background/80 backdrop-blur-md z-50 relative"
@@ -37,7 +55,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   isActive ? "text-primary" : "text-muted-foreground"
                 )}>
                   <item.icon className="w-3.5 h-3.5" />
-                  {item.label}
+                  <span>{item.label}</span>
                 </div>
                 {isActive && (
                   <div className="absolute -bottom-[2px] left-1/2 -translate-x-1/2 w-[calc(100%_-_36px)] h-[3px] bg-primary rounded-full" />
@@ -47,7 +65,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
           })}
         </nav>
         
-        <div className="flex w-[100px] shrink-0 items-center justify-end gap-2">
+        <div className="flex w-[180px] shrink-0 items-center justify-end gap-2">
+          <UpdateStatus />
+          <span className="hidden text-[10px] font-semibold tracking-wide text-muted-foreground sm:inline">Real{titleVersion && version ? ` · v${version}` : ""}</span>
           <img src={realMarkWhite} alt="Real" className="h-5 w-5 object-contain opacity-90" />
         </div>
       </header>

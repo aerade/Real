@@ -29,12 +29,28 @@ interface Window {
       status: string;
       percent?: number;
       message?: string;
+      currentVersion?: string;
+      latestVersion?: string;
+      releaseName?: string;
+      installerUrl?: string;
     }>;
     checkForUpdates(): Promise<{
       configured: boolean;
       status?: string;
       percent?: number;
       message?: string;
+      currentVersion?: string;
+      latestVersion?: string;
+      installerUrl?: string;
+      releaseName?: string;
+    }>;
+    downloadUpdate(): Promise<{
+      configured: boolean;
+      status?: string;
+      percent?: number;
+      message?: string;
+      currentVersion?: string;
+      latestVersion?: string;
     }>;
     installUpdate(): Promise<{ started: boolean }>;
     windowControl(action: "minimize" | "maximize" | "close"): Promise<void>;
