@@ -134,13 +134,36 @@ html[data-settings-border-color="red"] .real-app-frame { border-color: #d95555 !
 html[data-settings-border-color="blue"] .real-app-frame { border-color: #4da3d9 !important; }
 html[data-settings-border-color="green"] .real-app-frame { border-color: #4db879 !important; }
 html[data-settings-border-color="gold"] .real-app-frame { border-color: #d0a34c !important; }
-@keyframes rainbow-frame {
-  0%, 100% { border-color: #e16868; }
-  25% { border-color: #d4b65a; }
-  50% { border-color: #60bd87; }
-  75% { border-color: #6aa9d9; }
+@property --rainbow-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
 }
-html[data-settings-rainbow="true"] .real-app-frame {
+@keyframes rainbow-frame {
+  from { --rainbow-angle: 0deg; }
+  to { --rainbow-angle: 360deg; }
+}
+html[data-settings-rainbow="true"] .real-app-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  border-radius: inherit;
+  padding: max(1px, calc(var(--settings-border, 1) * 1px));
+  background: conic-gradient(
+    from var(--rainbow-angle),
+    #e16868,
+    #d4b65a,
+    #60bd87,
+    #6aa9d9,
+    #aa83bb,
+    #e16868
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
   animation: rainbow-frame 4s linear infinite;
 }
 html[data-settings-icons="true"] svg { color: #d97772; }

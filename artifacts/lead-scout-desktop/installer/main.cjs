@@ -1,6 +1,7 @@
 const { app, BrowserWindow, dialog, ipcMain, shell } = require("electron");
 const path = require("node:path");
 const fs = require("node:fs");
+const { pathToFileURL } = require("node:url");
 
 app.setAppUserModelId("com.real.installer");
 
@@ -86,6 +87,12 @@ ipcMain.handle("installer:choose-directory", async () => {
   return result.canceled ? null : result.filePaths[0] || null;
 });
 
+ipcMain.handle("installer:get-asset-url", (_event, assetName) => {
+  const allowedAssets = new Set(["installer-bg.png"]);
+  if (!allowedAssets.has(assetName)) return "";
+  return pathToFileURL(path.join(process.resourcesPath, "installer", assetName)).toString();
+});
+
 ipcMain.handle("installer:window-control", (event, action) => {
   const window = BrowserWindow.fromWebContents(event.sender);
   if (!window) return;
@@ -111,10 +118,12 @@ ipcMain.handle("installer:install", async (_event, requestedPath, options = {}) 
   return { target, executable, version: app.getVersion() };
 });
 
-ipcMain.handle("installer:launch", (_event, executable) => {
+ipcMain.handle("installer:launch", async (_event, executable) => {
   const target = String(executable || path.join(defaultTarget, "Real.exe"));
   if (fs.existsSync(target)) {
-    shell.openPath(target);
+    const error = await shell.openPath(target);
+    if (error) return { started: false, error };
+    setTimeout(() => app.quit(), 250);
     return { started: true };
   }
   return { started: false };

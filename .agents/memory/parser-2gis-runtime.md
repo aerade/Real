@@ -18,3 +18,13 @@ format documents flat fields; supporting only one shape silently loses business 
 
 **How to apply:** Treat nested fields as the first choice and use flat fields as fallbacks when
 normalizing each organization.
+
+On Linux systemd hosts, create the project `.venv` with a system-accessible Python rather than
+letting `uv` select an interpreter stored under `/root/.local/share/uv`; otherwise a non-root API
+service can fail with `Permission denied` while canonicalizing `.venv/bin/python`.
+
+**Why:** The VPS API reached Parser2GIS successfully, but its service account could not traverse
+the root-owned uv-managed Python target created by `uv sync`.
+
+**How to apply:** Recreate `/opt/real/.venv` with `/usr/bin/python3.12` (or the VPS system Python),
+then ensure the service account can read and execute the virtualenv before restarting `real-api`.
