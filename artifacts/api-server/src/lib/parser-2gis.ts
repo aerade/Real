@@ -246,6 +246,8 @@ async function findChromeBinary(): Promise<string | null> {
         path.join("/snap/chromium", revision, "usr", "lib", "chromium", "chromium"),
         path.join("/snap/chromium", revision, "usr", "lib", "chromium", "chrome"),
         path.join("/snap/chromium", revision, "usr", "lib", "chromium", "chromium-browser"),
+        path.join("/snap/chromium", revision, "usr", "lib", "chromium-browser", "chrome"),
+        path.join("/snap/chromium", revision, "usr", "lib", "chromium-browser", "chromium-browser"),
       ]);
     } catch {
       return [];
