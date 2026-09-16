@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+from collections import Counter
+import json
 import os
 import re
 import sys
@@ -121,12 +123,20 @@ def main() -> None:
                     )
                     trace(f"result links read: {len(result)}")
                     responses = parser._chrome_remote.get_responses()
-                    initial_item_responses = sum(
-                        1
+                    item_responses = [
+                        response
                         for response in responses
                         if "/items/byid" in response.get("url", "")
+                    ]
+                    initial_item_responses = len(item_responses)
+                    status_counts = Counter(
+                        str(response.get("status", "unknown"))
+                        for response in item_responses
                     )
-                    trace(f"captured item responses: {initial_item_responses}")
+                    trace(
+                        f"captured item responses: {initial_item_responses}; "
+                        f"statuses: {dict(status_counts)}"
+                    )
                     if not result and last_document is not None:
                         anchors = last_document.search(
                             lambda node: node.local_name == "a" and "href" in node.attributes
@@ -164,10 +174,36 @@ def main() -> None:
                         timeout=5,
                         throw_exception=False,
                     )
-                    trace(f"item response received: {bool(result)}")
+                    if result:
+                        trace(
+                            "item response received: "
+                            f"status={result.get('status', 'unknown')} "
+                            f"url={result.get('url', '')[:180]}"
+                        )
+                    else:
+                        trace("item response received: false")
                     return result
 
                 parser._chrome_remote.wait_response = wait_response
+
+                original_get_response_body = parser._chrome_remote.get_response_body
+
+                def get_response_body(response, timeout=10):
+                    trace("reading item response body")
+                    body = original_get_response_body(response, timeout=timeout)
+                    try:
+                        parsed_body = json.loads(body)
+                        result = parsed_body.get("result", {})
+                        item_count = len(result.get("items", []))
+                        trace(
+                            f"item response body parsed: bytes={len(body)} "
+                            f"items={item_count}"
+                        )
+                    except (TypeError, json.JSONDecodeError, AttributeError):
+                        trace(f"item response body is not valid JSON: bytes={len(body)}")
+                    return body
+
+                parser._chrome_remote.get_response_body = get_response_body
 
                 original_navigate = parser._chrome_remote.navigate
                 
@@ -196,6 +232,19 @@ def main() -> None:
                 trace("starting parser.parse")
                 parser.parse(writer)
                 trace("parser.parse finished")
+                browser_process = parser._chrome_remote._chrome_browser._proc
+            trace("ChromeRemote closed")
+            if browser_process.poll() is None:
+                trace("Chrome process still running after parser close")
+            else:
+                trace(f"Chrome process exited: code={browser_process.returncode}")
+
+        trace("writer closed")
+        with open(args.output_path, "r", encoding="utf-8-sig") as output_file:
+            output_records = json.load(output_file)
+        if not isinstance(output_records, list):
+            raise RuntimeError("Parser2GIS output is not a JSON array")
+        trace(f"output JSON records: {len(output_records)}")
     finally:
         restore_chrome_flags()
 
