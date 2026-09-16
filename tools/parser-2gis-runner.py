@@ -4,7 +4,9 @@
 from __future__ import annotations
 
 import argparse
+import os
 
+from parser_2gis.chrome import browser as chrome_browser
 from parser_2gis.config import Configuration
 from parser_2gis.parser import get_parser
 from parser_2gis.writer import get_writer
@@ -29,6 +31,32 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def patch_chrome_launch_flags():
+    """Add the Linux flags proven necessary for the snap Chromium binary."""
+    if os.name == "nt":
+        return lambda: None
+
+    original_popen = chrome_browser.subprocess.Popen
+
+    def popen(command, *popen_args, **popen_kwargs):
+        if isinstance(command, (list, tuple)) and any(
+            str(argument).startswith("--remote-debugging-port=")
+            for argument in command
+        ):
+            command = list(command)
+            for flag in ("--no-zygote", "--disable-dev-shm-usage"):
+                if flag not in command:
+                    command.append(flag)
+        return original_popen(command, *popen_args, **popen_kwargs)
+
+    chrome_browser.subprocess.Popen = popen
+
+    def restore() -> None:
+        chrome_browser.subprocess.Popen = original_popen
+
+    return restore
+
+
 def main() -> None:
     args = parse_args()
     chrome_options = {
@@ -43,38 +71,42 @@ def main() -> None:
         parser={"max_records": args.max_records},
     )
 
-    with get_writer(args.output_path, args.format, config.writer) as writer:
-        with get_parser(
-            args.url,
-            chrome_options=config.chrome,
-            parser_options=config.parser,
-        ) as parser:
-            # The upstream parser waits up to two minutes for every 2GIS XHR.
-            # Some VPS requests never close, although the result links are ready.
-            original_wait = type(parser)._wait_requests_finished
-            parser._wait_requests_finished = lambda: original_wait(
-                parser,
-                timeout=15,
-                throw_exception=False,
-            )
+    restore_chrome_flags = patch_chrome_launch_flags()
+    try:
+        with get_writer(args.output_path, args.format, config.writer) as writer:
+            with get_parser(
+                args.url,
+                chrome_options=config.chrome,
+                parser_options=config.parser,
+            ) as parser:
+                # The upstream parser waits up to two minutes for every 2GIS XHR.
+                # Some VPS requests never close, although the result links are ready.
+                original_wait = type(parser)._wait_requests_finished
+                parser._wait_requests_finished = lambda: original_wait(
+                    parser,
+                    timeout=15,
+                    throw_exception=False,
+                )
 
-            # Keep one slow or missing item response from multiplying into minutes:
-            # the upstream parser retries each item three times with a 30-second
-            # wait, and max_records only limits successful records.
-            original_wait_response = parser._chrome_remote.wait_response
-            parser._chrome_remote.wait_response = lambda pattern: original_wait_response(
-                pattern,
-                timeout=5,
-                throw_exception=False,
-            )
+                # Keep one slow or missing item response from multiplying into minutes:
+                # the upstream parser retries each item three times with a 30-second
+                # wait, and max_records only limits successful records.
+                original_wait_response = parser._chrome_remote.wait_response
+                parser._chrome_remote.wait_response = lambda pattern: original_wait_response(
+                    pattern,
+                    timeout=5,
+                    throw_exception=False,
+                )
 
-            original_navigate = parser._chrome_remote.navigate
-            parser._chrome_remote.navigate = lambda url, referer="", timeout=60: original_navigate(
-                url,
-                referer=referer,
-                timeout=min(timeout, 30),
-            )
-            parser.parse(writer)
+                original_navigate = parser._chrome_remote.navigate
+                parser._chrome_remote.navigate = lambda url, referer="", timeout=60: original_navigate(
+                    url,
+                    referer=referer,
+                    timeout=min(timeout, 30),
+                )
+                parser.parse(writer)
+    finally:
+        restore_chrome_flags()
 
 
 if __name__ == "__main__":
