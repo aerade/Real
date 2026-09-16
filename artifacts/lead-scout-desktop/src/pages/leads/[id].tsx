@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/hooks/use-auth";
 import { statusMap } from "@/lib/constants";
 import { Globe, MapPin, Building2, Phone, Mail, FileText, AlertTriangle, ArrowLeft, ArrowRight } from "lucide-react";
-import { Link, useParams } from "wouter";
+import { useLocation, useParams } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -15,11 +15,12 @@ import { cn } from "@/lib/utils";
 export function LeadDetailsPage() {
   const { id } = useParams();
   const leadId = Number(id);
+  const [, setLocation] = useLocation();
   const { session } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   
-  const { data: lead, isLoading } = useGetLead(leadId, {
+  const { data: lead, isLoading, isError, refetch } = useGetLead(leadId, {
     query: { enabled: !!leadId, queryKey: getGetLeadQueryKey(leadId) }
   });
 
@@ -31,6 +32,21 @@ export function LeadDetailsPage() {
   const [isRejecting, setIsRejecting] = useState(false);
   const initializedForId = useRef<number | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const safeExternalUrl = (value?: string | null) => {
+    if (!value) return null;
+    try {
+      const parsed = new URL(value);
+      return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed.href : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const handleBackToSearch = () => {
+    if (window.history.length > 1) window.history.back();
+    else setLocation("/search");
+  };
 
   useEffect(() => {
     if (lead && initializedForId.current !== leadId) {
@@ -98,14 +114,56 @@ export function LeadDetailsPage() {
     });
   };
 
-  if (isLoading || !lead) {
+  if (!leadId) {
     return (
       <AppLayout>
-        <div className="flex h-full items-center justify-center">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <div className="w-3 h-3 rounded-full border-2 border-foreground/30 border-t-foreground animate-spin" />
-            Загрузка данных...
+        <div className="mx-auto flex max-w-xl flex-col items-center justify-center gap-3 py-24 text-center">
+          <p className="text-sm font-semibold text-foreground">Lead not found</p>
+          <p className="text-xs text-muted-foreground">The company identifier is not valid.</p>
+          <Button type="button" variant="outline" size="sm" onClick={() => setLocation("/search")}>Back to search</Button>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="mx-auto max-w-4xl space-y-5 animate-pulse">
+          <div className="h-4 w-24 rounded bg-muted" />
+          <div className="h-9 w-2/3 rounded bg-muted" />
+          <div className="h-16 rounded-lg bg-muted" />
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="h-56 rounded-xl bg-muted" />
+            <div className="h-56 rounded-xl bg-muted" />
           </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (isError) {
+    return (
+      <AppLayout>
+        <div className="mx-auto flex max-w-xl flex-col items-center justify-center gap-3 py-24 text-center">
+          <p className="text-sm font-semibold text-foreground">Could not load this company</p>
+          <p className="text-xs text-muted-foreground">The lead may be unavailable right now. Try again or return to search.</p>
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={() => refetch()}>Try again</Button>
+            <Button type="button" size="sm" onClick={handleBackToSearch}>Back to search</Button>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!lead) {
+    return (
+      <AppLayout>
+        <div className="mx-auto flex max-w-xl flex-col items-center justify-center gap-3 py-24 text-center">
+          <p className="text-sm font-semibold text-foreground">Company not found</p>
+          <p className="text-xs text-muted-foreground">This lead may have been removed or is no longer available.</p>
+          <Button type="button" variant="outline" size="sm" onClick={handleBackToSearch}>Back to search</Button>
         </div>
       </AppLayout>
     );
@@ -114,14 +172,15 @@ export function LeadDetailsPage() {
   const isAssignedToMe = lead.assignee?.id === session?.user?.id;
   const canClaim = !lead.assignee && lead.status === 'new';
   const leadStatus = statusMap[lead.status] || { label: lead.status, variant: 'neutral' };
+  const websiteUrl = safeExternalUrl(lead.website);
 
   return (
     <AppLayout>
       <div className="space-y-4 max-w-4xl mx-auto flex flex-col h-full overflow-y-auto pr-2 pb-10">
-        <Link href="/leads" className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider mb-2">
+        <button type="button" onClick={handleBackToSearch} className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider mb-2">
           <ArrowLeft className="w-3 h-3" />
-          Назад
-        </Link>
+          Back to search
+        </button>
 
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 pb-2">
           <div>
@@ -133,9 +192,9 @@ export function LeadDetailsPage() {
               <span className="flex items-center gap-1">
                 <Building2 className="w-3.5 h-3.5 opacity-70" /> {lead.industry}
               </span>
-              {lead.website && (
-                <a href={lead.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-blue-400/80 hover:underline">
-                  <Globe className="w-3.5 h-3.5 opacity-70" /> {new URL(lead.website).hostname.replace('www.', '')}
+               {websiteUrl && (
+                 <a href={websiteUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-blue-400/80 hover:underline">
+                   <Globe className="w-3.5 h-3.5 opacity-70" /> {new URL(websiteUrl).hostname.replace('www.', '')}
                 </a>
               )}
             </div>
@@ -306,8 +365,8 @@ export function LeadDetailsPage() {
                       <li key={i} className="flex items-start gap-2.5 text-[11px]">
                         <Icon className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0 mt-0.5" />
                         <div className="break-all">
-                          {contact.url ? (
-                            <a href={contact.url} target="_blank" rel="noopener noreferrer" className="text-blue-400/80 hover:underline font-medium">
+                           {safeExternalUrl(contact.url) ? (
+                             <a href={safeExternalUrl(contact.url) ?? undefined} target="_blank" rel="noopener noreferrer" className="text-blue-400/80 hover:underline font-medium">
                               {contact.value}
                             </a>
                           ) : (

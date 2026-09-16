@@ -1,9 +1,9 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("realInstaller", {
-  getInfo: () => ipcRenderer.invoke("installer:get-info"),
+  getInfo: (target) => ipcRenderer.invoke("installer:get-info", target),
   chooseDirectory: () => ipcRenderer.invoke("installer:choose-directory"),
-  install: (target) => ipcRenderer.invoke("installer:install", target),
+  install: (target, options) => ipcRenderer.invoke("installer:install", target, options),
   launch: (executable) => ipcRenderer.invoke("installer:launch", executable),
   windowControl: (action) => ipcRenderer.invoke("installer:window-control", action),
 });

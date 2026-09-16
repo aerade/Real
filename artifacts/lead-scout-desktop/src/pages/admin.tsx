@@ -11,10 +11,8 @@ import {
   KeyRound,
   Laptop,
   LogOut,
-  Map,
   MonitorCog,
   Palette,
-  Plus,
   RotateCcw,
   Search,
   Settings2,
@@ -30,14 +28,7 @@ import {
   LayoutPanelTop,
   Play,
 } from "lucide-react";
-import {
-  getListCountriesQueryKey,
-  getListUsersQueryKey,
-  useCreateCountry,
-  useListCountries,
-  useListUsers,
-} from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { getListUsersQueryKey, useListUsers } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +43,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import realMarkWhite from "@/assets/real-mark-white.svg";
+import realMarkBlack from "@/assets/real-mark.svg";
 
 type SettingsSection = "profile" | "appearance" | "window" | "search" | "workspace" | "about";
 
@@ -78,6 +70,25 @@ type Preferences = {
   startupTab: string;
   toolbarPosition: "top" | "bottom";
   navbarPosition: "top" | "bottom";
+  customTheme: CustomTheme;
+};
+
+type CustomTheme = {
+  background: string;
+  foreground: string;
+  card: string;
+  primary: string;
+  accent: string;
+  border: string;
+};
+
+const defaultCustomTheme: CustomTheme = {
+  background: "#17191b",
+  foreground: "#f3f0ea",
+  card: "#202326",
+  primary: "#e9b872",
+  accent: "#30353a",
+  border: "#42484e",
 };
 
 const defaultPreferences: Preferences = {
@@ -89,7 +100,7 @@ const defaultPreferences: Preferences = {
   font: "bricolage",
   colorfulIcons: false,
   iconColorShift: 285,
-  macButtons: false,
+  macButtons: true,
   titleVersion: false,
   radius: 12,
   borderThickness: 1,
@@ -103,6 +114,7 @@ const defaultPreferences: Preferences = {
   startupTab: "overview",
   toolbarPosition: "top",
   navbarPosition: "top",
+  customTheme: defaultCustomTheme,
 };
 
 const sections: Array<{
@@ -115,17 +127,37 @@ const sections: Array<{
   { id: "appearance", label: "Appearance", description: "Theme and interface density", icon: Palette },
   { id: "window", label: "Window", description: "Startup and window behavior", icon: MonitorCog },
   { id: "search", label: "Search", description: "Lead discovery defaults", icon: FileSearch },
-  { id: "workspace", label: "Workspace", description: "Team and search geography", icon: Users },
+  { id: "workspace", label: "Workspace", description: "Owner access and account control", icon: Users },
   { id: "about", label: "About", description: "Version and support", icon: Info },
 ];
 
 function readPreferences(): Preferences {
   try {
     const saved = window.localStorage.getItem("real:settings") ?? window.localStorage.getItem("lead-scout:settings");
-    return saved ? { ...defaultPreferences, ...JSON.parse(saved) } : defaultPreferences;
+    if (!saved) return defaultPreferences;
+    const parsed = JSON.parse(saved) as Partial<Preferences>;
+    return { ...defaultPreferences, ...parsed, customTheme: { ...defaultCustomTheme, ...(parsed.customTheme ?? {}) } };
   } catch {
     return defaultPreferences;
   }
+}
+
+function hexToHsl(hex: string) {
+  const value = hex.replace("#", "");
+  const red = Number.parseInt(value.slice(0, 2), 16) / 255;
+  const green = Number.parseInt(value.slice(2, 4), 16) / 255;
+  const blue = Number.parseInt(value.slice(4, 6), 16) / 255;
+  const max = Math.max(red, green, blue);
+  const min = Math.min(red, green, blue);
+  const lightness = (max + min) / 2;
+  if (max === min) return `0 0% ${Math.round(lightness * 100)}%`;
+  const delta = max - min;
+  const saturation = lightness > 0.5 ? delta / (2 - max - min) : delta / (max + min);
+  let hue = 0;
+  if (max === red) hue = (green - blue) / delta + (green < blue ? 6 : 0);
+  else if (max === green) hue = (blue - red) / delta + 2;
+  else hue = (red - green) / delta + 4;
+  return `${Math.round(hue * 60)} ${Math.round(saturation * 100)}% ${Math.round(lightness * 100)}%`;
 }
 
 function avatarKey(login?: string) {
@@ -151,8 +183,8 @@ function SettingRow({
         {Icon && (
           <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border/70 bg-background text-muted-foreground">
             <Icon className="h-3.5 w-3.5" />
-          </div>
-        )}
+           </div>
+         )}
         <div className="min-w-0">
           <p className="text-[13px] font-semibold text-foreground">{title}</p>
           <p className="mt-0.5 max-w-[520px] text-xs leading-5 text-muted-foreground">{description}</p>
@@ -203,8 +235,6 @@ export function AdminPage() {
   const [profileNote, setProfileNote] = useState("");
   const [searchCity, setSearchCity] = useState("");
   const [searchIndustry, setSearchIndustry] = useState("");
-  const [newCode, setNewCode] = useState("");
-  const [newName, setNewName] = useState("");
   const [appInfo, setAppInfo] = useState({
     version: "1.0.0",
     platform: "Web preview",
@@ -214,17 +244,11 @@ export function AdminPage() {
     updateConfigured: false,
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const { data: users, isLoading: usersLoading } = useListUsers({
     query: { enabled: isOwner, queryKey: getListUsersQueryKey() },
   });
-  const { data: countries, isLoading: countriesLoading } = useListCountries({
-    query: { enabled: isOwner, queryKey: getListCountriesQueryKey() },
-  });
-  const createCountry = useCreateCountry();
-
   useEffect(() => {
     setPreferences(readPreferences());
     window.realDesktop?.getAppInfo().then(setAppInfo).catch(() => undefined);
@@ -272,25 +296,33 @@ export function AdminPage() {
     document.documentElement.style.setProperty("--settings-border", String(preferences.borderThickness));
     document.documentElement.style.setProperty("--settings-icon-shift", String(preferences.iconColorShift));
     document.documentElement.style.setProperty("--settings-animation-speed", String(preferences.animationSpeed));
-    return () => {
-      delete document.documentElement.dataset.settingsCompact;
-      delete document.documentElement.dataset.settingsReduceMotion;
-      delete document.documentElement.dataset.settingsAccent;
-      delete document.documentElement.dataset.settingsTheme;
-      delete document.documentElement.dataset.settingsFont;
-      delete document.documentElement.dataset.settingsIcons;
-      delete document.documentElement.dataset.settingsIconShift;
-      delete document.documentElement.dataset.settingsMacButtons;
-      delete document.documentElement.dataset.settingsTitleVersion;
-      delete document.documentElement.dataset.settingsToolbarPosition;
-      delete document.documentElement.dataset.settingsNavbarPosition;
-      delete document.documentElement.dataset.settingsAnimationStyle;
-      delete document.documentElement.dataset.settingsAnimations;
-      delete document.documentElement.dataset.settingsAnimationSpeed;
-      delete document.documentElement.dataset.settingsNavStyle;
-      delete document.documentElement.dataset.settingsBorderColor;
-      delete document.documentElement.dataset.settingsRainbow;
+    const customProperties: Record<string, string> = {
+      "--background": hexToHsl(preferences.customTheme.background),
+      "--foreground": hexToHsl(preferences.customTheme.foreground),
+      "--card": hexToHsl(preferences.customTheme.card),
+      "--card-foreground": hexToHsl(preferences.customTheme.foreground),
+      "--primary": hexToHsl(preferences.customTheme.primary),
+      "--primary-foreground": hexToHsl(preferences.customTheme.background),
+      "--accent": hexToHsl(preferences.customTheme.accent),
+      "--accent-foreground": hexToHsl(preferences.customTheme.foreground),
+      "--border": hexToHsl(preferences.customTheme.border),
+      "--input": hexToHsl(preferences.customTheme.border),
+      "--card-border": hexToHsl(preferences.customTheme.border),
+      "--muted": hexToHsl(preferences.customTheme.accent),
+      "--muted-foreground": hexToHsl(preferences.customTheme.foreground),
+      "--sidebar": hexToHsl(preferences.customTheme.background),
+      "--sidebar-foreground": hexToHsl(preferences.customTheme.foreground),
+      "--sidebar-border": hexToHsl(preferences.customTheme.border),
+      "--popover": hexToHsl(preferences.customTheme.card),
+      "--popover-foreground": hexToHsl(preferences.customTheme.foreground),
+      "--popover-border": hexToHsl(preferences.customTheme.border),
+      "--ring": hexToHsl(preferences.customTheme.primary),
     };
+    if (preferences.theme === "custom") {
+      Object.entries(customProperties).forEach(([key, value]) => document.documentElement.style.setProperty(key, value));
+    } else {
+      Object.keys(customProperties).forEach((key) => document.documentElement.style.removeProperty(key));
+    }
   }, [preferences]);
 
   const filteredSections = useMemo(() => {
@@ -304,7 +336,9 @@ export function AdminPage() {
   const updatePreference = <K extends keyof Preferences>(key: K, value: Preferences[K]) => {
     setPreferences((current) => {
       const next = { ...current, [key]: value };
-      window.localStorage.setItem("real:settings", JSON.stringify(next));
+      const serialized = JSON.stringify(next);
+      window.localStorage.setItem("real:settings", serialized);
+      window.localStorage.setItem("lead-scout:settings", serialized);
       window.dispatchEvent(new Event("real:settings-changed"));
       return next;
     });
@@ -345,23 +379,6 @@ export function AdminPage() {
     toast({ title: "Profile image removed" });
   };
 
-  const handleAddCountry = (event: FormEvent) => {
-    event.preventDefault();
-    if (!newCode.trim() || !newName.trim() || !isOwner) return;
-    createCountry.mutate(
-      { data: { code: newCode.trim().toUpperCase(), name: newName.trim() } },
-      {
-        onSuccess: () => {
-          setNewCode("");
-          setNewName("");
-          queryClient.invalidateQueries({ queryKey: getListCountriesQueryKey() });
-          toast({ title: "Country added", description: "The geography list is ready for search." });
-        },
-        onError: () => toast({ title: "Could not add country", description: "Try again in a moment." }),
-      },
-    );
-  };
-
   const saveSearchDefaults = (event: FormEvent) => {
     event.preventDefault();
     if (login) {
@@ -375,7 +392,9 @@ export function AdminPage() {
 
   const resetPreferences = () => {
     setPreferences(defaultPreferences);
-    window.localStorage.setItem("real:settings", JSON.stringify(defaultPreferences));
+    const serialized = JSON.stringify(defaultPreferences);
+    window.localStorage.setItem("real:settings", serialized);
+    window.localStorage.setItem("lead-scout:settings", serialized);
     if (login) {
       const key = login.toLowerCase();
       window.localStorage.removeItem(`real:search-defaults:${key}`);
@@ -386,6 +405,17 @@ export function AdminPage() {
     setProfileNote("");
     window.dispatchEvent(new Event("real:settings-changed"));
     toast({ title: "Preferences reset", description: "Real is back to its default workspace behavior." });
+  };
+
+  const updateCustomTheme = (key: keyof CustomTheme, value: string) => {
+    setPreferences((current) => {
+      const next = { ...current, theme: "custom", customTheme: { ...current.customTheme, [key]: value } };
+      const serialized = JSON.stringify(next);
+      window.localStorage.setItem("real:settings", serialized);
+      window.localStorage.setItem("lead-scout:settings", serialized);
+      window.dispatchEvent(new Event("real:settings-changed"));
+      return next;
+    });
   };
 
   const renderProfile = () => (
@@ -445,8 +475,8 @@ export function AdminPage() {
           <p className="text-sm font-semibold text-foreground">End this session</p>
            <p className="mt-1 text-xs text-muted-foreground">Sign out of Real on this device.</p>
         </div>
-        <Button type="button" variant="outline" onClick={logout} className="border-destructive/30 text-destructive hover:bg-destructive hover:text-destructive-foreground">
-          <LogOut className="h-3.5 w-3.5" />
+         <Button type="button" variant="outline" onClick={logout} className="border-destructive/30 text-destructive hover:bg-destructive hover:text-destructive-foreground">
+           <LogOut className="h-3.5 w-3.5 text-destructive" />
           Sign out
         </Button>
       </div>
@@ -461,15 +491,9 @@ export function AdminPage() {
         description="Shape Real around the way you investigate: color, type, motion, and window details."
       />
       <div className="mt-6 space-y-5">
-        <div className="rounded-lg border border-border/70 p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <div><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Theme</p><p className="mt-1 text-xs text-muted-foreground">The color language applied across the workspace.</p></div>
-            <Select value={preferences.theme} onValueChange={(value) => updatePreference("theme", value)}>
-              <SelectTrigger className="h-8 w-36 text-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>{["dark", "light"].map((item) => <SelectItem key={item} value={item}>{item[0].toUpperCase() + item.slice(1)}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <div className="rounded-lg border border-border/70 p-5">
+           <div className="mb-4"><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Theme</p><p className="mt-1 text-xs text-muted-foreground">Choose a complete color language for the workspace.</p></div>
+           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {[
               ["dark", "Dark", "bg-[#0b0d0d]"], ["blue", "Blue", "bg-[#6db5e6]"], ["purple", "Purple", "bg-[#bda4ec]"],
               ["red", "Red", "bg-[#eb7479]"], ["orange", "Orange", "bg-[#dfae83]"], ["pink", "Pink", "bg-[#dba5be]"],
@@ -482,7 +506,28 @@ export function AdminPage() {
                 <span className="mt-2 flex items-center justify-between text-[11px] font-semibold">{label}{preferences.theme === value && <Check className="h-3.5 w-3.5 text-primary" />}</span>
               </button>
             ))}
+             <button type="button" onClick={() => updatePreference("theme", "custom")} className={cn("rounded-md border p-2 text-left transition-colors", preferences.theme === "custom" ? "border-primary bg-primary/10" : "border-border/70 hover:border-primary/50")}>
+               <span className="flex h-5 overflow-hidden rounded-sm">
+                 <span className="w-1/2" style={{ backgroundColor: preferences.customTheme.primary }} />
+                 <span className="w-1/4" style={{ backgroundColor: preferences.customTheme.card }} />
+                 <span className="w-1/4" style={{ backgroundColor: preferences.customTheme.accent }} />
+               </span>
+               <span className="mt-2 flex items-center justify-between text-[11px] font-semibold">Custom{preferences.theme === "custom" && <Check className="h-3.5 w-3.5 text-primary" />}</span>
+             </button>
           </div>
+           {preferences.theme === "custom" && (
+             <div className="mt-4 grid grid-cols-2 gap-3 rounded-md border border-border/60 bg-background/40 p-3 sm:grid-cols-3">
+               {([
+                 ["background", "Canvas"], ["foreground", "Text"], ["card", "Cards"],
+                 ["primary", "Accent"], ["accent", "Muted"], ["border", "Borders"],
+               ] as Array<[keyof CustomTheme, string]>).map(([key, label]) => (
+                 <label key={key} className="flex items-center justify-between gap-2 text-[10px] font-semibold text-muted-foreground">
+                   {label}
+                   <input type="color" value={preferences.customTheme[key]} onChange={(event) => updateCustomTheme(key, event.target.value)} className="h-7 w-9 cursor-pointer rounded border border-border bg-transparent p-0.5" aria-label={`${label} color`} />
+                 </label>
+               ))}
+             </div>
+           )}
         </div>
         <div className="rounded-lg border border-border/70 px-5">
           <SettingRow icon={PaletteIcon} title="Font" description="Choose the voice of labels, lists, and controls.">
@@ -494,6 +539,27 @@ export function AdminPage() {
           </SettingRow>
           <SettingRow icon={SlidersHorizontal} title="Compact workspace" description="Reduce row height and secondary spacing across lead lists."><Switch checked={preferences.compact} onCheckedChange={(value) => updatePreference("compact", value)} /></SettingRow>
         </div>
+         <div className="rounded-lg border border-border/70 px-5">
+           <SettingRow icon={LayoutPanelTop} title="Navigation" description="Keep workspace navigation close at hand.">
+             <div className="grid grid-cols-2 gap-2">
+               {([["labels", "Labels", "Overview · Search"], ["icons", "Icons", "Compact rail"]] as const).map(([value, label, hint]) => (
+                 <button key={value} type="button" onClick={() => updatePreference("topBarStyle", value)} className={cn("min-w-[92px] rounded-md border px-2.5 py-2 text-left transition-colors", preferences.topBarStyle === value ? "border-primary bg-primary/10 text-foreground" : "border-border/70 text-muted-foreground hover:border-primary/50")}>
+                   <span className="block text-[10px] font-bold">{label}</span>
+                   <span className="mt-1 block truncate text-[9px] opacity-70">{hint}</span>
+                 </button>
+               ))}
+             </div>
+           </SettingRow>
+           <SettingRow icon={Play} title="Startup tab" description="Choose which workspace opens when Real starts.">
+             <Select value={preferences.startupTab} onValueChange={(value) => updatePreference("startupTab", value)}><SelectTrigger className="h-8 w-32 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="overview">Overview</SelectItem><SelectItem value="search">Search</SelectItem><SelectItem value="leads">Clients</SelectItem><SelectItem value="admin">Settings</SelectItem></SelectContent></Select>
+           </SettingRow>
+           <SettingRow icon={SlidersHorizontal} title="Toolbar position" description="Where action controls sit around the editor.">
+             <Select value={preferences.toolbarPosition} onValueChange={(value) => updatePreference("toolbarPosition", value as Preferences["toolbarPosition"])}><SelectTrigger className="h-8 w-32 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="top">Top</SelectItem><SelectItem value="bottom">Bottom</SelectItem></SelectContent></Select>
+           </SettingRow>
+           <SettingRow icon={LayoutPanelTop} title="Navbar position" description="Where the main navigation tabs sit.">
+             <Select value={preferences.navbarPosition} onValueChange={(value) => updatePreference("navbarPosition", value as Preferences["navbarPosition"])}><SelectTrigger className="h-8 w-32 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="top">Top</SelectItem><SelectItem value="bottom">Bottom</SelectItem></SelectContent></Select>
+           </SettingRow>
+         </div>
         <div className="rounded-lg border border-border/70 px-5">
           <SettingRow icon={Laptop} title="macOS button layout" description="Use the familiar left-aligned window controls."><Switch checked={preferences.macButtons} onCheckedChange={(value) => updatePreference("macButtons", value)} /></SettingRow>
           <SettingRow icon={Eye} title="App version in title bar" description="Show the installed Real version next to the app name."><Switch checked={preferences.titleVersion} onCheckedChange={(value) => updatePreference("titleVersion", value)} /></SettingRow>
@@ -505,7 +571,16 @@ export function AdminPage() {
         <div className="rounded-lg border border-border/70 px-5">
           <SettingRow icon={Sparkles} title="Enable animations" description="Turn interface motion on or off across the app."><Switch checked={preferences.animations} onCheckedChange={(value) => updatePreference("animations", value)} /></SettingRow>
           <SettingRow icon={SlidersHorizontal} title="Animation speed" description={`${preferences.animationSpeed.toFixed(1)}× transition speed.`}><div className="flex w-44 items-center gap-3"><Slider value={[preferences.animationSpeed]} min={0.5} max={2} step={0.1} onValueChange={([value]) => updatePreference("animationSpeed", value)} /><span className="w-8 text-right font-mono text-[10px] text-muted-foreground">{preferences.animationSpeed.toFixed(1)}×</span></div></SettingRow>
-          <SettingRow icon={Play} title="Animation style" description="Choose the feel of transitions."><div className="flex rounded-md bg-muted p-0.5">{[["smooth", "Smooth"], ["snappy", "Snappy"], ["minimal", "Minimal"]].map(([value, label]) => <button key={value} type="button" onClick={() => updatePreference("animationStyle", value as Preferences["animationStyle"])} className={cn("rounded px-2.5 py-1.5 text-[10px] font-semibold", preferences.animationStyle === value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground")}>{label}</button>)}</div></SettingRow>
+           <SettingRow icon={Play} title="Animation style" description="Choose the feel of transitions.">
+             <div className="grid grid-cols-3 gap-1.5">
+               {([["smooth", "Smooth", "Flow"], ["snappy", "Snappy", "Quick"], ["minimal", "Minimal", "Still"]] as const).map(([value, label, hint]) => (
+                 <button key={value} type="button" onClick={() => updatePreference("animationStyle", value)} className={cn("min-w-[66px] rounded-md border px-2 py-1.5 text-left transition-colors", preferences.animationStyle === value ? "border-primary bg-primary/10 text-foreground" : "border-border/70 text-muted-foreground hover:border-primary/50")}>
+                   <span className="block text-[10px] font-bold">{label}</span>
+                   <span className="mt-0.5 block text-[9px] opacity-70">{hint}</span>
+                 </button>
+               ))}
+             </div>
+           </SettingRow>
           <SettingRow icon={Volume2} title="Button sound" description="Play a short sound when a button is pressed."><Select value={preferences.buttonSound} onValueChange={(value) => updatePreference("buttonSound", value)}><SelectTrigger className="h-8 w-32 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="off">Off</SelectItem><SelectItem value="tap">Tap</SelectItem><SelectItem value="soft">Soft click</SelectItem><SelectItem value="pop">Pop</SelectItem></SelectContent></Select></SettingRow>
         </div>
       </div>
@@ -530,27 +605,6 @@ export function AdminPage() {
         <div className="flex items-start gap-3">
           <CircleHelp className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
           <p className="text-xs leading-5 text-muted-foreground">Window preferences are local to this desktop installation and do not change your account or workspace permissions.</p>
-        </div>
-      </div>
-      <div className="mt-6">
-        <SectionHeader eyebrow="Navigation" title="Navigation" description="Choose how Real opens and where its workspace controls live." />
-        <div className="mt-5 rounded-lg border border-border/70 px-5">
-          <SettingRow icon={LayoutPanelTop} title="Top bar style" description="Choose how tabs are displayed in the navigation bar.">
-            <div className="flex rounded-md bg-muted p-0.5">
-              {([["icons", "Icon only"], ["labels", "Icon + label"]] as const).map(([value, label]) => (
-                <button key={value} type="button" onClick={() => updatePreference("topBarStyle", value)} className={cn("rounded px-3 py-2 text-[10px] font-semibold", preferences.topBarStyle === value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground")}>{label}</button>
-              ))}
-            </div>
-          </SettingRow>
-          <SettingRow icon={Play} title="Startup tab" description="Choose which workspace opens when Real starts.">
-            <Select value={preferences.startupTab} onValueChange={(value) => updatePreference("startupTab", value)}><SelectTrigger className="h-8 w-32 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="overview">Overview</SelectItem><SelectItem value="search">Search</SelectItem><SelectItem value="leads">Clients</SelectItem><SelectItem value="admin">Settings</SelectItem></SelectContent></Select>
-          </SettingRow>
-          <SettingRow icon={SlidersHorizontal} title="Toolbar position" description="Where action controls sit around the editor.">
-            <Select value={preferences.toolbarPosition} onValueChange={(value) => updatePreference("toolbarPosition", value as Preferences["toolbarPosition"])}><SelectTrigger className="h-8 w-32 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="top">Top</SelectItem><SelectItem value="bottom">Bottom</SelectItem></SelectContent></Select>
-          </SettingRow>
-          <SettingRow icon={LayoutPanelTop} title="Navbar position" description="Where the main navigation tabs sit.">
-            <Select value={preferences.navbarPosition} onValueChange={(value) => updatePreference("navbarPosition", value as Preferences["navbarPosition"])}><SelectTrigger className="h-8 w-32 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="top">Top</SelectItem><SelectItem value="bottom">Bottom</SelectItem></SelectContent></Select>
-          </SettingRow>
         </div>
       </div>
     </>
@@ -579,32 +633,31 @@ export function AdminPage() {
 
   const renderWorkspace = () => (
     <>
-      <SectionHeader eyebrow="Owner controls" title="Workspace" description="Review the people and countries available to your team. Workspace administration is restricted to owners." />
+       <SectionHeader eyebrow="Owner controls" title="Workspace" description="Review the owner account that administers this workspace." />
       {!isOwner ? (
         <div className="mt-6 flex items-start gap-3 rounded-lg border border-border/70 bg-background/40 p-5">
           <Shield className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
           <div>
             <p className="text-sm font-semibold text-foreground">Owner access required</p>
-            <p className="mt-1 text-xs leading-5 text-muted-foreground">Team membership and search geography are managed by the workspace owner.</p>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">Team access is managed by the workspace owner.</p>
           </div>
         </div>
       ) : (
         <div className="mt-6 space-y-6">
           <div className="rounded-lg border border-border/70 p-5">
-            <div className="mb-4 flex items-center justify-between">
+             <div className="mb-4">
               <div>
                 <p className="text-sm font-semibold text-foreground">Team members</p>
-                <p className="mt-1 text-xs text-muted-foreground">People who can discover and claim leads.</p>
+                 <p className="mt-1 text-xs text-muted-foreground">Workspace ownership and access administration.</p>
               </div>
-              <Badge variant="outline" className="font-mono text-[10px]">{users?.length ?? 0} members</Badge>
             </div>
             {usersLoading ? (
               <div className="space-y-2">
-                {[1, 2, 3].map((item) => <div key={item} className="h-12 animate-pulse rounded-md bg-muted/50" />)}
+               <div className="h-12 animate-pulse rounded-md bg-muted/50" />
               </div>
-            ) : users?.length ? (
+             ) : users?.filter((user) => user.role === "owner").length ? (
               <div className="space-y-2">
-                {users.map((user) => (
+                 {users.filter((user) => user.role === "owner").map((user) => (
                   <div key={user.id} className="flex items-center justify-between rounded-md border border-border/60 bg-background/50 px-3 py-2.5">
                     <div className="flex min-w-0 items-center gap-3">
                       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-[11px] font-bold text-primary">{user.name.charAt(0).toUpperCase()}</div>
@@ -620,33 +673,7 @@ export function AdminPage() {
                   </div>
                 ))}
               </div>
-            ) : <p className="rounded-md border border-dashed border-border p-4 text-xs text-muted-foreground">No team members found.</p>}
-          </div>
-          <div className="rounded-lg border border-border/70 p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <p className="flex items-center gap-2 text-sm font-semibold text-foreground"><Map className="h-4 w-4 text-muted-foreground" />Search geography</p>
-                <p className="mt-1 text-xs text-muted-foreground">Countries enabled for lead discovery.</p>
-              </div>
-              <Badge variant="outline" className="font-mono text-[10px]">{countries?.length ?? 0} countries</Badge>
-            </div>
-            <form onSubmit={handleAddCountry} className="mb-4 flex gap-2">
-              <Input value={newCode} onChange={(event) => setNewCode(event.target.value.toUpperCase())} placeholder="Code" maxLength={2} className="h-8 w-16 text-center font-mono text-xs uppercase" />
-              <Input value={newName} onChange={(event) => setNewName(event.target.value)} placeholder="Country name" className="h-8 flex-1 text-xs" />
-              <Button type="submit" size="icon" className="h-8 w-8" disabled={createCountry.isPending || !newCode.trim() || !newName.trim()}><Plus className="h-3.5 w-3.5" /></Button>
-            </form>
-            {countriesLoading ? (
-              <div className="space-y-2">{[1, 2].map((item) => <div key={item} className="h-10 animate-pulse rounded-md bg-muted/50" />)}</div>
-            ) : countries?.length ? (
-              <div className="grid grid-cols-2 gap-2">
-                {countries.map((country) => (
-                  <div key={country.code} className="flex items-center justify-between rounded-md border border-border/60 bg-background/50 px-3 py-2">
-                    <div className="flex items-center gap-2"><span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">{country.code}</span><span className="text-xs font-medium text-foreground">{country.name}</span></div>
-                    <span className={cn("text-[9px] font-bold uppercase tracking-wider", country.enabled ? "text-emerald-400" : "text-muted-foreground")}>{country.enabled ? "Enabled" : "Disabled"}</span>
-                  </div>
-                ))}
-              </div>
-            ) : <p className="rounded-md border border-dashed border-border p-4 text-xs text-muted-foreground">No countries configured.</p>}
+             ) : <p className="rounded-md border border-dashed border-border p-4 text-xs text-muted-foreground">No owner account found.</p>}
           </div>
         </div>
       )}
@@ -658,7 +685,7 @@ export function AdminPage() {
        <SectionHeader eyebrow="System" title="About Real" description="A focused desktop workspace for finding, qualifying, and moving the right leads forward." />
       <div className="mt-6 overflow-hidden rounded-lg border border-border/70">
         <div className="flex items-center gap-4 border-b border-border/70 bg-background/50 p-5">
-           <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary p-2"><img src={realMarkWhite} alt="Real" className="h-full w-full object-contain" /></div>
+            <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-transparent"><img src={preferences.theme === "light" ? realMarkBlack : realMarkWhite} alt="Real app mark" className="h-full w-full object-contain" /></div>
            <div className="flex-1"><p className="text-sm font-semibold text-foreground">Real</p><p className="mt-1 text-xs text-muted-foreground">Desktop edition</p></div>
            <Badge variant="outline" className="font-mono text-[10px]">v{appInfo.version}</Badge>
         </div>

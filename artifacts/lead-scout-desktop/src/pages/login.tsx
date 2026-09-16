@@ -58,8 +58,6 @@ export function Login() {
 
   return (
     <div className="h-full w-full flex flex-col bg-background text-foreground relative select-none rounded-2xl overflow-hidden border border-border/20 shadow-2xl">
-      <div className="noise-bg" />
-      
       {/* Top Bar Decorative */}
       <header className="relative z-50 h-14 flex items-center px-4 shrink-0 absolute top-0 left-0 w-full pointer-events-auto" style={{ WebkitAppRegion: "drag" } as React.CSSProperties}>
         <div className="pointer-events-auto h-full" style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}>

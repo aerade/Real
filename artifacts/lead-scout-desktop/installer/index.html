@@ -3,48 +3,89 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Install Real</title>
+    <title>Real</title>
     <style>
       :root { color-scheme: dark; font-family: "Segoe UI", system-ui, sans-serif; }
       * { box-sizing: border-box; }
-      body { margin: 0; min-height: 100vh; color: #f7f7f5; background: #070808; overflow: hidden; }
-      .shell { min-height: 100vh; position: relative; border: 1px solid rgba(255,255,255,.15); border-radius: 22px; overflow: hidden; background: #090b0b; }
-      .backdrop { position: absolute; inset: 0; background: center / cover no-repeat url("installer-bg.png"); opacity: .42; }
-      .veil { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(3,5,5,.96) 0%, rgba(3,5,5,.79) 48%, rgba(3,5,5,.35) 100%); }
-      header { height: 54px; position: relative; z-index: 2; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; -webkit-app-region: drag; }
-      header strong { letter-spacing: .14em; font-size: 11px; text-transform: uppercase; }
-      .controls { display: flex; gap: 9px; -webkit-app-region: no-drag; }
-      .controls button { width: 12px; height: 12px; padding: 0; border: 0; border-radius: 50%; cursor: pointer; }
-      .min { background: #f0b52d; } .max { background: #45c86a; } .close { background: #f26058; }
-      main { position: relative; z-index: 1; display: grid; grid-template-columns: 1.05fr .95fr; gap: 48px; padding: 52px 68px 56px; }
-      .mark { font-size: 76px; font-weight: 800; letter-spacing: .3em; line-height: 1; text-shadow: 0 12px 38px rgba(0,0,0,.5); }
-      .eyebrow { margin: 20px 0 12px; color: rgba(255,255,255,.55); font: 700 10px ui-monospace, monospace; letter-spacing: .18em; text-transform: uppercase; }
-      h1 { margin: 0; font-size: 34px; letter-spacing: -.04em; }
-      .copy { max-width: 420px; color: rgba(255,255,255,.62); line-height: 1.6; font-size: 14px; }
-      .panel { align-self: center; padding: 24px; border: 1px solid rgba(255,255,255,.15); border-radius: 16px; background: rgba(14,16,16,.82); box-shadow: 0 18px 55px rgba(0,0,0,.35); }
-      label { display: block; color: rgba(255,255,255,.54); font-size: 10px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
-      .path { display: flex; gap: 8px; margin-top: 9px; }
-      input { min-width: 0; flex: 1; height: 40px; padding: 0 12px; color: #fff; border: 1px solid rgba(255,255,255,.14); border-radius: 8px; outline: none; background: rgba(255,255,255,.06); font: 12px ui-monospace, monospace; }
-      button { color: #fff; border: 1px solid rgba(255,255,255,.16); border-radius: 8px; background: rgba(255,255,255,.09); cursor: pointer; }
-      button:hover { background: rgba(255,255,255,.17); } button:disabled { cursor: default; opacity: .55; }
-      .browse { width: 74px; font-size: 11px; font-weight: 700; }
-      .install { width: 100%; height: 44px; margin-top: 20px; color: #080909; border: 0; background: #f6f6f4; font-weight: 800; }
+      body { margin: 0; min-height: 100vh; overflow: hidden; color: #f5f5f2; background: #080909; }
+      button, input { font: inherit; }
+      .shell { position: relative; min-height: 100vh; overflow: hidden; border: 1px solid rgba(255,255,255,.13); border-radius: 18px; background: #090a0a; }
+      .backdrop { position: absolute; inset: 0; background: center / cover no-repeat url("installer-bg.png"); opacity: .28; }
+      .veil { position: absolute; inset: 0; background: linear-gradient(110deg, rgba(6,8,8,.98) 0%, rgba(6,8,8,.91) 48%, rgba(6,8,8,.62) 100%); }
+      header { position: relative; z-index: 2; display: flex; height: 58px; align-items: center; justify-content: space-between; padding: 0 20px; -webkit-app-region: drag; border-bottom: 1px solid rgba(255,255,255,.09); }
+      .controls { display: flex; gap: 8px; -webkit-app-region: no-drag; }
+      .controls button { width: 11px; height: 11px; padding: 0; border: 0; border-radius: 50%; cursor: pointer; }
+      .min { background: #e3ad37; } .max { background: #4fba70; } .close { background: #dc605b; }
+      .brand { display: flex; align-items: center; gap: 10px; -webkit-app-region: no-drag; }
+      .brand img { width: 94px; height: 28px; object-fit: contain; }
+      .brand span { color: rgba(255,255,255,.42); font: 600 10px ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; }
+      main { position: relative; z-index: 1; display: grid; grid-template-columns: 1.1fr .9fr; gap: 54px; padding: 54px 70px 60px; }
+      .intro { align-self: center; max-width: 430px; }
+      .eyebrow { margin: 0 0 14px; color: rgba(255,255,255,.46); font: 700 10px ui-monospace, monospace; letter-spacing: .17em; text-transform: uppercase; }
+      h1 { margin: 0; max-width: 380px; font-size: 36px; line-height: 1.04; letter-spacing: -.045em; }
+      .copy { margin: 17px 0 0; max-width: 400px; color: rgba(255,255,255,.58); font-size: 14px; line-height: 1.65; }
+      .meta { display: flex; gap: 18px; margin-top: 30px; color: rgba(255,255,255,.42); font: 10px ui-monospace, monospace; text-transform: uppercase; letter-spacing: .08em; }
+      .panel { align-self: center; padding: 22px; border: 1px solid rgba(255,255,255,.14); border-radius: 14px; background: rgba(16,18,18,.88); box-shadow: 0 20px 60px rgba(0,0,0,.32); }
+      .panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+      .panel h2 { margin: 0; font-size: 15px; letter-spacing: -.01em; }
+      .panel-subtitle { margin: 5px 0 0; color: rgba(255,255,255,.46); font-size: 11px; line-height: 1.45; }
+      .state { padding: 5px 7px; border: 1px solid rgba(255,255,255,.12); border-radius: 5px; color: rgba(255,255,255,.52); font: 700 9px ui-monospace, monospace; text-transform: uppercase; white-space: nowrap; }
+      .state.installed { border-color: rgba(104,202,132,.3); color: #8bd59c; }
+      label.caption { display: block; margin-top: 22px; color: rgba(255,255,255,.44); font: 700 9px ui-monospace, monospace; letter-spacing: .13em; text-transform: uppercase; }
+      .path { display: flex; gap: 8px; margin-top: 8px; }
+      input[type="text"] { min-width: 0; flex: 1; height: 38px; padding: 0 10px; color: #fff; border: 1px solid rgba(255,255,255,.13); border-radius: 7px; outline: none; background: rgba(255,255,255,.055); font: 11px ui-monospace, monospace; }
+      input[type="text"]:focus { border-color: rgba(255,255,255,.38); }
+      button { color: #fff; border: 1px solid rgba(255,255,255,.14); border-radius: 7px; background: rgba(255,255,255,.075); cursor: pointer; }
+      button:hover { background: rgba(255,255,255,.14); } button:disabled { cursor: default; opacity: .5; }
+      .browse { width: 68px; font-size: 10px; font-weight: 700; }
+      .options { display: grid; gap: 8px; margin-top: 17px; }
+      .option { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border: 1px solid rgba(255,255,255,.1); border-radius: 7px; color: rgba(255,255,255,.72); font-size: 11px; cursor: pointer; }
+      .option:hover { border-color: rgba(255,255,255,.24); }
+      .option input { width: 14px; height: 14px; accent-color: #f5f5f2; }
+      .status { min-height: 37px; margin-top: 16px; color: rgba(255,255,255,.55); font-size: 11px; line-height: 1.5; }
+      .progress { height: 4px; overflow: hidden; border-radius: 8px; background: rgba(255,255,255,.11); }
+      .bar { width: 0; height: 100%; border-radius: inherit; background: #f5f5f2; transition: width .3s ease; }
+      .install { width: 100%; height: 42px; margin-top: 18px; color: #0a0b0b; border: 0; background: #f5f5f2; font-size: 12px; font-weight: 800; }
       .install:hover { background: #fff; }
-      .status { min-height: 40px; margin-top: 16px; color: rgba(255,255,255,.62); font-size: 12px; line-height: 1.5; }
-      .progress { height: 4px; overflow: hidden; border-radius: 10px; background: rgba(255,255,255,.12); }
-      .bar { width: 0%; height: 100%; border-radius: inherit; background: #fff; transition: width .3s ease; }
-      .checks { display: flex; gap: 12px; margin-top: 17px; color: rgba(255,255,255,.42); font-size: 10px; }
-      .done { display: none; margin-top: 16px; gap: 8px; } .done.show { display: flex; }
-      @media (max-width: 760px) { main { grid-template-columns: 1fr; gap: 20px; padding: 34px 28px; } .mark { font-size: 56px; } }
+      .launch { display: none; }
+      .launch.show { display: block; }
+      @media (max-width: 760px) { main { grid-template-columns: 1fr; gap: 28px; padding: 34px 28px; } .intro { max-width: none; } .panel { width: 100%; } }
     </style>
   </head>
   <body>
     <div class="shell">
       <div class="backdrop"></div><div class="veil"></div>
-      <header><strong>Real installer</strong><div class="controls"><button class="min" aria-label="Minimize"></button><button class="max" aria-label="Maximize"></button><button class="close" aria-label="Close"></button></div></header>
+      <header>
+        <div class="controls">
+          <button class="min" aria-label="Minimize"></button>
+          <button class="max" aria-label="Maximize"></button>
+          <button class="close" aria-label="Close"></button>
+        </div>
+        <div class="brand"><img src="real-logo-horizontal-white.svg" alt="Real" /><span>Desktop edition</span></div>
+      </header>
       <main>
-        <section><div class="mark">REAL</div><p class="eyebrow">Private workspace</p><h1>Install Real</h1><p class="copy">A focused desktop workspace for discovering, qualifying, and managing business leads. This installer is built specifically for Real and does not use the standard Windows installer UI.</p></section>
-        <section class="panel"><label for="path">Installation folder</label><div class="path"><input id="path" /><button class="browse">Browse</button></div><div class="status" id="status">Ready to install the latest Real workspace.</div><div class="progress"><div class="bar" id="bar"></div></div><div class="checks"><span>✓ Desktop shortcut</span><span>✓ Start menu shortcut</span></div><button class="install" id="install">Install Real</button><div class="done" id="done"><button class="install" id="launch">Launch Real</button></div></section>
+        <section class="intro">
+          <p class="eyebrow">Private workspace</p>
+          <h1>Install Real on this computer.</h1>
+          <p class="copy">A focused desktop workspace for discovering, qualifying, and managing business leads. Choose where it lives and which shortcuts you want.</p>
+          <div class="meta"><span>Real desktop</span><span id="version">v—</span></div>
+        </section>
+        <section class="panel">
+          <div class="panel-head">
+            <div><h2 id="action-title">Install Real</h2><p class="panel-subtitle">Choose a folder and finish in one step.</p></div>
+            <span id="state" class="state">New install</span>
+          </div>
+          <label class="caption" for="path">Installation folder</label>
+          <div class="path"><input id="path" type="text" /><button class="browse">Browse</button></div>
+          <div class="options">
+            <label class="option"><input id="desktop-shortcut" type="checkbox" checked /> Desktop shortcut</label>
+            <label class="option"><input id="start-menu-shortcut" type="checkbox" checked /> Start menu shortcut</label>
+          </div>
+          <div class="status" id="status">Checking this computer for an existing Real installation…</div>
+          <div class="progress"><div class="bar" id="bar"></div></div>
+          <button class="install" id="install">Install Real</button>
+          <button class="install launch" id="launch">Launch Real</button>
+        </section>
       </main>
     </div>
     <script>
@@ -53,23 +94,46 @@
       const status = document.querySelector("#status");
       const bar = document.querySelector("#bar");
       const installButton = document.querySelector("#install");
-      const done = document.querySelector("#done");
       const launchButton = document.querySelector("#launch");
+      const actionTitle = document.querySelector("#action-title");
+      const state = document.querySelector("#state");
+      const version = document.querySelector("#version");
+      const desktopShortcut = document.querySelector("#desktop-shortcut");
+      const startMenuShortcut = document.querySelector("#start-menu-shortcut");
       let executable = "";
       const controls = { min: "minimize", max: "maximize", close: "close" };
       Object.entries(controls).forEach(([className, action]) => document.querySelector(`.${className}`).onclick = () => api.windowControl(action));
-      api.getInfo().then((info) => { pathInput.value = info.target; if (!info.payloadReady) status.textContent = "Installer payload is missing."; });
-      document.querySelector(".browse").onclick = async () => { const selected = await api.chooseDirectory(); if (selected) pathInput.value = selected; };
+      function setInfo(info) {
+        pathInput.value = info.target;
+        version.textContent = `v${info.version}`;
+        const installed = Boolean(info.installed);
+        actionTitle.textContent = installed ? "Update Real" : "Install Real";
+        installButton.textContent = installed ? "Update Real" : "Install Real";
+        state.textContent = installed ? "Installed" : "New install";
+        state.classList.toggle("installed", installed);
+        status.textContent = installed ? "An existing Real installation was found. You can safely update it here." : "Ready to install Real in the selected folder.";
+        bar.style.width = "0%";
+      }
+      api.getInfo().then(setInfo).catch(() => { status.textContent = "Could not inspect the installation folder."; });
+      pathInput.addEventListener("change", async () => { const info = await api.getInfo(pathInput.value); setInfo(info); });
+      document.querySelector(".browse").onclick = async () => {
+        const selected = await api.chooseDirectory();
+        if (!selected) return;
+        const info = await api.getInfo(selected);
+        setInfo(info);
+      };
       installButton.onclick = async () => {
-        installButton.disabled = true; pathInput.disabled = true; bar.style.width = "24%"; status.textContent = "Preparing the Real application…";
+        installButton.disabled = true; pathInput.disabled = true; desktopShortcut.disabled = true; startMenuShortcut.disabled = true;
+        bar.style.width = "26%"; status.textContent = "Preparing the Real application…";
         try {
-          await new Promise((resolve) => setTimeout(resolve, 220));
-          bar.style.width = "72%"; status.textContent = "Copying application files and creating shortcuts…";
-          const result = await api.install(pathInput.value);
+          await new Promise((resolve) => setTimeout(resolve, 260));
+          bar.style.width = "72%"; status.textContent = "Copying files and creating selected shortcuts…";
+          const result = await api.install(pathInput.value, { desktopShortcut: desktopShortcut.checked, startMenuShortcut: startMenuShortcut.checked });
           executable = result.executable; bar.style.width = "100%"; status.textContent = `Real ${result.version} is installed and ready.`;
-          installButton.style.display = "none"; done.classList.add("show");
+          installButton.style.display = "none"; launchButton.classList.add("show");
         } catch (error) {
-          installButton.disabled = false; pathInput.disabled = false; bar.style.width = "0%"; status.textContent = error?.message || "Installation failed. Choose another folder and try again.";
+          installButton.disabled = false; pathInput.disabled = false; desktopShortcut.disabled = false; startMenuShortcut.disabled = false; bar.style.width = "0%";
+          status.textContent = error?.message || "Installation failed. Choose another folder and try again.";
         }
       };
       launchButton.onclick = () => api.launch(executable);

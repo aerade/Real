@@ -38,6 +38,10 @@ function payloadDirectory() {
   return path.join(process.resourcesPath, "real-app");
 }
 
+function installationTarget(value) {
+  return path.resolve(String(value || defaultTarget));
+}
+
 function writeShortcut(shortcutPath, target, description) {
   if (process.platform !== "win32") return;
   fs.mkdirSync(path.dirname(shortcutPath), { recursive: true });
@@ -67,11 +71,15 @@ async function copyPayloadWithRetry(payload, target) {
   throw lastError instanceof Error ? lastError : new Error("Could not replace the existing Real installation.");
 }
 
-ipcMain.handle("installer:get-info", () => ({
-  target: defaultTarget,
-  payloadReady: fs.existsSync(path.join(payloadDirectory(), "Real.exe")),
-  version: app.getVersion(),
-}));
+ipcMain.handle("installer:get-info", (_event, requestedTarget) => {
+  const target = installationTarget(requestedTarget);
+  return {
+    target,
+    installed: fs.existsSync(path.join(target, "Real.exe")),
+    payloadReady: fs.existsSync(path.join(payloadDirectory(), "Real.exe")),
+    version: app.getVersion(),
+  };
+});
 
 ipcMain.handle("installer:choose-directory", async () => {
   const result = await dialog.showOpenDialog({ properties: ["openDirectory", "createDirectory"] });
@@ -86,8 +94,8 @@ ipcMain.handle("installer:window-control", (event, action) => {
   if (action === "close") window.close();
 });
 
-ipcMain.handle("installer:install", async (_event, requestedPath) => {
-  const target = path.resolve(String(requestedPath || defaultTarget));
+ipcMain.handle("installer:install", async (_event, requestedPath, options = {}) => {
+  const target = installationTarget(requestedPath);
   const payload = payloadDirectory();
   if (!fs.existsSync(path.join(payload, "Real.exe"))) {
     throw new Error("The bundled Real application payload is missing.");
@@ -98,8 +106,8 @@ ipcMain.handle("installer:install", async (_event, requestedPath) => {
   const executable = path.join(target, "Real.exe");
   const startMenu = path.join(process.env.APPDATA || app.getPath("appData"), "Microsoft", "Windows", "Start Menu", "Programs", "Real.lnk");
   const desktop = path.join(app.getPath("desktop"), "Real.lnk");
-  writeShortcut(startMenu, executable, "Real workspace");
-  writeShortcut(desktop, executable, "Real workspace");
+  if (options.startMenuShortcut !== false) writeShortcut(startMenu, executable, "Real workspace");
+  if (options.desktopShortcut !== false) writeShortcut(desktop, executable, "Real workspace");
   return { target, executable, version: app.getVersion() };
 });
 
