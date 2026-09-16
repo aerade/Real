@@ -394,7 +394,10 @@ async function runParser(url: string, outputPath: string): Promise<void> {
     let stderr = "";
     const timer = setTimeout(() => {
       terminate();
-      reject(new Error("2ГИС-поиск превысил лимит ожидания 75 секунд"));
+      const details = stderr.trim();
+      reject(new Error(
+        `2ГИС-поиск превысил лимит ожидания 75 секунд${details ? `: ${details}` : ""}`,
+      ));
     }, PARSER_TIMEOUT_MS);
 
     child.stderr?.on("data", (chunk: Buffer) => {
