@@ -154,3 +154,17 @@ mtime_ms = 1789488572525
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2929918a-2bad-485e-b0f1-dc67096566c8/46c53a84-d594-4cb2-b25e-2809c47a1a5e/c0365d0f-82ab-4e3f-a996-5f287dd6a4a4"
 storage_version_token = "1789488585265167"
 content_type = "application/octet-stream"
+
+[[outputs]]
+id = "HUkTKuF_qkIpsfzlvaaYU"
+uri = "file://attached_assets/image_1789523796333.png"
+type = "image"
+title = "Фоновая фотография экрана входа"
+description = "Оригинальное изображение, которое используется на startup/login-экране с затемнением."
+logical_id = "4a4497ea-6e69-4502-8d4a-1e444869d9c5"
+content_hash = "sha256:82eb9199c3bcf24d15c9d91ed77ea776e85276cd400fc69216d633c3f8c98e20"
+size = 376090
+mtime_ms = 1789523797941
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2929918a-2bad-485e-b0f1-dc67096566c8/4a4497ea-6e69-4502-8d4a-1e444869d9c5/67028466-4355-485e-8301-dcbfc3f5698d"
+storage_version_token = "1789532307755077"
+content_type = "image/png"
