@@ -1,0 +1,65 @@
+Windows PowerShell
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+PS C:\Users\aerade> ssh root@samojlenko0604.fvds.ru
+root@samojlenko0604.fvds.ru's password:
+Welcome to Ubuntu 24.04.5 LTS (GNU/Linux 6.8.0-139-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/pro
+Last login: Wed Sep 16 17:06:45 2026 from 95.170.183.60
+root@samojlenko0604:~# SNAP_ROOT="$(readlink -f /snap/chromium/current)"
+CHROME="$SNAP_ROOT/usr/lib/chromium-browser/chrome"
+
+echo "snap root: $SNAP_ROOT"
+echo "chrome: $CHROME"
+
+find "$SNAP_ROOT" -name 'libnspr4.so' -o -name 'libnss3.so'
+
+LIB_PATH="$SNAP_ROOT/usr/lib/chromium-browser:$SNAP_ROOT/usr/lib/x86_64-linux-gnu:$SNAP_ROOT/lib/x86_64-linux-gnu:$SNAP_ROOT/usr/lib:$SNAP_ROOT/lib"
+
+echo "--- missing libraries ---"
+LD_LIBRARY_PATH="$LIB_PATH" ldd "$CHROME" | grep "not found" || true
+
+TMP_CHROME_DIR="$(mktemp -d /tmp/real-chrome-direct.XXXXXX)"
+
+sudo -u real env LD_LIBRARY_PATH="$LIB_PATH" "$CHROME" \
+  --headless \
+  --disable-gpu \
+  --disable-dev-shm-usage \
+  --no-sandbox \
+  --no-first-run \
+  --no-default-browser-check \
+  --no-zygote \
+  --remote-allow-origins='*' \
+  --remote-debugging-port=19229 \
+  --user-data-dir="$TMP_CHROME_DIR" \
+  about:blank \
+  >/tmp/real-chrome-direct.out 2>/tmp/real-chrome-direct.err &
+
+rm -rf "$TMP_CHROME_DIR"v/null || trueversion || true
+snap root: /snap/chromium/3525
+chrome: /snap/chromium/3525/usr/lib/chromium-browser/chrome
+/snap/chromium/3525/usr/lib/x86_64-linux-gnu/libnspr4.so
+/snap/chromium/3525/usr/lib/x86_64-linux-gnu/libnss3.so
+--- missing libraries ---
+        libatk-1.0.so.0 => not found
+        libatk-bridge-2.0.so.0 => not found
+        libxkbcommon.so.0 => not found
+        libasound.so.2 => not found
+        libgbm.so.1 => not found
+        libcairo.so.2 => not found
+        libpango-1.0.so.0 => not found
+        libXcomposite.so.1 => not found
+        libXdamage.so.1 => not found
+        libXfixes.so.3 => not found
+        libXrandr.so.2 => not found
+        libatspi.so.0 => not found
+[1] 73965
+[1]+  Exit 127                sudo -u real env LD_LIBRARY_PATH="$LIB_PATH" "$CHROME" --headless --disable-gpu --disable-dev-shm-usage --no-sandbox --no-first-run --no-default-browser-check --no-zygote --remote-allow-origins='*' --remote-debugging-port=19229 --user-data-dir="$TMP_CHROME_DIR" about:blank > /tmp/real-chrome-direct.out 2> /tmp/real-chrome-direct.err
+--- CDP ---
+curl: (7) Failed to connect to 127.0.0.1 port 19229 after 0 ms: Couldn't connect to server
+
+--- stderr ---
+/snap/chromium/3525/usr/lib/chromium-browser/chrome: error while loading shared libraries: libatk-1.0.so.0: cannot open shared object file: No such file or directory
