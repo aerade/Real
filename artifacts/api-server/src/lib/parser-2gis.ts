@@ -238,6 +238,8 @@ async function findChromeBinary(): Promise<string | null> {
   const configured = process.env.REAL_CHROME_BINARY?.trim();
   const candidates = [
     configured,
+    "/snap/chromium/current/usr/lib/chromium/chromium",
+    "/snap/chromium/current/usr/lib/chromium/chrome",
     "/usr/bin/chromium",
     "/usr/bin/chromium-browser",
     "/usr/bin/google-chrome",
