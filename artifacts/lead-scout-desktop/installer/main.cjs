@@ -49,6 +49,24 @@ function writeShortcut(shortcutPath, target, description) {
   });
 }
 
+function wait(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+async function copyPayloadWithRetry(payload, target) {
+  let lastError;
+  for (let attempt = 0; attempt < 24; attempt += 1) {
+    try {
+      fs.cpSync(payload, target, { recursive: true, force: true });
+      return;
+    } catch (error) {
+      lastError = error;
+      await wait(500);
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error("Could not replace the existing Real installation.");
+}
+
 ipcMain.handle("installer:get-info", () => ({
   target: defaultTarget,
   payloadReady: fs.existsSync(path.join(payloadDirectory(), "Real.exe")),
@@ -75,7 +93,7 @@ ipcMain.handle("installer:install", async (_event, requestedPath) => {
     throw new Error("The bundled Real application payload is missing.");
   }
   fs.mkdirSync(target, { recursive: true });
-  fs.cpSync(payload, target, { recursive: true, force: true });
+  await copyPayloadWithRetry(payload, target);
 
   const executable = path.join(target, "Real.exe");
   const startMenu = path.join(process.env.APPDATA || app.getPath("appData"), "Microsoft", "Windows", "Start Menu", "Programs", "Real.lnk");

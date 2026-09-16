@@ -6,7 +6,6 @@ directories:
   buildResources: build
 extraMetadata:
   name: real-installer
-  version: 1.0.0
   main: installer/main.cjs
 files:
   - installer/**/*
