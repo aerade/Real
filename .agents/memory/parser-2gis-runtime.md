@@ -47,3 +47,12 @@ VPS browser until its internal `_wait_requests_finished` timeout.
 
 **How to apply:** Run Parser2GIS through the project wrapper, which gives pending requests a
 short grace period and continues with the loaded result DOM instead of waiting indefinitely.
+
+Ubuntu's `/snap/bin/chromium` launcher can fail for a non-root systemd service with a
+`not a snap cgroup` error; the real executable is under the mounted snap revision.
+
+**Why:** The API service user could not establish Chromium's DevTools connection through the
+launcher, while the launcher also differed from the binary selected by an interactive shell.
+
+**How to apply:** Prefer `/snap/chromium/current/usr/lib/chromium/chromium` when it exists,
+before `/usr/bin/chromium-browser` or other snap wrapper paths.
