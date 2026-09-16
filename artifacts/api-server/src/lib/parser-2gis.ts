@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { accessSync, constants } from "node:fs";
 import { access, mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -93,14 +94,19 @@ function transliterate(value: string): string {
 function findProjectRoot(): string {
   const configuredRoot = process.env.REAL_PARSER_CWD?.trim();
   if (configuredRoot) return configuredRoot;
-  let current = process.cwd();
-  while (current !== path.dirname(current)) {
-    try {
-      // eslint-disable-next-line no-sync
-      require("node:fs").accessSync(path.join(current, "pyproject.toml"));
-      return current;
-    } catch {
-      current = path.dirname(current);
+  const anchors = [
+    process.cwd(),
+    path.dirname(process.argv[1] ?? ""),
+  ].filter(Boolean);
+  for (const anchor of anchors) {
+    let current = path.resolve(anchor);
+    while (current !== path.dirname(current)) {
+      try {
+        accessSync(path.join(current, "pyproject.toml"), constants.R_OK);
+        return current;
+      } catch {
+        current = path.dirname(current);
+      }
     }
   }
   return process.cwd();
@@ -215,10 +221,87 @@ function mapItem(item: TwoGisItem, input: ParserInput): PublicBusiness | null {
   };
 }
 
+async function findChromeBinary(): Promise<string | null> {
+  const configured = process.env.REAL_CHROME_BINARY?.trim();
+  const candidates = [
+    configured,
+    "/usr/bin/chromium",
+    "/usr/bin/chromium-browser",
+    "/usr/bin/google-chrome",
+    "/usr/bin/google-chrome-stable",
+    "/repl/tools/bin/chromium",
+  ].filter((candidate): candidate is string => Boolean(candidate));
+
+  for (const candidate of candidates) {
+    if (path.isAbsolute(candidate)) {
+      try {
+        accessSync(candidate, constants.X_OK);
+        return candidate;
+      } catch {
+        continue;
+      }
+    }
+
+    const command = process.platform === "win32" ? "where" : "which";
+    try {
+      const resolved = await new Promise<string>((resolve, reject) => {
+        const child = spawn(command, [candidate], { stdio: ["ignore", "pipe", "ignore"] });
+        let stdout = "";
+        child.stdout?.on("data", (chunk: Buffer) => { stdout += chunk.toString(); });
+        child.once("error", reject);
+        child.once("close", (code) => code === 0 && stdout.trim() ? resolve(stdout.trim().split(/\r?\n/)[0]) : reject(new Error("not found")));
+      });
+      if (resolved) return resolved;
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+}
+
+async function findParserCommand(): Promise<string> {
+  const configured = process.env.REAL_PARSER_COMMAND?.trim();
+  const candidates = [
+    configured,
+    "/root/.local/bin/uv",
+    "/usr/local/bin/uv",
+    "/usr/bin/uv",
+    "uv",
+  ].filter((candidate): candidate is string => Boolean(candidate));
+
+  for (const candidate of candidates) {
+    if (path.isAbsolute(candidate)) {
+      try {
+        accessSync(candidate, constants.X_OK);
+        return candidate;
+      } catch {
+        continue;
+      }
+    }
+
+    const command = process.platform === "win32" ? "where" : "which";
+    try {
+      const resolved = await new Promise<string>((resolve, reject) => {
+        const child = spawn(command, [candidate], { stdio: ["ignore", "pipe", "ignore"] });
+        let stdout = "";
+        child.stdout?.on("data", (chunk: Buffer) => { stdout += chunk.toString(); });
+        child.once("error", reject);
+        child.once("close", (code) => code === 0 && stdout.trim() ? resolve(stdout.trim().split(/\r?\n/)[0]) : reject(new Error("not found")));
+      });
+      if (resolved) return resolved;
+    } catch {
+      continue;
+    }
+  }
+
+  return "uv";
+}
+
 async function runParser(url: string, outputPath: string): Promise<void> {
-  const binaryPath = process.env.REAL_CHROME_BINARY ?? "/repl/tools/bin/chromium";
-  const parserCommand = process.env.REAL_PARSER_COMMAND?.trim() || "uv";
-  const commandArgs = parserCommand === "uv" ? ["run", "parser-2gis"] : [];
+  const binaryPath = await findChromeBinary();
+  const parserCommand = await findParserCommand();
+  const commandArgs = path.basename(parserCommand) === "uv" ? ["run", "parser-2gis"] : [];
   const args = [
     ...commandArgs,
     "-i", url,
@@ -227,8 +310,8 @@ async function runParser(url: string, outputPath: string): Promise<void> {
     "--parser.max-records", "5",
     "--chrome.headless", "yes",
     "--chrome.silent-browser", "yes",
-    "--chrome.binary_path", binaryPath,
   ];
+  if (binaryPath) args.push("--chrome.binary_path", binaryPath);
   const cwd = findProjectRoot();
 
   await new Promise<void>((resolve, reject) => {
@@ -256,7 +339,7 @@ async function runParser(url: string, outputPath: string): Promise<void> {
       if (code === 0) {
         resolve();
       } else {
-        reject(new Error(`2ГИС-парсер завершился с кодом ${code ?? "unknown"}${stderr ? `: ${stderr.trim()}` : ""}`));
+        reject(new Error(`2ГИС-парсер завершился с кодом ${code ?? "unknown"} (cwd: ${cwd}${binaryPath ? `, browser: ${binaryPath}` : ""})${stderr ? `: ${stderr.trim()}` : ""}`));
       }
     });
   });
