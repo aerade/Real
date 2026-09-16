@@ -254,8 +254,8 @@ async function findChromeBinary(): Promise<string | null> {
     }
   })();
   const candidates = [
-    configured,
     ...snapChromiumCandidates,
+    configured,
     "/usr/bin/chromium",
     "/usr/bin/chromium-browser",
     "/usr/bin/google-chrome",

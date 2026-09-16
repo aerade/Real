@@ -1,0 +1,40 @@
+root@samojlenko0604:/opt/real# cd /opt/real
+
+git pull --ff-only
+
+pnpm --filter @workspace/api-server run build
+
+sudo systemctl restart real-api
+sudo systemctl is-active real-api
+remote: Enumerating objects: 13, done.
+remote: Counting objects: 100% (13/13), done.
+remote: Compressing objects: 100% (7/7), done.
+remote: Total 7 (delta 5), reused 0 (delta 0), pack-reused 0 (from 0)
+Unpacking objects: 100% (7/7), 624 bytes | 104.00 KiB/s, done.
+From github-real:aerade/Real
+   894b7d7..6f739ba  main       -> origin/main
+Updating 894b7d7..6f739ba
+Fast-forward
+ artifacts/api-server/src/lib/parser-2gis.ts | 2 ++
+ 1 file changed, 2 insertions(+)
+
+$ node ./build.mjs
+
+  dist/index.mjs                       2.2mb ⚠️
+  dist/pino-worker.mjs               153.5kb
+  dist/pino-file.mjs                 142.1kb
+  dist/pino-pretty.mjs               115.3kb
+  dist/thread-stream-worker.mjs        7.4kb
+  dist/index.mjs.map                   3.8mb
+  dist/pino-worker.mjs.map           256.9kb
+  dist/pino-file.mjs.map             229.0kb
+  dist/pino-pretty.mjs.map           209.5kb
+  dist/thread-stream-worker.mjs.map   12.0kb
+
+⚡ Done in 3043ms
+active
+root@samojlenko0604:/opt/real# sudo journalctl -u real-api --since "5 minutes ago" --no-pager \
+  | grep -E "2GIS search (failed|completed)"
+Sep 16 18:42:59 samojlenko0604.fvds.ru node[72955]: {"level":50,"time":1789573379444,"pid":72955,"hostname":"samojlenko0604.fvds.ru","req":{"id":3,"method":"POST","url":"/api/leads/search"},"err":{"type":"Error","message":"2ГИС-парсер завершился с кодом 1 (cwd: /opt/real, browser: /usr/bin/chromium-browser): Traceback (most recent call last):\n  File \"/opt/real/tools/parser-2gis-runner.py\", line 64, in <module>\n    main()\n  File \"/opt/real/tools/parser-2gis-runner.py\", line 47, in main\n    with get_parser(\n         ^^^^^^^^^^^\n  File \"/opt/real/.venv/lib/python3.12/site-packages/parser_2gis/parser/factory.py\", line 19, in get_parser\n    return parser(url, chrome_options, parser_options)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/real/.venv/lib/python3.12/site-packages/parser_2gis/parser/parsers/main.py\", line 44, in __init__\n    self._chrome_remote.start()\n  File \"/opt/real/.venv/lib/python3.12/site-packages/parser_2gis/chrome/remote.py\", line 69, in start\n    self._connect_interface()\n  File \"/opt/real/.venv/lib/python3.12/site-packages/parser_2gis/common.py\", line 65, in inner\n    raise TimeoutError(func)\nTimeoutError: <function ChromeRemote._connect_interface at 0x7352e79a4cc0>","stack":"Error: 2ГИС-парсер завершился с кодом 1 (cwd: /opt/real, browser: /usr/bin/chromium-browser): Traceback (most recent call last):\n  File \"/opt/real/tools/parser-2gis-runner.py\", line 64, in <module>\n    main()\n  File \"/opt/real/tools/parser-2gis-runner.py\", line 47, in main\n    with get_parser(\n         ^^^^^^^^^^^\n  File \"/opt/real/.venv/lib/python3.12/site-packages/parser_2gis/parser/factory.py\", line 19, in get_parser\n    return parser(url, chrome_options, parser_options)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/real/.venv/lib/python3.12/site-packages/parser_2gis/parser/parsers/main.py\", line 44, in __init__\n    self._chrome_remote.start()\n  File \"/opt/real/.venv/lib/python3.12/site-packages/parser_2gis/chrome/remote.py\", line 69, in start\n    self._connect_interface()\n  File \"/opt/real/.venv/lib/python3.12/site-packages/parser_2gis/common.py\", line 65, in inner\n    raise TimeoutError(func)\nTimeoutError: <function ChromeRemote._connect_interface at 0x7352e79a4cc0>\n    at ChildProcess.<anonymous> (file:///opt/real/artifacts/api-server/dist/index.mjs:38596:16)\n    at ChildProcess.wrapper (node:events:639:12)\n    at ChildProcess.emit (node:events:514:28)\n    at maybeClose (node:internal/child_process:1141:16)\n    at ChildProcess._handle.onexit (node:internal/child_process:306:5)"},"msg":"2GIS search failed"}
+Sep 16 18:45:02 samojlenko0604.fvds.ru node[73359]: {"level":50,"time":1789573502818,"pid":73359,"hostname":"samojlenko0604.fvds.ru","req":{"id":2,"method":"POST","url":"/api/leads/search"},"err":{"type":"Error","message":"2ГИС-парсер завершился с кодом 1 (cwd: /opt/real, browser: /usr/bin/chromium-browser): Traceback (most recent call last):\n  File \"/opt/real/tools/parser-2gis-runner.py\", line 64, in <module>\n    main()\n  File \"/opt/real/tools/parser-2gis-runner.py\", line 47, in main\n    with get_parser(\n         ^^^^^^^^^^^\n  File \"/opt/real/.venv/lib/python3.12/site-packages/parser_2gis/parser/factory.py\", line 19, in get_parser\n    return parser(url, chrome_options, parser_options)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/real/.venv/lib/python3.12/site-packages/parser_2gis/parser/parsers/main.py\", line 44, in __init__\n    self._chrome_remote.start()\n  File \"/opt/real/.venv/lib/python3.12/site-packages/parser_2gis/chrome/remote.py\", line 69, in start\n    self._connect_interface()\n  File \"/opt/real/.venv/lib/python3.12/site-packages/parser_2gis/common.py\", line 65, in inner\n    raise TimeoutError(func)\nTimeoutError: <function ChromeRemote._connect_interface at 0x7d34b1010cc0>","stack":"Error: 2ГИС-парсер завершился с кодом 1 (cwd: /opt/real, browser: /usr/bin/chromium-browser): Traceback (most recent call last):\n  File \"/opt/real/tools/parser-2gis-runner.py\", line 64, in <module>\n    main()\n  File \"/opt/real/tools/parser-2gis-runner.py\", line 47, in main\n    with get_parser(\n         ^^^^^^^^^^^\n  File \"/opt/real/.venv/lib/python3.12/site-packages/parser_2gis/parser/factory.py\", line 19, in get_parser\n    return parser(url, chrome_options, parser_options)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/real/.venv/lib/python3.12/site-packages/parser_2gis/parser/parsers/main.py\", line 44, in __init__\n    self._chrome_remote.start()\n  File \"/opt/real/.venv/lib/python3.12/site-packages/parser_2gis/chrome/remote.py\", line 69, in start\n    self._connect_interface()\n  File \"/opt/real/.venv/lib/python3.12/site-packages/parser_2gis/common.py\", line 65, in inner\n    raise TimeoutError(func)\nTimeoutError: <function ChromeRemote._connect_interface at 0x7d34b1010cc0>\n    at ChildProcess.<anonymous> (file:///opt/real/artifacts/api-server/dist/index.mjs:38598:16)\n    at ChildProcess.wrapper (node:events:639:12)\n    at ChildProcess.emit (node:events:514:28)\n    at maybeClose (node:internal/child_process:1141:16)\n    at ChildProcess._handle.onexit (node:internal/child_process:306:5)"},"msg":"2GIS search failed"}
+root@samojlenko0604:/opt/real#
