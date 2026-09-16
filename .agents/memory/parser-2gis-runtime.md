@@ -28,3 +28,13 @@ the root-owned uv-managed Python target created by `uv sync`.
 
 **How to apply:** Recreate `/opt/real/.venv` with `/usr/bin/python3.12` (or the VPS system Python),
 then ensure the service account can read and execute the virtualenv before restarting `real-api`.
+
+When Parser2GIS can run but `/api/leads/search` is logged as `request aborted` at exactly 60 seconds,
+check the reverse proxy before changing parser code; the API parser limit is three minutes and a
+default Nginx `proxy_read_timeout 60s` can close the client connection first.
+
+**Why:** The VPS healthcheck succeeded after the venv fix, while searches consistently disconnected
+at about 60 seconds without producing the API's own parser-timeout error.
+
+**How to apply:** Raise the existing API proxy location's read/send timeout above three minutes,
+then reload Nginx and retest the same search.
