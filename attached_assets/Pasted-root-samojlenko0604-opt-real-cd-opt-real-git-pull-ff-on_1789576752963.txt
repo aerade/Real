@@ -1,0 +1,37 @@
+root@samojlenko0604:/opt/real# cd /opt/real
+git pull --ff-only
+
+sudo pkill -TERM -u real -f '/snap/chromium/.*chrom' 2>/dev/null || true
+
+pnpm --filter @workspace/api-server run build
+sudo systemctl restart real-api
+remote: Enumerating objects: 7, done.
+remote: Counting objects: 100% (7/7), done.
+remote: Compressing objects: 100% (3/3), done.
+remote: Total 4 (delta 2), reused 0 (delta 0), pack-reused 0 (from 0)
+Unpacking objects: 100% (4/4), 641 bytes | 71.00 KiB/s, done.
+From github-real:aerade/Real
+   89d9bd1..ab24ec6  main       -> origin/main
+Updating 89d9bd1..ab24ec6
+Fast-forward
+ tools/parser-2gis-runner.py | 19 +++++++------------
+ 1 file changed, 7 insertions(+), 12 deletions(-)
+
+$ node ./build.mjs
+
+  dist/index.mjs                       2.2mb ⚠️
+  dist/pino-worker.mjs               153.5kb
+  dist/pino-file.mjs                 142.1kb
+  dist/pino-pretty.mjs               115.3kb
+  dist/thread-stream-worker.mjs        7.4kb
+  dist/index.mjs.map                   3.8mb
+  dist/pino-worker.mjs.map           256.9kb
+  dist/pino-file.mjs.map             229.0kb
+  dist/pino-pretty.mjs.map           209.5kb
+  dist/thread-stream-worker.mjs.map   12.0kb
+
+⚡ Done in 4191ms
+root@samojlenko0604:/opt/real# sudo journalctl -u real-api --since "3 minutes ago" --no-pager \
+  | grep -E "parser2gis|2GIS search|Parser2GIS|75 секунд"
+Sep 16 19:38:48 samojlenko0604.fvds.ru node[77607]: {"level":50,"time":1789576728782,"pid":77607,"hostname":"samojlenko0604.fvds.ru","req":{"id":2,"method":"POST","url":"/api/leads/search"},"err":{"type":"Error","message":"2ГИС-поиск превысил лимит ожидания 75 секунд: [parser2gis +0.0s] starting writer\n[parser2gis +0.0s] starting ChromeRemote\n[parser2gis +13.2s] ChromeRemote connected\n[parser2gis +13.2s] starting parser.parse\n[parser2gis +13.2s] starting 2GIS navigation\n[parser2gis +16.0s] 2GIS navigation finished\n[parser2gis +16.0s] skipping page XHR wait; reading loaded DOM","stack":"Error: 2ГИС-поиск превысил лимит ожидания 75 секунд: [parser2gis +0.0s] starting writer\n[parser2gis +0.0s] starting ChromeRemote\n[parser2gis +13.2s] ChromeRemote connected\n[parser2gis +13.2s] starting parser.parse\n[parser2gis +13.2s] starting 2GIS navigation\n[parser2gis +16.0s] 2GIS navigation finished\n[parser2gis +16.0s] skipping page XHR wait; reading loaded DOM\n    at Timeout._onTimeout (file:///opt/real/artifacts/api-server/dist/index.mjs:38619:14)\n    at listOnTimeout (node:internal/timers:685:17)\n    at process.processTimers (node:internal/timers:618:7)"},"msg":"2GIS search failed"}
+root@samojlenko0604:/opt/real#
