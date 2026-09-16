@@ -127,6 +127,8 @@ function parserEnvironment(binaryPath: string | null): NodeJS.ProcessEnv {
     PYTHONUNBUFFERED: "1",
   };
   if (!binaryPath?.startsWith("/snap/chromium/")) return environment;
+  delete environment.DBUS_SESSION_BUS_ADDRESS;
+  delete environment.DISPLAY;
 
   const snapRoot = binaryPath.split("/usr/")[0];
   const libraryPaths = [
