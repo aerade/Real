@@ -21,6 +21,15 @@ type TwoGisContact = {
 type TwoGisItem = {
   id?: string;
   name?: string;
+  name_ex?: {
+    primary?: string;
+    short_name?: string;
+    extension?: string;
+  };
+  org?: {
+    name?: string;
+    branch_count?: number;
+  };
   category?: string;
   address?: string;
   city?: string;
@@ -177,7 +186,11 @@ function extractContacts(item: TwoGisItem): {
 }
 
 function mapItem(item: TwoGisItem, input: ParserInput): PublicBusiness | null {
-  if (!item.id || !item.name?.trim()) return null;
+  const name = item.name?.trim()
+    || item.name_ex?.primary?.trim()
+    || item.name_ex?.short_name?.trim()
+    || item.org?.name?.trim();
+  if (!item.id || !name) return null;
   const { contacts, website } = extractContacts(item);
   const rubric = item.rubrics?.find((entry) => typeof entry !== "string" && entry.kind === "primary")
     ?? item.rubrics?.[0];
@@ -203,7 +216,7 @@ function mapItem(item: TwoGisItem, input: ParserInput): PublicBusiness | null {
 
   return {
     sourceId: `2gis:${item.id}`,
-    name: item.name.trim(),
+    name,
     city,
     industry,
     website,
