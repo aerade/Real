@@ -5,3 +5,4 @@
 - [Windows icon padding](windows-icon-padding.md) — preserve transparent canvas margins when shrinking the white mark inside Windows ICO resources.
 - [Parser2GIS runtime](parser-2gis-runtime.md) — Parser2GIS needs an explicit Chromium path and writes JSON with a UTF-8 BOM.
 - [GitHub Git authentication](github-git-auth.md) — this workspace's HTTPS Git remote needs x-access-token Basic auth even when the API token works with Bearer auth.
+- [GitHub LFS push limitation](github-lfs-push.md) — publish small source fixes through the Contents API when full pushes cannot upload Windows LFS artifacts.
