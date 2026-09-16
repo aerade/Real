@@ -8,6 +8,7 @@ import os
 import re
 import sys
 import time
+from urllib.parse import urljoin
 
 from parser_2gis.chrome import browser as chrome_browser
 from parser_2gis.config import Configuration
@@ -172,6 +173,18 @@ def main() -> None:
                     return result
 
                 parser._chrome_remote.navigate = navigate
+
+                original_perform_click = parser._chrome_remote.perform_click
+
+                def perform_click(node, timeout=None):
+                    href = node.attributes.get("href", "")
+                    if re.search(r"/(?:firm|station)/[^/?#]+(?:[/?#]|$)", href):
+                        target_url = urljoin(args.url, href)
+                        trace(f"opening result URL directly: {target_url}")
+                        return navigate(target_url, referer=args.url, timeout=30)
+                    return original_perform_click(node, timeout=timeout)
+
+                parser._chrome_remote.perform_click = perform_click
                 trace("starting parser.parse")
                 parser.parse(writer)
                 trace("parser.parse finished")
