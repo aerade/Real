@@ -1,0 +1,212 @@
+root@samojlenko0604:/opt/real# cd /opt/real
+
+git status --short
+git diff -- pnpm-workspace.yaml
+Refresh index: 100% (289/289), done.
+ M pnpm-workspace.yaml
+diff --git a/pnpm-workspace.yaml b/pnpm-workspace.yaml
+index dd4952b..f423dae 100644
+--- a/pnpm-workspace.yaml
++++ b/pnpm-workspace.yaml
+@@ -68,13 +68,6 @@ catalog:
+
+ autoInstallPeers: false
+
+-onlyBuiltDependencies:
+-  - '@swc/core'
+-  - electron
+-  - esbuild
+-  - msw
+-  - unrs-resolver
+-
+ overrides:
+   # replit uses linux-x64 only, we can exclude all other platforms
+   "esbuild>@esbuild/darwin-arm64": "-"
+@@ -161,3 +154,7 @@ overrides:
+   esbuild: "0.28.2"
+   # orval pins js-yaml to an exact version older than the CVE fix (>=4.3.2)
+   js-yaml: '4.3.2'
++
++allowBuilds:
++  electron: true
++  esbuild: true
+root@samojlenko0604:/opt/real# cp -a pnpm-workspace.yaml /root/pnpm-workspace.yaml.before-update
+
+git stash push -m "VPS local pnpm workspace before parser update" -- pnpm-workspace.yaml
+
+git pull --ff-only
+
+git rev-parse --short HEAD
+Saved working directory and index state On main: VPS local pnpm workspace before parser update
+Updating fe3cccf..13c9c19
+Fast-forward
+ .agents/agent_assets_metadata.toml                                          |  14 +
+ .agents/memory/MEMORY.md                                                    |   5 +-
+ .agents/memory/github-git-auth.md                                           |  10 +
+ .agents/memory/parser-2gis-runtime.md                                       |  12 +-
+ .agents/memory/windows-native-build-dependencies.md                         |  10 +
+ .agents/memory/windows-nsis-branding-bitmaps.md                             |  10 +
+ .agents/memory/windows-nsis-releases.md                                     |   8 +-
+ .github/scripts/smoke-test-real-installer.ps1                               | 159 +++++++
+ .github/scripts/verify-authenticode.ps1                                     | 198 ++++++++
+ .github/scripts/verify-real-installer.ps1                                   | 774 +++++++++++++++++++++++++++++++
+ .github/workflows/real-windows-release.yml                                  | 101 +++-
+ artifacts/api-server/src/lib/osm-leads.ts                                   |  10 +-
+ artifacts/api-server/src/lib/parser-2gis.ts                                 | 165 ++++++-
+ artifacts/api-server/src/lib/store.ts                                       |  89 ++--
+ artifacts/api-server/src/routes/leads.ts                                    |  22 +-
+ artifacts/lead-scout-desktop/WINDOWS_BUILD.md                               |  28 +-
+ artifacts/lead-scout-desktop/build/installer-header.bmp                     | Bin 0 -> 25818 bytes
+ artifacts/lead-scout-desktop/build/installer-sidebar.bmp                    | Bin 0 -> 154542 bytes
+ artifacts/lead-scout-desktop/build/installer.nsh                            |  20 +
+ artifacts/lead-scout-desktop/electron-builder-installer.yml                 |  27 ++
+ artifacts/lead-scout-desktop/electron-builder.yml                           |  14 +-
+ artifacts/lead-scout-desktop/electron/main.cjs                              | 117 ++++-
+ artifacts/lead-scout-desktop/electron/preload.cjs                           |   4 +
+ artifacts/lead-scout-desktop/installer/index.html                           | 142 ++++++
+ artifacts/lead-scout-desktop/installer/main.cjs                             | 124 +++++
+ artifacts/lead-scout-desktop/installer/preload.cjs                          |   9 +
+ artifacts/lead-scout-desktop/installer/prepare-payload.cjs                  |  13 +
+ artifacts/lead-scout-desktop/installer/real-logo-horizontal-white.svg       |   6 +
+ artifacts/lead-scout-desktop/package.json                                   |   5 +-
+ artifacts/lead-scout-desktop/src/App.tsx                                    |  39 ++
+ artifacts/lead-scout-desktop/src/components/layout/app-layout.tsx           | 139 +++++-
+ artifacts/lead-scout-desktop/src/components/layout/window-controls.tsx      |  66 ++-
+ artifacts/lead-scout-desktop/src/components/startup-screen.tsx              | 103 +++--
+ artifacts/lead-scout-desktop/src/components/update-status.tsx               | 116 +++++
+ artifacts/lead-scout-desktop/src/desktop.d.ts                               |  38 +-
+ artifacts/lead-scout-desktop/src/hooks/use-auth.tsx                         |   6 +-
+ artifacts/lead-scout-desktop/src/index.css                                  |  93 +++-
+ artifacts/lead-scout-desktop/src/pages/admin.tsx                            | 894 +++++++++++++++++++++++++++++-------
+ artifacts/lead-scout-desktop/src/pages/dashboard.tsx                        |  41 +-
+ artifacts/lead-scout-desktop/src/pages/leads/[id].tsx                       | 166 ++++++-
+ artifacts/lead-scout-desktop/src/pages/login.tsx                            |  23 +-
+ artifacts/lead-scout-desktop/src/pages/search.tsx                           | 327 +++----------
+ artifacts/lead-scout-desktop/vite.config.ts                                 | 126 +++--
+ ...oot-samojlenko0604-export-PATH-usr-local-sbin-usr-loca_1789472646099.txt |  51 ++
+ ...oot-samojlenko0604-opt-real-git-config-global-add-safe_1789471934235.txt |  51 ++
+ ...oot-samojlenko0604-sleep-3-systemctl-status-real-api-n_1789472568194.txt |  49 ++
+ attached_assets/image_1789473642937.png                                     | Bin 0 -> 93370 bytes
+ attached_assets/image_1789473994718.png                                     | Bin 0 -> 180774 bytes
+ attached_assets/image_1789474302977.png                                     | Bin 0 -> 164343 bytes
+ attached_assets/image_1789475278088.png                                     | Bin 0 -> 2806 bytes
+ attached_assets/image_1789475329869.png                                     | Bin 0 -> 3960 bytes
+ attached_assets/image_1789475394876.png                                     | Bin 0 -> 3965 bytes
+ attached_assets/image_1789477143938.png                                     | Bin 0 -> 710647 bytes
+ attached_assets/image_1789483542447.png                                     | Bin 0 -> 94685 bytes
+ attached_assets/image_1789486081532.png                                     | Bin 0 -> 18703 bytes
+ attached_assets/image_1789487151506.png                                     | Bin 0 -> 1428 bytes
+ attached_assets/image_1789487422580.png                                     | Bin 0 -> 5564 bytes
+ attached_assets/image_1789523796333.png                                     | Bin 0 -> 376090 bytes
+ attached_assets/image_1789524083828.png                                     | Bin 0 -> 29081 bytes
+ attached_assets/image_1789524135444.png                                     | Bin 0 -> 31990 bytes
+ attached_assets/image_1789524173955.png                                     | Bin 0 -> 29705 bytes
+ attached_assets/image_1789524197181.png                                     | Bin 0 -> 30287 bytes
+ attached_assets/image_1789524261200.png                                     | Bin 0 -> 34898 bytes
+ attached_assets/image_1789527385817.png                                     | Bin 0 -> 6377 bytes
+ attached_assets/image_1789528221497.png                                     | Bin 0 -> 4020 bytes
+ attached_assets/image_1789528269970.png                                     | Bin 0 -> 59190 bytes
+ attached_assets/image_1789528508301.png                                     | Bin 0 -> 9603 bytes
+ attached_assets/image_1789528693376.png                                     | Bin 0 -> 11762 bytes
+ pnpm-lock.yaml                                                              |  73 ++-
+ pnpm-workspace.yaml                                                         |  14 +-
+ pyproject.toml                                                              |   2 +-
+ uv.lock                                                                     |  65 ++-
+ 72 files changed, 3791 insertions(+), 787 deletions(-)
+ create mode 100644 .agents/memory/github-git-auth.md
+ create mode 100644 .agents/memory/windows-native-build-dependencies.md
+ create mode 100644 .agents/memory/windows-nsis-branding-bitmaps.md
+ create mode 100644 .github/scripts/smoke-test-real-installer.ps1
+ create mode 100644 .github/scripts/verify-authenticode.ps1
+ create mode 100644 .github/scripts/verify-real-installer.ps1
+ create mode 100644 artifacts/lead-scout-desktop/build/installer-header.bmp
+ create mode 100644 artifacts/lead-scout-desktop/build/installer-sidebar.bmp
+ create mode 100644 artifacts/lead-scout-desktop/build/installer.nsh
+ create mode 100644 artifacts/lead-scout-desktop/electron-builder-installer.yml
+ create mode 100644 artifacts/lead-scout-desktop/installer/index.html
+ create mode 100644 artifacts/lead-scout-desktop/installer/main.cjs
+ create mode 100644 artifacts/lead-scout-desktop/installer/preload.cjs
+ create mode 100644 artifacts/lead-scout-desktop/installer/prepare-payload.cjs
+ create mode 100644 artifacts/lead-scout-desktop/installer/real-logo-horizontal-white.svg
+ create mode 100644 artifacts/lead-scout-desktop/src/components/update-status.tsx
+ create mode 100644 attached_assets/Pasted-root-samojlenko0604-export-PATH-usr-local-sbin-usr-loca_1789472646099.txt
+ create mode 100644 attached_assets/Pasted-root-samojlenko0604-opt-real-git-config-global-add-safe_1789471934235.txt
+ create mode 100644 attached_assets/Pasted-root-samojlenko0604-sleep-3-systemctl-status-real-api-n_1789472568194.txt
+ create mode 100644 attached_assets/image_1789473642937.png
+ create mode 100644 attached_assets/image_1789473994718.png
+ create mode 100644 attached_assets/image_1789474302977.png
+ create mode 100644 attached_assets/image_1789475278088.png
+ create mode 100644 attached_assets/image_1789475329869.png
+ create mode 100644 attached_assets/image_1789475394876.png
+ create mode 100644 attached_assets/image_1789477143938.png
+ create mode 100644 attached_assets/image_1789483542447.png
+ create mode 100644 attached_assets/image_1789486081532.png
+ create mode 100644 attached_assets/image_1789487151506.png
+ create mode 100644 attached_assets/image_1789487422580.png
+ create mode 100644 attached_assets/image_1789523796333.png
+ create mode 100644 attached_assets/image_1789524083828.png
+ create mode 100644 attached_assets/image_1789524135444.png
+ create mode 100644 attached_assets/image_1789524173955.png
+ create mode 100644 attached_assets/image_1789524197181.png
+ create mode 100644 attached_assets/image_1789524261200.png
+ create mode 100644 attached_assets/image_1789527385817.png
+ create mode 100644 attached_assets/image_1789528221497.png
+ create mode 100644 attached_assets/image_1789528269970.png
+ create mode 100644 attached_assets/image_1789528508301.png
+ create mode 100644 attached_assets/image_1789528693376.png
+13c9c19
+root@samojlenko0604:/opt/real# export PATH="/root/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+uv sync --locked
+pnpm --filter @workspace/api-server run build
+
+systemctl restart real-api
+systemctl status real-api --no-pager -l
+Resolved 14 packages in 10ms
+Checked 13 packages in 30ms
+Scope: all 9 workspace projects
+✓ Lockfile passes supply-chain policies (698 entries in 17.3s)
+Lockfile is up to date, resolution step is skipped
+Packages: +9
++++++++++
+Progress: resolved 9, reused 4, downloaded 5, added 9, done
+. preinstall$ sh -c 'rm -f package-lock.json yarn.lock; case "$npm_config_user_agent" in pnpm/*) ;; *) echo "Use pnpm…
+└─ Done in 41ms
+Error: ERR_PNPM_IGNORED_BUILDS
+
+  × installing dependencies
+  ╰─▶ Ignored build scripts: electron@38.8.6, esbuild@0.28.2
+  help: Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.
+
+● real-api.service - Real API Server
+     Loaded: loaded (/etc/systemd/system/real-api.service; enabled; preset: enabled)
+     Active: active (running) since Wed 2026-09-16 07:03:02 MSK; 47ms ago
+   Main PID: 48507 ((node))
+      Tasks: 1 (limit: 1046)
+     Memory: 1.4M (peak: 1.6M)
+        CPU: 11ms
+     CGroup: /system.slice/real-api.service
+             └─48507 "(node)"
+
+Sep 16 07:03:02 samojlenko0604.fvds.ru systemd[1]: real-api.service: Deactivated successfully.
+Sep 16 07:03:02 samojlenko0604.fvds.ru systemd[1]: Stopped real-api.service - Real API Server.
+Sep 16 07:03:02 samojlenko0604.fvds.ru systemd[1]: Started real-api.service - Real API Server.
+root@samojlenko0604:/opt/real# curl http://127.0.0.1:8080/api/healthz
+{"status":"ok"}root@samojlenko0cd /opt/reall# cd /opt/real
+
+BROWSER=$(command -v chromium-browser || command -v chromium || command -v google-chrome)
+
+uv run parser-2gis \
+  -i 'https://2gis.ru/krasnoyarsk/search/стоматология' \
+  -o /tmp/parser-smoke.json \
+  -f json \
+  --parser.max-records 1 \
+  --chrome.headless yes \
+  --chrome.silent-browser yes \
+  --chrome.binary_path "$BROWSER"
+
+head -c 500 /tmp/parser-smoke.json
+/opt/real/.venv/lib/python3.14/site-packages/parser_2gis/runner/gui.py:82: SyntaxWarning: 'break' in a 'finally' block
+  break
+16/09/2026 07:03:22.010 | INFO     | Парсинг запущен.
+16/09/2026 07:03:22.010 | INFO     | Парсинг ссылки https://2gis.ru/krasnoyarsk/search/стоматология
