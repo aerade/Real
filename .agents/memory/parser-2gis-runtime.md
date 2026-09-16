@@ -84,3 +84,12 @@ until the outer API deadline even though the loaded DOM was already available.
 
 **How to apply:** After navigation, read the loaded DOM without waiting for every background XHR;
 keep short item-response and process-level limits as separate safeguards.
+
+The current 2GIS search UI can render business links as `/<city>/firm/<id>` without the older
+`?stat=` query payload; a parser that accepts only the legacy link shape reports zero results.
+
+**Why:** The VPS DOM contained real firm links and many anchors, but the upstream link predicate
+rejected every one because it required a base64-like `stat` query.
+
+**How to apply:** Accept both `/firm/<id>` and `/station/<id>` paths, with or without query
+parameters, when extracting result nodes for Parser2GIS.
