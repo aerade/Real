@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { accessSync, constants } from "node:fs";
+import { accessSync, constants, readdirSync } from "node:fs";
 import { access, mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -236,10 +236,24 @@ function mapItem(item: TwoGisItem, input: ParserInput): PublicBusiness | null {
 
 async function findChromeBinary(): Promise<string | null> {
   const configured = process.env.REAL_CHROME_BINARY?.trim();
+  const snapChromiumCandidates = (() => {
+    try {
+      const revisions = readdirSync("/snap/chromium", { withFileTypes: true })
+        .filter((entry) => entry.isDirectory() || entry.isSymbolicLink())
+        .map((entry) => entry.name)
+        .sort((left, right) => (left === "current" ? -1 : right === "current" ? 1 : right.localeCompare(left)));
+      return revisions.flatMap((revision) => [
+        path.join("/snap/chromium", revision, "usr", "lib", "chromium", "chromium"),
+        path.join("/snap/chromium", revision, "usr", "lib", "chromium", "chrome"),
+        path.join("/snap/chromium", revision, "usr", "lib", "chromium", "chromium-browser"),
+      ]);
+    } catch {
+      return [];
+    }
+  })();
   const candidates = [
     configured,
-    "/snap/chromium/current/usr/lib/chromium/chromium",
-    "/snap/chromium/current/usr/lib/chromium/chrome",
+    ...snapChromiumCandidates,
     "/usr/bin/chromium",
     "/usr/bin/chromium-browser",
     "/usr/bin/google-chrome",
