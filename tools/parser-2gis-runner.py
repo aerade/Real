@@ -101,6 +101,26 @@ def main() -> None:
 
                 parser._wait_requests_finished = wait_requests_finished
 
+                original_get_links = parser._get_links
+
+                def get_links():
+                    trace("reading result links from DOM")
+                    result = original_get_links()
+                    trace(f"result links read: {len(result)}")
+                    return result
+
+                parser._get_links = get_links
+
+                original_get_document = parser._chrome_remote.get_document
+
+                def get_document(full=True):
+                    trace(f"requesting DOM document (full={full})")
+                    result = original_get_document(full=full)
+                    trace("DOM document received")
+                    return result
+
+                parser._chrome_remote.get_document = get_document
+
                 # Keep one slow or missing item response from multiplying into minutes:
                 # the upstream parser retries each item three times with a 30-second
                 # wait, and max_records only limits successful records.
