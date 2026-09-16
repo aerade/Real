@@ -104,7 +104,10 @@ def main() -> None:
                 parser._wait_requests_finished = wait_requests_finished
 
                 last_document = None
+                initial_item_responses = 0
+
                 def get_links():
+                    nonlocal initial_item_responses
                     trace("reading result links from DOM")
                     document = parser._chrome_remote.get_document()
                     result = document.search(
@@ -118,6 +121,13 @@ def main() -> None:
                         )
                     )
                     trace(f"result links read: {len(result)}")
+                    responses = parser._chrome_remote.get_responses()
+                    initial_item_responses = sum(
+                        1
+                        for response in responses
+                        if "/items/byid" in response.get("url", "")
+                    )
+                    trace(f"captured item responses: {initial_item_responses}")
                     if not result and last_document is not None:
                         anchors = last_document.search(
                             lambda node: node.local_name == "a" and "href" in node.attributes
@@ -179,9 +189,8 @@ def main() -> None:
                 def perform_click(node, timeout=None):
                     href = node.attributes.get("href", "")
                     if re.search(r"/(?:firm|station)/[^/?#]+(?:[/?#]|$)", href):
-                        target_url = urljoin(args.url, href)
-                        trace(f"opening result URL directly: {target_url}")
-                        return navigate(target_url, referer=args.url, timeout=30)
+                        trace("using captured item response; skipping card navigation")
+                        return None
                     return original_perform_click(node, timeout=timeout)
 
                 parser._chrome_remote.perform_click = perform_click
