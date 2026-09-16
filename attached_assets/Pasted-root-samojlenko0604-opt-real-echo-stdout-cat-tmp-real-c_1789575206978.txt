@@ -1,0 +1,85 @@
+root@samojlenko0604:/opt/real# echo "--- stdout ---"
+cat /tmp/real-chrome-direct.out
+
+echo "--- stderr ---"
+cat /tmp/real-chrome-direct.err
+--- stdout ---
+--- stderr ---
+[75431:75445:0916/190830.953161:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[75431:75445:0916/190832.263591:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[75431:75445:0916/190832.958618:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[75431:75445:0916/190838.479447:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+
+DevTools listening on ws://127.0.0.1:19229/devtools/browser/cb41dce9-9842-4808-ac4a-b820b7ad3db0
+root@samojlenko0604:/opt/real# sudo kill 75428 2>/dev/null || true
+sudo pkill -TERM -u real -f '/snap/chromium/3525/usr/lib/chromium-browser/chrome' 2>/dev/null || true
+[1]+  Terminated              sudo -u real env LD_LIBRARY_PATH="$LIB_PATH" "$CHROME" --headless --disable-gpu --disable-dev-shm-usage --no-sandbox --no-first-run --no-default-browser-check --no-zygote --remote-allow-origins='*' --remote-debugging-port=19229 --user-data-dir="$TMP_CHROME_DIR" about:blank > /tmp/real-chrome-direct.out 2> /tmp/real-chrome-direct.err
+root@samojlenko0604:/opt/real# SNAP_ROOT="$(readlink -f /snap/chromium/current)"
+CHROME="$SNAP_ROOT/usr/lib/chromium-browser/chrome"
+
+LIB_PATH="$SNAP_ROOT/usr/lib/chromium-browser:$SNAP_ROOT/usr/lib/x86_64-linux-gnu:$SNAP_ROOT/lib/x86_64-linux-gnu:$SNAP_ROOT/usr/lib:$SNAP_ROOT/lib:/usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:/usr/lib:/lib"
+
+TMP_CHROME_DIR="$(mktemp -d /tmp/real-chrome-direct.XXXXXX)"
+chown real:real "$TMP_CHROME_DIR"
+
+sudo -u real env \
+  -u DBUS_SESSION_BUS_ADDRESS \
+  -u DISPLAY \
+  LD_LIBRARY_PATH="$LIB_PATH" \
+  "$CHROME" \
+  --headless \
+  --disable-gpu \
+  --disable-dev-shm-usage \
+  --no-sandbox \
+  --no-first-run \
+  --no-default-browser-check \
+  --no-zygote \
+  --remote-allow-origins='*' \
+  --remote-debugging-address=127.0.0.1 \
+  --remote-debugging-port=19229 \
+  --user-data-dir="$TMP_CHROME_DIR" \
+  about:blank \
+  >/tmp/real-chrome-direct.out \
+  2>/tmp/real-chrome-direct.err &
+
+CHROME_PID=$!
+rm -rf "$TMP_CHROME_DIR"v/null || trueversion || true|| true
+[1] 75673
+--- process ---
+    PID    PPID USER     STAT     ELAPSED COMMAND
+  75673   73945 root     S          00:15 sudo -u real env -u DBUS_SESSION_BUS_ADDRESS -u DISPLAY LD_LIBRARY_PATH=/snap/
+--- CDP ---
+{
+   "Browser": "Chrome/152.0.7977.82",
+   "Protocol-Version": "1.3",
+   "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36",
+   "V8-Version": "15.2.124.21",
+   "WebKit-Version": "537.36 (@d04cdb24d67b081f6cf80200ffc5233f44b61109)",
+   "webSocketDebuggerUrl": "ws://127.0.0.1:19229/devtools/browser/76de2dfc-29b1-479d-86f5-7c34ec5b3088"
+}
+
+--- stderr ---
+[75676:75693:0916/191158.894150:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[75676:75693:0916/191158.898655:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[75676:75693:0916/191200.336331:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[75676:75693:0916/191200.576898:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+
+DevTools listening on ws://127.0.0.1:19229/devtools/browser/76de2dfc-29b1-479d-86f5-7c34ec5b3088
+[75676:75676:0916/191202.480374:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type:
+[75676:75676:0916/191202.480768:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type:
+[75676:75693:0916/191202.481598:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[75676:75693:0916/191202.485743:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[75676:75676:0916/191202.500577:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type:
+[75676:75676:0916/191202.640640:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type:
+[75676:75676:0916/191202.799806:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type:
+[75676:75676:0916/191202.806185:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type:
+[75676:75693:0916/191202.808099:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[75676:75676:0916/191203.083252:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.Properties.GetAll: object_path= /org/freedesktop/UPower/devices/DisplayDevice: org.freedesktop.DBus.Error.ServiceUnknown: The name org.freedesktop.UPower was not provided by any .service files
+[75676:75676:0916/191203.087173:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type:
+[75676:75693:0916/191203.088400:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[75676:75676:0916/191203.331000:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type:
+[75676:75693:0916/191203.331974:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[75676:75676:0916/191203.389671:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type:
+[75676:75696:0916/191211.636031:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: QUOTA_EXCEEDED
+rm: cannot remove '/tmp/real-chrome-direct.E9pc9o/Default': Directory not empty
+root@samojlenko0604:/opt/real#

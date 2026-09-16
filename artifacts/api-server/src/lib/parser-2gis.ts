@@ -54,7 +54,7 @@ type TwoGisItem = {
 
 const parserCache = new Map<string, { expiresAt: number; results: PublicBusiness[] }>();
 const activeParses = new Map<string, Promise<PublicBusiness[]>>();
-const PARSER_TIMEOUT_MS = 180_000;
+const PARSER_TIMEOUT_MS = 300_000;
 
 const cityAliases: Record<string, string> = {
   москва: "moscow",
@@ -374,13 +374,25 @@ async function runParser(url: string, outputPath: string): Promise<void> {
   await new Promise<void>((resolve, reject) => {
     const child = spawn(parserCommand, args, {
       cwd,
+      detached: process.platform !== "win32",
       env: parserEnvironment(binaryPath),
       stdio: ["ignore", "ignore", "pipe"],
     });
+    const terminate = () => {
+      if (child.pid && process.platform !== "win32") {
+        try {
+          process.kill(-child.pid, "SIGTERM");
+          return;
+        } catch {
+          // Fall back to terminating the direct child below.
+        }
+      }
+      child.kill("SIGTERM");
+    };
     let stderr = "";
     const timer = setTimeout(() => {
-      child.kill("SIGTERM");
-      reject(new Error("2ГИС-поиск превысил лимит ожидания 3 минуты"));
+      terminate();
+      reject(new Error("2ГИС-поиск превысил лимит ожидания 5 минут"));
     }, PARSER_TIMEOUT_MS);
 
     child.stderr?.on("data", (chunk: Buffer) => {
