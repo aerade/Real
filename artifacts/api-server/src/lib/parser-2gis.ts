@@ -314,7 +314,10 @@ async function findParserCommand(): Promise<string> {
 async function runParser(url: string, outputPath: string): Promise<void> {
   const binaryPath = await findChromeBinary();
   const parserCommand = await findParserCommand();
-  const commandArgs = path.basename(parserCommand) === "uv" ? ["run", "parser-2gis"] : [];
+  const cwd = findProjectRoot();
+  const commandArgs = path.basename(parserCommand) === "uv"
+    ? ["run", "python", path.join(cwd, "tools", "parser-2gis-runner.py")]
+    : [];
   const args = [
     ...commandArgs,
     "-i", url,
@@ -325,7 +328,6 @@ async function runParser(url: string, outputPath: string): Promise<void> {
     "--chrome.silent-browser", "yes",
   ];
   if (binaryPath) args.push("--chrome.binary_path", binaryPath);
-  const cwd = findProjectRoot();
 
   await new Promise<void>((resolve, reject) => {
     const child = spawn(parserCommand, args, {
