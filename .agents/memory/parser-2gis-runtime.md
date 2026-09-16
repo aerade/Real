@@ -93,3 +93,15 @@ rejected every one because it required a base64-like `stat` query.
 
 **How to apply:** Accept both `/firm/<id>` and `/station/<id>` paths, with or without query
 parameters, when extracting result nodes for Parser2GIS.
+
+The remaining production mismatch is at the network-response stage: the VPS DOM exposes firm
+links, but the current 2GIS page produced zero captured `items/byid` responses. The page HTML
+references the `catalog.api.2gis.ru` 2.0/3.0 APIs, so the next investigation must identify the
+actual catalog response URL and payload before changing more browser timing or navigation.
+
+**Why:** Chromium, navigation, DOM extraction, and current firm-link matching all passed, while
+every item-response wait expired and direct firm-page navigation also blocked.
+
+**How to apply:** Inspect all captured catalog response URLs/statuses from the Parser2GIS browser
+session, then adapt the Parser2GIS response pattern and JSON mapping to the live endpoint while
+keeping Parser2GIS as the source.
