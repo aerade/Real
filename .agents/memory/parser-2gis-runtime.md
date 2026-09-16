@@ -75,3 +75,12 @@ API request limit even though the requested record count was only five.
 
 **How to apply:** Override item-response and navigation waits in the VPS wrapper, and keep a
 short process-level deadline so one broken 2GIS endpoint cannot block the desktop search.
+
+On the VPS, waiting for `window.openHTTPs == 0` through CDP can block the CDP call itself when
+2GIS leaves an XHR pending; the parser's timeout decorator does not reliably interrupt that call.
+
+**Why:** Parser2GIS connected and completed navigation, then remained inside its page-XHR wait
+until the outer API deadline even though the loaded DOM was already available.
+
+**How to apply:** After navigation, read the loaded DOM without waiting for every background XHR;
+keep short item-response and process-level limits as separate safeguards.
