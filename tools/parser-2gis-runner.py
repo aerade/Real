@@ -101,12 +101,22 @@ def main() -> None:
 
                 parser._wait_requests_finished = wait_requests_finished
 
+                last_document = None
                 original_get_links = parser._get_links
 
                 def get_links():
                     trace("reading result links from DOM")
                     result = original_get_links()
                     trace(f"result links read: {len(result)}")
+                    if not result and last_document is not None:
+                        anchors = last_document.search(
+                            lambda node: node.local_name == "a" and "href" in node.attributes
+                        )
+                        samples = [
+                            node.attributes["href"][:180]
+                            for node in anchors[:10]
+                        ]
+                        trace(f"all DOM anchors: {len(anchors)}; samples: {samples}")
                     return result
 
                 parser._get_links = get_links
@@ -114,8 +124,10 @@ def main() -> None:
                 original_get_document = parser._chrome_remote.get_document
 
                 def get_document(full=True):
+                    nonlocal last_document
                     trace(f"requesting DOM document (full={full})")
                     result = original_get_document(full=full)
+                    last_document = result
                     trace("DOM document received")
                     return result
 
