@@ -1,0 +1,52 @@
+root@samojlenko0604:/opt/real# cd /opt/realeal
+
+pnpm approve-builds
+Choose which packages to build (<space> to select, <enter> to confirm): electron, esbuild
+The next packages will now be built: electron, esbuild.
+The next packages will now be built: electron, esbuild.
+Do you approve? yes
+✓ Lockfile passes supply-chain policies (verified 1m ago)
+Already up to date
+node_modules/.pnpm/esbuild@0.28.2/node_modules/esbuild: Running postinstall script, done in 354ms
+node_modules/.pnpm/electron@38.8.6/node_modules/electron: Running postinstall script, done in 919ms
+root@samojlenko0604:/opt/real# pnpm install --frozen-lockfile
+pnpm --filter @workspace/api-server run build
+Scope: all 9 workspace projects
+✓ Lockfile passes supply-chain policies (verified 2m ago)
+Lockfile is up to date, resolution step is skipped
+Done in 548ms using pnpm v12.4.1
+
+$ node ./build.mjs
+
+  dist/index.mjs                       2.2mb ⚠️
+  dist/pino-worker.mjs               153.5kb
+  dist/pino-file.mjs                 142.1kb
+  dist/pino-pretty.mjs               115.3kb
+  dist/thread-stream-worker.mjs        7.4kb
+  dist/index.mjs.map                   3.8mb
+  dist/pino-worker.mjs.map           256.9kb
+  dist/pino-file.mjs.map             229.0kb
+  dist/pino-pretty.mjs.map           209.5kb
+  dist/thread-stream-worker.mjs.map   12.0kb
+
+⚡ Done in 4738ms
+root@samojlenko0604:/opt/real# systemctl restart real-api
+sleep 3
+systemctl status real-api --no-pager -l
+curl http://127.0.0.1:8080/api/healthz
+● real-api.service - Real API Server
+     Loaded: loaded (/etc/systemd/system/real-api.service; enabled; preset: enabled)
+     Active: active (running) since Wed 2026-09-16 07:05:19 MSK; 3s ago
+   Main PID: 48981 (MainThread)
+      Tasks: 11 (limit: 1046)
+     Memory: 40.4M (peak: 52.2M)
+        CPU: 891ms
+     CGroup: /system.slice/real-api.service
+             └─48981 /usr/bin/node /opt/real/artifacts/api-server/dist/index.mjs
+
+Sep 16 07:05:19 samojlenko0604.fvds.ru systemd[1]: Started real-api.service - Real API Server.
+Sep 16 07:05:20 samojlenko0604.fvds.ru node[48981]: {"level":30,"time":1789531520421,"pid":48981,"hostname":"samojlenko0604.fvds.ru","port":8080,"msg":"Server listening"}
+{"status":"ok"}root@samojlenko0ls -lh /tmp/parser-smoke.jsonrser-smoke.json
+head -c 500 /tmp/parser-smoke.json
+-rw-r--r-- 1 root root 5 Sep 16 07:04 /tmp/parser-smoke.json
+﻿[]root@samojlenko0604:/opt/real#
