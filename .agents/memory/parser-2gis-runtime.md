@@ -56,3 +56,13 @@ launcher, while the launcher also differed from the binary selected by an intera
 
 **How to apply:** Prefer `/snap/chromium/current/usr/lib/chromium/chromium` when it exists,
 before `/usr/bin/chromium-browser` or other snap wrapper paths.
+
+When launching the direct Chromium snap binary from a systemd service, remove inherited
+`DBUS_SESSION_BUS_ADDRESS` and `DISPLAY` values; an invalid DBus address can delay CDP startup
+for minutes even when all shared libraries are installed.
+
+**Why:** The same direct binary opened DevTools promptly after those variables were unset, while
+the inherited service environment produced repeated DBus parsing errors and delayed startup.
+
+**How to apply:** Delete those two environment keys for the snap Chromium child process, while
+keeping the snap and host library directories in `LD_LIBRARY_PATH`.
