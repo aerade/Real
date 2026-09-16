@@ -90,19 +90,14 @@ def main() -> None:
                 parser_options=config.parser,
             ) as parser:
                 trace("ChromeRemote connected")
-                # The upstream parser waits up to two minutes for every 2GIS XHR.
-                # Some VPS requests never close, although the result links are ready.
-                original_wait = type(parser)._wait_requests_finished
-
                 def wait_requests_finished():
-                    trace("waiting for page XHR")
-                    result = original_wait(
-                        parser,
-                        timeout=15,
-                        throw_exception=False,
-                    )
-                    trace(f"page XHR wait finished: {result}")
-                    return result
+                    # The upstream implementation evaluates window.openHTTPs
+                    # through CDP. A permanently pending 2GIS XHR can block the
+                    # CDP call itself, so its timeout decorator cannot interrupt
+                    # it. Navigation has already completed and the DOM links are
+                    # available, so continue without waiting for every XHR.
+                    trace("skipping page XHR wait; reading loaded DOM")
+                    return True
 
                 parser._wait_requests_finished = wait_requests_finished
 
