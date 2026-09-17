@@ -128,7 +128,10 @@ ipcMain.handle("real:install-update", () => {
     stdio: "ignore",
     windowsHide: false,
   }).unref();
-  setTimeout(() => app.quit(), 250);
+  // Close the running app before the installer replaces its locked files.
+  // The installer also retries briefly for the Windows process teardown.
+  setTimeout(() => app.quit(), 100);
+  setTimeout(() => app.exit(0), 1500).unref();
   return { started: true };
 });
 ipcMain.handle("real:request", async (_event, request) => {

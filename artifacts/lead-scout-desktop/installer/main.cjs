@@ -60,16 +60,33 @@ function wait(milliseconds) {
 
 async function copyPayloadWithRetry(payload, target) {
   let lastError;
-  for (let attempt = 0; attempt < 24; attempt += 1) {
+  for (let attempt = 0; attempt < 60; attempt += 1) {
     try {
-      fs.cpSync(payload, target, { recursive: true, force: true });
+      copyDirectoryContents(payload, target);
       return;
     } catch (error) {
       lastError = error;
-      await wait(500);
+      await wait(attempt < 3 ? 750 : 500);
     }
   }
-  throw lastError instanceof Error ? lastError : new Error("Could not replace the existing Real installation.");
+  const detail = lastError instanceof Error && lastError.message ? ` ${lastError.message}` : "";
+  throw new Error(`Could not replace the existing Real installation. Close Real and try again.${detail}`);
+}
+
+function copyDirectoryContents(source, target) {
+  fs.mkdirSync(target, { recursive: true });
+  for (const entry of fs.readdirSync(source, { withFileTypes: true })) {
+    const sourcePath = path.join(source, entry.name);
+    const targetPath = path.join(target, entry.name);
+    if (entry.isDirectory()) {
+      copyDirectoryContents(sourcePath, targetPath);
+    } else if (entry.isSymbolicLink()) {
+      fs.rmSync(targetPath, { force: true });
+      fs.symlinkSync(fs.readlinkSync(sourcePath), targetPath);
+    } else {
+      fs.copyFileSync(sourcePath, targetPath);
+    }
+  }
 }
 
 ipcMain.handle("installer:get-info", (_event, requestedTarget) => {
@@ -106,6 +123,9 @@ ipcMain.handle("installer:install", async (_event, requestedPath, options = {}) 
   const payload = payloadDirectory();
   if (!fs.existsSync(path.join(payload, "Real.exe"))) {
     throw new Error("The bundled Real application payload is missing.");
+  }
+  if (path.resolve(payload) === path.resolve(target)) {
+    throw new Error("Choose a different installation folder.");
   }
   fs.mkdirSync(target, { recursive: true });
   await copyPayloadWithRetry(payload, target);
