@@ -125,8 +125,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view $env:GITHUB_REF_NAME 2>$null
+          gh release view $env:GITHUB_REF_NAME --repo $env:GITHUB_REPOSITORY 2>$null
           if ($LASTEXITCODE -ne 0) {
-            gh release create $env:GITHUB_REF_NAME --title $env:GITHUB_REF_NAME --generate-notes
+            gh release create $env:GITHUB_REF_NAME --repo $env:GITHUB_REPOSITORY --title $env:GITHUB_REF_NAME --generate-notes
           }
-          gh release upload $env:GITHUB_REF_NAME release/Real-Installer-*.exe release/real-update.json release/installer-verification.json --clobber
+          gh release upload $env:GITHUB_REF_NAME --repo $env:GITHUB_REPOSITORY release/Real-Installer-*.exe release/real-update.json release/installer-verification.json --clobber
