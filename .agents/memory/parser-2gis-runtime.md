@@ -114,3 +114,21 @@ library paths, and the first complete Parser2GIS smoke run took about 103 second
 **How to apply:** Run the parser with the project virtualenv Python, set `HOME` and XDG cache paths
 to a writable project directory, pass the direct snap binary environment, and keep the API/proxy
 deadlines above the observed full-search duration.
+
+The VPS's current 2GIS SSR search page exposes usable firm/station links, and each card's
+`initialState` contains the profile payload needed by the existing mapper.
+
+**Why:** CDP `Page.navigate` timed out on the VPS even though ordinary HTTPS requests returned the
+search page and five complete cards in under seven seconds.
+
+**How to apply:** Try the direct 2GIS SSR search/card path before starting ChromeRemote; retain the
+browser path only as a fallback for pages that do not expose SSR cards.
+
+The search-history table is part of the application schema but was absent from the deployed VPS
+database until it was created separately.
+
+**Why:** The Parser2GIS route returned five records successfully, then failed at the history query
+with `relation "lead_search_history" does not exist`.
+
+**How to apply:** Include `lead_search_history` in the production schema/migration step before
+enabling the search route on a fresh or previously deployed database.
