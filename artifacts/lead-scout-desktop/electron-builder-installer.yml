@@ -9,7 +9,7 @@ extraMetadata:
   main: installer/main.cjs
 files:
   - installer/**/*
-extraResources:
+extraFiles:
   - from: build/installer-payload/win-unpacked
     to: real-app
   - from: ../../attached_assets/real-logo/real-mark-white.ico
