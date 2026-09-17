@@ -36,7 +36,24 @@ function createWindow() {
 }
 
 function payloadDirectory() {
-  return path.join(process.resourcesPath, "real-app");
+  const candidates = [
+    path.join(path.dirname(process.resourcesPath), "real-app"),
+    path.join(process.resourcesPath, "real-app"),
+  ];
+  return candidates.find((candidate) => payloadReady(candidate)) || candidates[0];
+}
+
+function payloadReady(payload) {
+  return fs.existsSync(path.join(payload, "Real.exe")) &&
+    fs.existsSync(path.join(payload, "resources", "app.asar"));
+}
+
+async function waitForPayload(payload) {
+  for (let attempt = 0; attempt < 60; attempt += 1) {
+    if (payloadReady(payload)) return;
+    await wait(500);
+  }
+  throw new Error("The bundled Real application payload is incomplete. Download the installer again.");
 }
 
 function installationTarget(value) {
@@ -94,7 +111,7 @@ ipcMain.handle("installer:get-info", (_event, requestedTarget) => {
   return {
     target,
     installed: fs.existsSync(path.join(target, "Real.exe")),
-    payloadReady: fs.existsSync(path.join(payloadDirectory(), "Real.exe")),
+    payloadReady: payloadReady(payloadDirectory()),
     version: app.getVersion(),
   };
 });
@@ -121,9 +138,7 @@ ipcMain.handle("installer:window-control", (event, action) => {
 ipcMain.handle("installer:install", async (_event, requestedPath, options = {}) => {
   const target = installationTarget(requestedPath);
   const payload = payloadDirectory();
-  if (!fs.existsSync(path.join(payload, "Real.exe"))) {
-    throw new Error("The bundled Real application payload is missing.");
-  }
+  await waitForPayload(payload);
   if (path.resolve(payload) === path.resolve(target)) {
     throw new Error("Choose a different installation folder.");
   }
