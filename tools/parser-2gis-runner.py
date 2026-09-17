@@ -351,22 +351,26 @@ def main() -> None:
                 original_perform_click = parser._chrome_remote.perform_click
                 museum_cookie_set = False
 
-                def perform_click(node, timeout=None):
+                def set_museum_cookie():
                     nonlocal museum_cookie_set
+                    if museum_cookie_set:
+                        return
+                    trace("setting 2GIS museum acceptance cookie")
+                    cookie_result = parser._chrome_remote._chrome_tab.Network.setCookie(
+                        name="dg5_museum_accept",
+                        value="true",
+                        url="https://2gis.ru/",
+                        path="/",
+                    )
+                    if not cookie_result.get("success", False):
+                        raise RuntimeError("Не удалось установить cookie принятия риска 2ГИС")
+                    museum_cookie_set = True
+                    trace("2GIS museum acceptance cookie set")
+
+                def perform_click(node, timeout=None):
                     href = node.attributes.get("href", "")
                     if re.search(r"/(?:firm|station)/[^/?#]+(?:[/?#]|$)", href):
-                        if not museum_cookie_set:
-                            trace("setting 2GIS museum acceptance cookie")
-                            cookie_result = parser._chrome_remote._chrome_tab.Network.setCookie(
-                                name="dg5_museum_accept",
-                                value="true",
-                                url="https://2gis.ru/",
-                                path="/",
-                            )
-                            if not cookie_result.get("success", False):
-                                raise RuntimeError("Не удалось установить cookie принятия риска 2ГИС")
-                            museum_cookie_set = True
-                            trace("2GIS museum acceptance cookie set")
+                        set_museum_cookie()
                         trace(f"opening result card URL: {href[:240]}")
                         parser._chrome_remote.execute_script(
                             f"window.location.href = {json.dumps(href)}"
@@ -375,6 +379,7 @@ def main() -> None:
                     return original_perform_click(node, timeout=timeout)
 
                 parser._chrome_remote.perform_click = perform_click
+                set_museum_cookie()
                 trace("starting parser.parse")
                 parser.parse(writer)
                 trace("parser.parse finished")
