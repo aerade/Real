@@ -244,12 +244,26 @@ def main() -> None:
                 parser._chrome_remote.navigate = navigate
 
                 original_perform_click = parser._chrome_remote.perform_click
+                museum_cookie_set = False
 
                 def perform_click(node, timeout=None):
+                    nonlocal museum_cookie_set
                     href = node.attributes.get("href", "")
                     if re.search(r"/(?:firm|station)/[^/?#]+(?:[/?#]|$)", href):
-                        trace("using captured item response; skipping card navigation")
-                        return None
+                        if not museum_cookie_set:
+                            trace("setting 2GIS museum acceptance cookie")
+                            cookie_result = parser._chrome_remote._chrome_tab.Network.setCookie(
+                                name="dg5_museum_accept",
+                                value="true",
+                                url="https://2gis.ru/",
+                                path="/",
+                            )
+                            if not cookie_result.get("success", False):
+                                raise RuntimeError("Не удалось установить cookie принятия риска 2ГИС")
+                            museum_cookie_set = True
+                            trace("2GIS museum acceptance cookie set")
+                        trace("opening result card")
+                        return original_perform_click(node, timeout=timeout)
                     return original_perform_click(node, timeout=timeout)
 
                 parser._chrome_remote.perform_click = perform_click
