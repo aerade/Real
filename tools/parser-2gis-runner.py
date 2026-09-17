@@ -123,6 +123,25 @@ def main() -> None:
                     )
                     trace(f"result links read: {len(result)}")
                     responses = parser._chrome_remote.get_responses()
+                    api_responses = [
+                        response
+                        for response in responses
+                        if "api.2gis." in response.get("url", "")
+                    ]
+                    api_status_counts = Counter(
+                        str(response.get("status", "unknown"))
+                        for response in api_responses
+                    )
+                    trace(
+                        f"captured 2GIS API responses: {len(api_responses)}; "
+                        f"statuses: {dict(api_status_counts)}"
+                    )
+                    for index, response in enumerate(api_responses[:20], start=1):
+                        trace(
+                            f"2GIS API response {index}: "
+                            f"status={response.get('status', 'unknown')} "
+                            f"url={response.get('url', '')[:240]}"
+                        )
                     item_responses = [
                         response
                         for response in responses
