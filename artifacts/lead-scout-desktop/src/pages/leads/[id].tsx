@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { getGetLeadQueryKey, LeadUpdateStatus, useClaimLead, useGetLead, useUpdateLead } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout/app-layout";
+import { OutreachMessagePanel } from "@/components/outreach-message-panel";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -121,6 +122,8 @@ export function LeadDetailsPage() {
              : <p className="w-full text-center text-xs text-muted-foreground">В работе у {lead.assignee?.name ?? "другого сотрудника"}.</p>}
         </div>
          {isRejecting && isAssignedToMe && <div className="rounded-xl border border-destructive/25 bg-destructive/5 p-4"><label htmlFor="reject-reason" className="text-xs font-semibold">Почему лид не подходит?</label><Textarea data-testid="textarea-reject-reason" id="reject-reason" value={rejectReason} onChange={(event) => setRejectReason(event.target.value)} placeholder="Добавьте короткую причину для команды." className="mt-2 min-h-16 resize-none text-xs" /><div className="mt-3 flex justify-end gap-2"><Button data-testid="button-cancel-reject" type="button" variant="ghost" size="sm" onClick={() => setIsRejecting(false)}>Отмена</Button><Button data-testid="button-confirm-reject" type="button" variant="destructive" size="sm" disabled={updateLead.isPending || !rejectReason.trim()} onClick={rejectLead}>Подтвердить отказ</Button></div></div>}
+
+         <OutreachMessagePanel lead={lead} />
 
         <div className="grid gap-5 lg:grid-cols-[1.15fr_.85fr]">
           <div className="space-y-5">
