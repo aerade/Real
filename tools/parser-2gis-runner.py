@@ -206,6 +206,7 @@ def main() -> None:
                         )
                     else:
                         trace("item response received: false")
+                        current_url = ""
                         try:
                             current_url = parser._chrome_remote.execute_script("location.href")
                             current_title = parser._chrome_remote.execute_script("document.title")
@@ -215,6 +216,33 @@ def main() -> None:
                             )
                         except Exception as error:
                             trace(f"after item wait: unable to read page state: {error}")
+                        try:
+                            card_data = parser._chrome_remote.execute_script(
+                                r"""(() => {
+                                    const profiles = window.initialState?.data?.entity?.profile ?? {};
+                                    const match = window.location.pathname.match(/\/(?:firm|station)\/([^/?#]+)/);
+                                    const profile = match ? profiles[match[1]] : Object.values(profiles)[0];
+                                    return profile?.data ?? null;
+                                })()"""
+                            )
+                            if isinstance(card_data, dict) and card_data.get("id"):
+                                fallback_body = json.dumps(
+                                    {"result": {"items": [card_data]}},
+                                    ensure_ascii=False,
+                                )
+                                trace(
+                                    "using card initialState as item response: "
+                                    f"id={card_data.get('id')} "
+                                    f"name={card_data.get('name', '')[:120]}"
+                                )
+                                return {
+                                    "status": 200,
+                                    "url": current_url,
+                                    "_fallback_body": fallback_body,
+                                }
+                            trace("card initialState not found")
+                        except Exception as error:
+                            trace(f"card initialState extraction failed: {error}")
                         try:
                             responses = parser._chrome_remote.get_responses()
                             api_responses = [
@@ -240,6 +268,10 @@ def main() -> None:
                 original_get_response_body = parser._chrome_remote.get_response_body
 
                 def get_response_body(response, timeout=10):
+                    fallback_body = response.get("_fallback_body")
+                    if fallback_body is not None:
+                        trace("reading item response body from 2GIS card initialState")
+                        return fallback_body
                     trace("reading item response body")
                     body = original_get_response_body(response, timeout=timeout)
                     try:
@@ -289,8 +321,11 @@ def main() -> None:
                                 raise RuntimeError("Не удалось установить cookie принятия риска 2ГИС")
                             museum_cookie_set = True
                             trace("2GIS museum acceptance cookie set")
-                        trace("opening result card")
-                        return original_perform_click(node, timeout=timeout)
+                        trace(f"opening result card URL: {href[:240]}")
+                        parser._chrome_remote.execute_script(
+                            f"window.location.href = {json.dumps(href)}"
+                        )
+                        return None
                     return original_perform_click(node, timeout=timeout)
 
                 parser._chrome_remote.perform_click = perform_click
