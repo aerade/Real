@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search as SearchIcon, AlertTriangle, Building2, Globe, MapPin, Target, Check, LockKeyhole, ArrowUpDown, Filter, Database, RotateCcw, AlertCircle } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Search as SearchIcon, AlertTriangle, Building2, Globe, MapPin, Target, Check, LockKeyhole, ArrowUpDown, Filter, Database, RotateCcw, AlertCircle, History } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
@@ -78,6 +79,8 @@ export function SearchPage() {
   const [hasSearched, setHasSearched] = useState(false);
   const [sortBy, setSortBy] = useState("score");
   const [minimumScore, setMinimumScore] = useState("all");
+  const [showPreviouslyFound, setShowPreviouslyFound] = useState(false);
+  const [searchPreferencesLoaded, setSearchPreferencesLoaded] = useState(false);
   const searchMutation = useSearchLeads();
   const { session } = useAuth();
   useEffect(() => {
@@ -85,14 +88,25 @@ export function SearchPage() {
     if (!login) return;
     try {
       const saved = window.localStorage.getItem(`real:search-defaults:${login.toLowerCase()}`) ?? window.localStorage.getItem(`lead-scout:search-defaults:${login.toLowerCase()}`);
-      const defaults = saved ? JSON.parse(saved) as { city?: string; industry?: string } : {};
+      const defaults = saved ? JSON.parse(saved) as { city?: string; industry?: string; showPreviouslyFound?: boolean } : {};
       setCity(defaults.city ?? ""); setIndustry(defaults.industry ?? "");
-    } catch { setCity(""); setIndustry(""); }
+      setShowPreviouslyFound(defaults.showPreviouslyFound ?? false);
+      setSearchPreferencesLoaded(true);
+    } catch { setCity(""); setIndustry(""); setShowPreviouslyFound(false); setSearchPreferencesLoaded(true); }
   }, [session?.user?.login]);
+  useEffect(() => {
+    const login = session?.user?.login;
+    if (!login || !searchPreferencesLoaded) return;
+    const key = `real:search-defaults:${login.toLowerCase()}`;
+    try {
+      const existing = JSON.parse(window.localStorage.getItem(key) ?? "{}") as { city?: string; industry?: string };
+      window.localStorage.setItem(key, JSON.stringify({ ...existing, city, industry, showPreviouslyFound }));
+    } catch { /* local preferences are optional */ }
+  }, [city, industry, showPreviouslyFound, searchPreferencesLoaded, session?.user?.login]);
   const runSearch = () => {
     if (!city.trim() || !industry.trim()) return;
     setHasSearched(true);
-    searchMutation.mutate({ data: { country, city: city.trim(), industry: industry.trim() } });
+    searchMutation.mutate({ data: { country, city: city.trim(), industry: industry.trim(), showPreviouslyFound } });
   };
   const handleSearch = (event: React.FormEvent) => { event.preventDefault(); runSearch(); };
   const results = searchMutation.data || [];
@@ -119,6 +133,10 @@ export function SearchPage() {
             <div className="flex flex-col gap-2"><Label className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">City</Label><SuggestionInput value={city} onChange={setCity} options={CITIES_BY_COUNTRY.россия} placeholder="например, Красноярск" icon={MapPin} /></div>
             <div className="flex flex-col gap-2"><Label className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">Industry</Label><SuggestionInput value={industry} onChange={setIndustry} options={POPULAR_INDUSTRIES} placeholder="например, Стоматология" icon={Building2} /></div>
             <Button type="submit" disabled={searchMutation.isPending || !city.trim() || !industry.trim()} className="h-10 rounded-md font-semibold"><SearchIcon className="mr-2 h-4 w-4" />Search</Button>
+            <div className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-background/60 px-3 py-2.5 md:col-span-4">
+              <div className="flex items-center gap-2.5"><History className="h-4 w-4 text-muted-foreground" /><div><p className="text-xs font-semibold text-foreground">Показывать ранее найденные компании</p><p className="text-[11px] text-muted-foreground">По умолчанию повторно показанные компании скрываются</p></div></div>
+              <Switch checked={showPreviouslyFound} onCheckedChange={setShowPreviouslyFound} aria-label="Показывать ранее найденные компании" />
+            </div>
           </form>
         </div>
         {hasSearched && <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border/70 bg-card/40">

@@ -1,6 +1,7 @@
 const { app, BrowserWindow, dialog, ipcMain, shell } = require("electron");
 const path = require("node:path");
 const fs = require("node:fs");
+const { pathToFileURL } = require("node:url");
 
 app.setAppUserModelId("com.real.installer");
 
@@ -59,16 +60,33 @@ function wait(milliseconds) {
 
 async function copyPayloadWithRetry(payload, target) {
   let lastError;
-  for (let attempt = 0; attempt < 24; attempt += 1) {
+  for (let attempt = 0; attempt < 60; attempt += 1) {
     try {
-      fs.cpSync(payload, target, { recursive: true, force: true });
+      copyDirectoryContents(payload, target);
       return;
     } catch (error) {
       lastError = error;
-      await wait(500);
+      await wait(attempt < 3 ? 750 : 500);
     }
   }
-  throw lastError instanceof Error ? lastError : new Error("Could not replace the existing Real installation.");
+  const detail = lastError instanceof Error && lastError.message ? ` ${lastError.message}` : "";
+  throw new Error(`Could not replace the existing Real installation. Close Real and try again.${detail}`);
+}
+
+function copyDirectoryContents(source, target) {
+  fs.mkdirSync(target, { recursive: true });
+  for (const entry of fs.readdirSync(source, { withFileTypes: true })) {
+    const sourcePath = path.join(source, entry.name);
+    const targetPath = path.join(target, entry.name);
+    if (entry.isDirectory()) {
+      copyDirectoryContents(sourcePath, targetPath);
+    } else if (entry.isSymbolicLink()) {
+      fs.rmSync(targetPath, { force: true });
+      fs.symlinkSync(fs.readlinkSync(sourcePath), targetPath);
+    } else {
+      fs.copyFileSync(sourcePath, targetPath);
+    }
+  }
 }
 
 ipcMain.handle("installer:get-info", (_event, requestedTarget) => {
@@ -86,6 +104,12 @@ ipcMain.handle("installer:choose-directory", async () => {
   return result.canceled ? null : result.filePaths[0] || null;
 });
 
+ipcMain.handle("installer:get-asset-url", (_event, assetName) => {
+  const allowedAssets = new Set(["installer-bg.png"]);
+  if (!allowedAssets.has(assetName)) return "";
+  return pathToFileURL(path.join(process.resourcesPath, "installer", assetName)).toString();
+});
+
 ipcMain.handle("installer:window-control", (event, action) => {
   const window = BrowserWindow.fromWebContents(event.sender);
   if (!window) return;
@@ -100,6 +124,9 @@ ipcMain.handle("installer:install", async (_event, requestedPath, options = {}) 
   if (!fs.existsSync(path.join(payload, "Real.exe"))) {
     throw new Error("The bundled Real application payload is missing.");
   }
+  if (path.resolve(payload) === path.resolve(target)) {
+    throw new Error("Choose a different installation folder.");
+  }
   fs.mkdirSync(target, { recursive: true });
   await copyPayloadWithRetry(payload, target);
 
@@ -111,10 +138,12 @@ ipcMain.handle("installer:install", async (_event, requestedPath, options = {}) 
   return { target, executable, version: app.getVersion() };
 });
 
-ipcMain.handle("installer:launch", (_event, executable) => {
+ipcMain.handle("installer:launch", async (_event, executable) => {
   const target = String(executable || path.join(defaultTarget, "Real.exe"));
   if (fs.existsSync(target)) {
-    shell.openPath(target);
+    const error = await shell.openPath(target);
+    if (error) return { started: false, error };
+    setTimeout(() => app.quit(), 250);
     return { started: true };
   }
   return { started: false };

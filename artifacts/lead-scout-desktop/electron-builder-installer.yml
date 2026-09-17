@@ -15,7 +15,7 @@ extraResources:
   - from: ../../attached_assets/real-logo/real-mark-white.ico
     to: installer-icon.ico
   - from: ../../attached_assets/image_1789523796333.png
-    to: installer-bg.png
+    to: installer/installer-bg.png
 win:
   icon: ../../attached_assets/real-logo/real-mark-white.ico
   target:

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { WindowControls } from "@/components/layout/window-controls";
-import startupBg from "@assets/image_1789523796333.png";
+import startupBg from "@assets/image_1789532603940.png";
 
 type StartupUpdate = {
   configured: boolean;

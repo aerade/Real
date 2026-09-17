@@ -97,6 +97,8 @@ export interface LeadSearchInput {
   country: string;
   city: string;
   industry: string;
+  /** Include companies already shown to this user in earlier searches. */
+  showPreviouslyFound?: boolean;
 }
 
 export type LeadUpdateStatus = typeof LeadUpdateStatus[keyof typeof LeadUpdateStatus];

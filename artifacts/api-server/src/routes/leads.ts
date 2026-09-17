@@ -6,10 +6,12 @@ import {
   createCountry,
   getDashboard,
   getLead,
+  getPreviouslyShownLeadIds,
   getUserById,
   listCountries,
   listLeads,
   listUsers,
+  recordShownLeads,
   updateLead,
   upsertSearchedLead,
   type AuthUser,
@@ -105,9 +107,12 @@ router.get("/leads", async (req, res, next) => {
 });
 
 router.post("/leads/search", async (req, res, next) => {
+  const user = await requestUser(req);
+  if (!user) return res.status(401).json({ error: "Требуется вход" });
   const requestedCountry = String(req.body?.country ?? "").trim();
   const city = String(req.body?.city ?? "").trim();
   const industry = String(req.body?.industry ?? "").trim();
+  const showPreviouslyFound = req.body?.showPreviouslyFound === true;
   const countryKey = requestedCountry.toLowerCase();
   if (countryKey && !["россия", "russia", "ru"].includes(countryKey)) {
     return res.status(400).json({ error: "Пока доступен поиск только по России" });
@@ -130,12 +135,20 @@ router.post("/leads/search", async (req, res, next) => {
       businesses.map((business) => upsertSearchedLead(business, country, city)),
     );
     const available = found.filter((lead) => lead.status === "new" && !lead.assignee);
+    const previouslyShown = await getPreviouslyShownLeadIds(user.id, available.map((lead) => lead.id));
+    const results = showPreviouslyFound
+      ? available
+      : available.filter((lead) => !previouslyShown.has(lead.id));
+    const returned = results.slice(0, 5);
+    await recordShownLeads(user.id, returned.map((lead) => lead.id));
     req.log.info({
       parserResults: businesses.length,
       upserted: found.length,
       available: available.length,
+      previouslyShown: previouslyShown.size,
+      returned: returned.length,
     }, "2GIS search completed");
-    return res.json(available.slice(0, 5));
+    return res.json(returned);
   } catch (error) {
     req.log.error({ err: error }, "Public lead search failed");
     return res.status(502).json({
