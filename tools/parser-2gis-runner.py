@@ -129,6 +129,7 @@ def main() -> None:
                 last_document = None
                 initial_item_responses = 0
                 target_link_count = max(1, min(args.max_records, 5))
+                pending_card_url = None
 
                 def get_links():
                     nonlocal initial_item_responses
@@ -234,7 +235,60 @@ def main() -> None:
                 # wait, and max_records only limits successful records.
                 original_wait_response = parser._chrome_remote.wait_response
 
+                def load_card_response(card_url):
+                    trace(f"reading card HTML from 2GIS: url={card_url[:240]}")
+                    request = urllib.request.Request(
+                        card_url,
+                        headers={
+                            "Accept": "text/html,application/xhtml+xml",
+                            "Accept-Language": "ru-RU,ru;q=0.9",
+                            "Cookie": "dg5_museum_accept=true",
+                            "User-Agent": (
+                                "Mozilla/5.0 (X11; Linux x86_64) "
+                                "AppleWebKit/537.36 Chrome/131 Safari/537.36"
+                            ),
+                        },
+                    )
+                    with urllib.request.urlopen(request, timeout=10) as card_response:
+                        body = card_response.read().decode("utf-8", errors="replace")
+                    trace(
+                        f"2GIS card HTML fetched: bytes={len(body)} "
+                        f"has_initialState={'var initialState' in body}"
+                    )
+                    card_id_match = re.search(r"/(?:firm|station)/([^/?#]+)", card_url)
+                    card_id = card_id_match.group(1) if card_id_match else ""
+                    card_data = extract_card_initial_state(body, card_id)
+                    if not card_data:
+                        trace("card HTML initialState not found")
+                        return None
+                    trace(
+                        "using card HTML initialState as item response: "
+                        f"id={card_data.get('id')} "
+                        f"name={card_data.get('name', '')[:120]}"
+                    )
+                    return {
+                        "status": 200,
+                        "url": card_url,
+                        "_fallback_body": json.dumps(
+                            {
+                                "meta": {"code": 200},
+                                "result": {"items": [card_data]},
+                            },
+                            ensure_ascii=False,
+                        ),
+                    }
+
                 def wait_response(pattern):
+                    nonlocal pending_card_url
+                    card_url = pending_card_url
+                    pending_card_url = None
+                    if card_url:
+                        try:
+                            result = load_card_response(card_url)
+                            if result:
+                                return result
+                        except Exception as error:
+                            trace(f"direct card HTML request failed: {error}")
                     trace("waiting for item response")
                     result = original_wait_response(
                         pattern,
@@ -287,43 +341,18 @@ def main() -> None:
                                     current_url,
                                 )
                                 card_id = card_id_match.group(1) if card_id_match else ""
-                                trace(f"reading card HTML from 2GIS: url={current_url[:240]}")
-                                request = urllib.request.Request(
-                                    current_url,
-                                    headers={
-                                        "Accept": "text/html,application/xhtml+xml",
-                                        "Accept-Language": "ru-RU,ru;q=0.9",
-                                        "Cookie": "dg5_museum_accept=true",
-                                        "User-Agent": (
-                                            "Mozilla/5.0 (X11; Linux x86_64) "
-                                            "AppleWebKit/537.36 Chrome/131 Safari/537.36"
-                                        ),
-                                    },
-                                )
-                                with urllib.request.urlopen(request, timeout=10) as card_response:
-                                    body = card_response.read().decode("utf-8", errors="replace")
-                                trace(
-                                    f"2GIS card HTML fetched: bytes={len(body)} "
-                                    f"has_initialState={'var initialState' in body}"
-                                )
                                 card_data = extract_card_initial_state(body, card_id)
                                 if card_data:
-                                    fallback_body = json.dumps(
-                                        {
-                                            "meta": {"code": 200},
-                                            "result": {"items": [card_data]},
-                                        },
-                                        ensure_ascii=False,
-                                    )
-                                    trace(
-                                        "using card HTML initialState as item response: "
-                                        f"id={card_data.get('id')} "
-                                        f"name={card_data.get('name', '')[:120]}"
-                                    )
                                     return {
                                         "status": 200,
                                         "url": current_url,
-                                        "_fallback_body": fallback_body,
+                                        "_fallback_body": json.dumps(
+                                            {
+                                                "meta": {"code": 200},
+                                                "result": {"items": [card_data]},
+                                            },
+                                            ensure_ascii=False,
+                                        ),
                                     }
                             trace("card HTML initialState not found")
                         except Exception as error:
@@ -389,19 +418,12 @@ def main() -> None:
                     trace("2GIS museum acceptance cookie set")
 
                 def perform_click(node, timeout=None):
+                    nonlocal pending_card_url
                     href = node.attributes.get("href", "")
                     if re.search(r"/(?:firm|station)/[^/?#]+(?:[/?#]|$)", href):
                         set_museum_cookie()
-                        trace(f"opening result card URL: {href[:240]}")
-                        card_url = href if href.startswith("http") else f"https://2gis.ru{href}"
-                        try:
-                            original_navigate(
-                                card_url,
-                                referer=args.url,
-                                timeout=5,
-                            )
-                        except Exception as error:
-                            trace(f"card navigation reached timeout: {error}")
+                        pending_card_url = href if href.startswith("http") else f"https://2gis.ru{href}"
+                        trace(f"loading result card data: {pending_card_url[:240]}")
                         return None
                     return original_perform_click(node, timeout=timeout)
 
