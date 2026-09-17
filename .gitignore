@@ -48,3 +48,23 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Local workspace metadata
+.agents/
+.replit
+.replitignore
+replit.md
+artifacts/*/.replit-artifact/
+
+# Build and release output
+artifacts/**/build/
+artifacts/**/release/
+/artifacts/mockup-sandbox/
+
+# Uploaded working files and design captures
+/screenshots/
+/attached_assets/*
+!/attached_assets/real-logo/
+!/attached_assets/real-logo/**
+!/attached_assets/image_1789523796333.png
+!/attached_assets/image_1789532603940.png
