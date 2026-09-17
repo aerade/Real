@@ -206,6 +206,33 @@ def main() -> None:
                         )
                     else:
                         trace("item response received: false")
+                        try:
+                            current_url = parser._chrome_remote.execute_script("location.href")
+                            current_title = parser._chrome_remote.execute_script("document.title")
+                            trace(
+                                f"after item wait: url={current_url!s:.240} "
+                                f"title={current_title!s:.160}"
+                            )
+                        except Exception as error:
+                            trace(f"after item wait: unable to read page state: {error}")
+                        try:
+                            responses = parser._chrome_remote.get_responses()
+                            api_responses = [
+                                response
+                                for response in responses
+                                if "api.2gis." in response.get("url", "")
+                            ]
+                            trace(
+                                f"post-click 2GIS API responses: {len(api_responses)}"
+                            )
+                            for index, response in enumerate(api_responses[-20:], start=1):
+                                trace(
+                                    f"post-click API response {index}: "
+                                    f"status={response.get('status', 'unknown')} "
+                                    f"url={response.get('url', '')[:240]}"
+                                )
+                        except Exception as error:
+                            trace(f"post-click response inspection failed: {error}")
                     return result
 
                 parser._chrome_remote.wait_response = wait_response
