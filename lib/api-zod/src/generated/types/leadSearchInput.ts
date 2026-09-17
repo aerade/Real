@@ -10,4 +10,6 @@ export interface LeadSearchInput {
   country: string;
   city: string;
   industry: string;
+  /** Include companies already shown to this user in earlier searches. */
+  showPreviouslyFound?: boolean;
 }

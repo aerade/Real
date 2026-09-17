@@ -105,10 +105,13 @@ export const ListLeadsResponseItem = zod.object({
 export const ListLeadsResponse = zod.array(ListLeadsResponseItem)
 
 
+export const searchLeadsBodyShowPreviouslyFoundDefault = false;
+
 export const SearchLeadsBody = zod.object({
   "country": zod.string(),
   "city": zod.string(),
-  "industry": zod.string()
+  "industry": zod.string(),
+  "showPreviouslyFound": zod.boolean().default(searchLeadsBodyShowPreviouslyFoundDefault).describe('Include companies already shown to this user in earlier searches.')
 })
 
 export const searchLeadsResponseScoreMin = 0;

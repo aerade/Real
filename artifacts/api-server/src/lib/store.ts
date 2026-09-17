@@ -1,10 +1,11 @@
 import { randomBytes, scrypt as nodeScrypt, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
-import { and, desc, eq, isNull, like, or, type SQL } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, like, or, type SQL } from "drizzle-orm";
 import {
   activitiesTable,
   countriesTable,
   db,
+  leadSearchHistoryTable,
   leadsTable,
   usersTable,
   type LeadRow,
@@ -348,6 +349,33 @@ export async function upsertSearchedLead(
   if (!id) throw new Error("Не удалось сохранить найденного клиента");
 
   return (await getLead(id))!;
+}
+
+export async function getPreviouslyShownLeadIds(userId: number, leadIds: number[]): Promise<Set<number>> {
+  if (leadIds.length === 0) return new Set();
+  const rows = await db.select({ leadId: leadSearchHistoryTable.leadId })
+    .from(leadSearchHistoryTable)
+    .where(and(
+      eq(leadSearchHistoryTable.userId, userId),
+      inArray(leadSearchHistoryTable.leadId, leadIds),
+    ));
+  return new Set(rows.map((row) => row.leadId));
+}
+
+export async function recordShownLeads(userId: number, leadIds: number[]): Promise<void> {
+  if (leadIds.length === 0) return;
+  const now = new Date();
+  await db.insert(leadSearchHistoryTable).values(
+    leadIds.map((leadId) => ({
+      userId,
+      leadId,
+      firstSeenAt: now,
+      lastSeenAt: now,
+    })),
+  ).onConflictDoUpdate({
+    target: [leadSearchHistoryTable.userId, leadSearchHistoryTable.leadId],
+    set: { lastSeenAt: now },
+  });
 }
 
 export async function getDashboard(user: AuthUser) {

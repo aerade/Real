@@ -20,4 +20,5 @@
 export * from "./activities";
 export * from "./countries";
 export * from "./leads";
+export * from "./lead-search-history";
 export * from "./users";

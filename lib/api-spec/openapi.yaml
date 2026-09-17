@@ -296,6 +296,10 @@ components:
         country: { type: string }
         city: { type: string }
         industry: { type: string }
+        showPreviouslyFound:
+          type: boolean
+          default: false
+          description: Include companies already shown to this user in earlier searches.
     LeadUpdate:
       type: object
       properties:
