@@ -5,6 +5,7 @@ import {
   activitiesTable,
   countriesTable,
   db,
+  ensureLeadSearchHistoryTable,
   leadSearchHistoryTable,
   leadsTable,
   usersTable,
@@ -219,6 +220,8 @@ async function verifyPassword(password: string, encoded: string): Promise<boolea
 }
 
 export async function initializeDatabase(): Promise<void> {
+  await ensureLeadSearchHistoryTable();
+
   const passwordHash = await hashPassword(DEFAULT_PASSWORD);
 
   await db.insert(usersTable).values(
