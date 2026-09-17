@@ -223,3 +223,14 @@ status?: string;
 assignedToMe?: boolean;
 };
 
+export type ListLeadArchiveParams = {
+/**
+ * Search all clients ever found by name, city, industry, or website.
+ */
+query?: string;
+/**
+ * Filter archived clients by pipeline status.
+ */
+status?: string;
+};
+

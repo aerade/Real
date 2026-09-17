@@ -10,6 +10,7 @@ import {
   getPreviouslyShownLeadIds,
   getUserById,
   listCountries,
+  listLeadArchive,
   listLeads,
   listUsers,
   recordShownLeads,
@@ -102,6 +103,18 @@ router.get("/leads", async (req, res, next) => {
       typeof req.query.status === "string" ? req.query.status : undefined,
       req.query.assignedToMe === "true",
     ));
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get("/leads/archive", async (req, res, next) => {
+  try {
+    const user = await requestUser(req);
+    if (!user) return res.status(401).json({ error: "Требуется вход" });
+    const query = typeof req.query.query === "string" ? req.query.query : "";
+    const status = typeof req.query.status === "string" ? req.query.status : undefined;
+    return res.json(await listLeadArchive(user, query, status));
   } catch (error) {
     return next(error);
   }

@@ -48,5 +48,5 @@ export function LeadsPage() {
 }
 
 function SummaryCard({ label, value, detail, accent = false }: { label: string; value: number; detail: string; accent?: boolean }) {
-  return <div className={cn("rounded-xl border border-border/70 bg-card p-4 shadow-sm", accent && "border-primary/30")}><p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">{label}</p><p data-testid={`text-pipeline-${label.toLowerCase().replaceAll(" ", "-")}`} className={cn("mt-3 font-mono text-2xl font-semibold", accent && "text-primary")}>{value}</p><p className="mt-1 text-[10px] text-muted-foreground">{detail}</p></div>;
+  return <div className="rounded-xl border border-border/70 bg-card p-4 shadow-sm"><p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">{label}</p><p data-testid={`text-pipeline-${label.toLowerCase().replaceAll(" ", "-")}`} className={cn("mt-3 font-mono text-2xl font-semibold", accent && "text-primary")}>{value}</p><p className="mt-1 text-[10px] text-muted-foreground">{detail}</p></div>;
 }

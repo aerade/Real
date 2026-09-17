@@ -14,6 +14,7 @@ import { useHashLocation } from 'wouter/use-hash-location';
 import { AuthProvider, ProtectedRoute } from '@/hooks/use-auth';
 import { Login } from '@/pages/login';
 import { Dashboard } from '@/pages/dashboard';
+import { ArchivePage } from '@/pages/archive';
 import { SearchPage } from '@/pages/search';
 import { LeadsPage } from '@/pages/leads/index';
 import { LeadDetailsPage } from '@/pages/leads/[id]';
@@ -40,6 +41,12 @@ function Router() {
         <Route path="/search">
           <ProtectedRoute>
             <SearchPage />
+          </ProtectedRoute>
+        </Route>
+
+        <Route path="/archive">
+          <ProtectedRoute>
+            <ArchivePage />
           </ProtectedRoute>
         </Route>
         

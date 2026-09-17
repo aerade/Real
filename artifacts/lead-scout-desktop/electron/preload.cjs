@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld("realDesktop", {
   checkForUpdates: () => ipcRenderer.invoke("real:check-updates"),
   downloadUpdate: () => ipcRenderer.invoke("real:download-update"),
   installUpdate: () => ipcRenderer.invoke("real:install-update"),
+  openArchiveWindow: () => ipcRenderer.invoke("real:open-archive-window"),
   windowControl: (action) => ipcRenderer.invoke("real:window-control", action),
   onUpdateStatus: (listener) => {
     const handler = (_event, value) => listener(value);

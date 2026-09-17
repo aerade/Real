@@ -110,6 +110,30 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Lead"
+  /leads/archive:
+    get:
+      operationId: listLeadArchive
+      tags: [leads]
+      parameters:
+        - in: query
+          name: query
+          schema:
+            type: string
+          description: Search all clients ever found by name, city, industry, or website.
+        - in: query
+          name: status
+          schema:
+            type: string
+          description: Filter archived clients by pipeline status.
+      responses:
+        "200":
+          description: All clients ever found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Lead"
   /leads/{id}:
     get:
       operationId: getLead
