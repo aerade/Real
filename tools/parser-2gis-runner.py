@@ -245,15 +245,20 @@ def main() -> None:
                                     f"status={response.get('status', 'unknown')} "
                                     f"url={response.get('url', '')[:240]}"
                                 )
-                            card_responses = [
-                                response
-                                for response in responses
-                                if re.search(
-                                    r"/(?:firm|station)/[^/?#]+(?:[/?#]|$)",
-                                    response.get("url", ""),
-                                )
-                                and response.get("status", 0) == 200
-                            ]
+                            card_responses = []
+                            response_deadline = time.monotonic() + 10
+                            while not card_responses and time.monotonic() < response_deadline:
+                                card_responses = [
+                                    response
+                                    for response in parser._chrome_remote.get_responses()
+                                    if re.search(
+                                        r"/(?:firm|station)/[^/?#]+(?:[/?#]|$)",
+                                        response.get("url", ""),
+                                    )
+                                    and response.get("status", 0) == 200
+                                ]
+                                if not card_responses:
+                                    time.sleep(0.5)
                             for response in reversed(card_responses):
                                 current_url = response.get("url", "")
                                 card_id_match = re.search(
@@ -276,6 +281,10 @@ def main() -> None:
                                 )
                                 with urllib.request.urlopen(request, timeout=10) as card_response:
                                     body = card_response.read().decode("utf-8", errors="replace")
+                                trace(
+                                    f"2GIS card HTML fetched: bytes={len(body)} "
+                                    f"has_initialState={'var initialState' in body}"
+                                )
                                 card_data = extract_card_initial_state(body, card_id)
                                 if card_data:
                                     fallback_body = json.dumps(
