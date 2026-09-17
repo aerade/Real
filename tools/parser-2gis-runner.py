@@ -393,9 +393,15 @@ def main() -> None:
                     if re.search(r"/(?:firm|station)/[^/?#]+(?:[/?#]|$)", href):
                         set_museum_cookie()
                         trace(f"opening result card URL: {href[:240]}")
-                        parser._chrome_remote.execute_script(
-                            f"window.location.href = {json.dumps(href)}"
-                        )
+                        card_url = href if href.startswith("http") else f"https://2gis.ru{href}"
+                        try:
+                            original_navigate(
+                                card_url,
+                                referer=args.url,
+                                timeout=5,
+                            )
+                        except Exception as error:
+                            trace(f"card navigation reached timeout: {error}")
                         return None
                     return original_perform_click(node, timeout=timeout)
 
