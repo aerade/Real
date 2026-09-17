@@ -1,0 +1,385 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: Lead Scout API
+servers:
+  - url: /api
+tags:
+  - name: health
+  - name: auth
+  - name: leads
+  - name: dashboard
+  - name: admin
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+  /auth/session:
+    get:
+      operationId: getSession
+      tags: [auth]
+      responses:
+        "200":
+          description: Current session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      responses:
+        "204":
+          description: Logged out
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [dashboard]
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dashboard"
+  /leads:
+    get:
+      operationId: listLeads
+      tags: [leads]
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: assignedToMe
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Leads
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Lead"
+  /leads/search:
+    post:
+      operationId: searchLeads
+      tags: [leads]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeadSearchInput"
+      responses:
+        "200":
+          description: Ranked search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Lead"
+  /leads/{id}:
+    get:
+      operationId: getLead
+      tags: [leads]
+      parameters:
+        - $ref: "#/components/parameters/LeadId"
+      responses:
+        "200":
+          description: Lead
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+    patch:
+      operationId: updateLead
+      tags: [leads]
+      parameters:
+        - $ref: "#/components/parameters/LeadId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeadUpdate"
+      responses:
+        "200":
+          description: Updated lead
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+  /leads/{id}/claim:
+    post:
+      operationId: claimLead
+      tags: [leads]
+      parameters:
+        - $ref: "#/components/parameters/LeadId"
+      responses:
+        "200":
+          description: Claimed lead
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+  /countries:
+    get:
+      operationId: listCountries
+      tags: [leads]
+      responses:
+        "200":
+          description: Countries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Country"
+    post:
+      operationId: createCountry
+      tags: [admin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CountryInput"
+      responses:
+        "201":
+          description: Country created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Country"
+  /users:
+    get:
+      operationId: listUsers
+      tags: [admin]
+      responses:
+        "200":
+          description: Team members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+components:
+  parameters:
+    LeadId:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: integer
+  schemas:
+    HealthStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+    User:
+      type: object
+      required: [id, name, login, role, active]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        login: { type: string }
+        role: { type: string, enum: [owner, manager] }
+        active: { type: boolean }
+    LoginInput:
+      type: object
+      required: [login, password]
+      properties:
+        login: { type: string }
+        password: { type: string }
+    Session:
+      type: object
+      required: [authenticated]
+      properties:
+        authenticated: { type: boolean }
+        user:
+          anyOf:
+            - $ref: "#/components/schemas/User"
+            - type: "null"
+    Country:
+      type: object
+      required: [code, name, enabled]
+      properties:
+        code: { type: string }
+        name: { type: string }
+        enabled: { type: boolean }
+    CountryInput:
+      type: object
+      required: [code, name]
+      properties:
+        code: { type: string }
+        name: { type: string }
+    Contact:
+      type: object
+      required: [type, value, url]
+      properties:
+        type: { type: string }
+        value: { type: string }
+        url: { type: string }
+    Lead:
+      type: object
+      required: [id, name, country, city, industry, status, score, scoreReasons, issues, reviewsCount, branchesCount, contacts, source, scoreBreakdown, scoreVersion, updatedAt]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        country: { type: string }
+        city: { type: string }
+        industry: { type: string }
+        website: { type: ["string", "null"] }
+        status:
+          type: string
+          enum: [new, claimed, contacted, replied, rejected, no_reply, deal]
+        score: { type: integer, minimum: 0, maximum: 100 }
+        scoreReasons:
+          type: array
+          items: { type: string }
+        issues:
+          type: array
+          items: { type: string }
+        reviewsCount: { type: integer }
+        rating: { type: ["number", "null"] }
+        branchesCount: { type: integer }
+        contacts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Contact"
+        source: { type: string }
+        websiteAudit:
+          anyOf:
+            - $ref: "#/components/schemas/WebsiteAudit"
+            - type: "null"
+        scoreBreakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScoreFactor"
+        scoreVersion: { type: string }
+        assignee:
+          anyOf:
+            - $ref: "#/components/schemas/User"
+            - type: "null"
+        note: { type: ["string", "null"] }
+        updatedAt: { type: string, format: date-time }
+    ScoreFactor:
+      type: object
+      required: [key, label, category, points, maxPoints, evidence]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        category: { type: string, enum: [market, contactability, opportunity, website] }
+        points: { type: integer }
+        maxPoints: { type: integer }
+        evidence: { type: string }
+    WebsiteAuditCheck:
+      type: object
+      required: [key, label, status, evidence]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        status: { type: string, enum: [pass, warn, fail, unknown] }
+        evidence: { type: string }
+    WebsiteAudit:
+      type: object
+      required: [status, url, finalUrl, checkedAt, responseTimeMs, statusCode, pageSizeKb, qualityScore, title, metaDescription, hasMobileViewport, checks, error]
+      properties:
+        status: { type: string, enum: [checked, unavailable, not_provided] }
+        url: { type: ["string", "null"] }
+        finalUrl: { type: ["string", "null"] }
+        checkedAt: { type: ["string", "null"], format: date-time }
+        responseTimeMs: { type: ["integer", "null"] }
+        statusCode: { type: ["integer", "null"] }
+        pageSizeKb: { type: ["integer", "null"] }
+        qualityScore: { type: ["integer", "null"], minimum: 0, maximum: 100 }
+        title: { type: ["string", "null"] }
+        metaDescription: { type: ["string", "null"] }
+        hasMobileViewport: { type: ["boolean", "null"] }
+        checks:
+          type: array
+          items:
+            $ref: "#/components/schemas/WebsiteAuditCheck"
+        error: { type: ["string", "null"] }
+    LeadSearchInput:
+      type: object
+      required: [country, city, industry]
+      properties:
+        country: { type: string }
+        city: { type: string }
+        industry: { type: string }
+        showPreviouslyFound:
+          type: boolean
+          default: false
+          description: Include companies already shown to this user in earlier searches.
+    LeadUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [new, claimed, contacted, replied, rejected, no_reply, deal]
+        note: { type: string }
+    StageCount:
+      type: object
+      required: [status, count]
+      properties:
+        status: { type: string }
+        count: { type: integer }
+    Activity:
+      type: object
+      required: [id, text, at]
+      properties:
+        id: { type: integer }
+        text: { type: string }
+        at: { type: string, format: date-time }
+    Dashboard:
+      type: object
+      required: [available, inWork, replies, deals, stages, recent]
+      properties:
+        available: { type: integer }
+        inWork: { type: integer }
+        replies: { type: integer }
+        deals: { type: integer }
+        stages:
+          type: array
+          items:
+            $ref: "#/components/schemas/StageCount"
+        recent:
+          type: array
+          items:
+            $ref: "#/components/schemas/Activity"

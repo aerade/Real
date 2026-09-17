@@ -1,0 +1,70 @@
+# See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+
+# compiled output
+dist
+release
+tmp
+out-tsc
+*.tsbuildinfo
+.expo
+.expo-shared
+
+# dependencies
+node_modules
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# misc
+/.sass-cache
+/connect.lock
+/coverage
+/libpeerconnection.log
+npm-debug.log
+yarn-error.log
+testem.log
+/typings
+
+# System Files
+.DS_Store
+Thumbs.db
+
+.cursor/rules/nx-rules.mdc
+.github/instructions/nx.instructions.md
+
+# Replit
+.cache/
+.local/
+
+# Local workspace metadata
+.agents/
+.replit
+.replitignore
+replit.md
+artifacts/*/.replit-artifact/
+
+# Build and release output
+artifacts/**/build/
+artifacts/**/release/
+/artifacts/mockup-sandbox/
+
+# Uploaded working files and design captures
+/screenshots/
+/attached_assets/*
+!/attached_assets/real-logo/
+!/attached_assets/real-logo/**
+!/attached_assets/image_1789523796333.png
+!/attached_assets/image_1789532603940.png

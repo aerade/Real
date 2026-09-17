@@ -1,0 +1,11 @@
+[project]
+name = "repl-nix-workspace"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.10"
+dependencies = [
+    "parser-2gis",
+]
+
+[tool.uv.sources]
+parser-2gis = { git = "https://github.com/interlark/parser-2gis.git", rev = "e12cc05" }
