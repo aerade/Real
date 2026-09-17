@@ -21,24 +21,24 @@ export function WindowControls({ variant = "mac" }: { variant?: "mac" | "windows
     >
       {variant === "mac" && <button
         type="button"
-        aria-label="Close"
-        title="Close"
+         aria-label="Закрыть"
+         title="Закрыть"
         onClick={(event) => handleControlClick(event, "close")}
         className="h-3 w-3 rounded-full bg-[#ff5f57] border border-black/10 cursor-pointer pointer-events-auto"
         style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
       />}
       {variant === "mac" && <button
         type="button"
-        aria-label="Minimize"
-        title="Minimize"
+         aria-label="Свернуть"
+         title="Свернуть"
         onClick={(event) => handleControlClick(event, "minimize")}
         className="h-3 w-3 rounded-full bg-[#febc2e] border border-black/10 cursor-pointer pointer-events-auto"
         style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
       />}
       {variant === "mac" && <button
         type="button"
-        aria-label="Maximize"
-        title="Maximize"
+         aria-label="Развернуть"
+         title="Развернуть"
         onClick={(event) => handleControlClick(event, "maximize")}
         className="h-3 w-3 rounded-full bg-[#28c840] border border-black/10 cursor-pointer pointer-events-auto"
         style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
@@ -47,8 +47,8 @@ export function WindowControls({ variant = "mac" }: { variant?: "mac" | "windows
         <>
           <button
             type="button"
-            aria-label="Minimize"
-            title="Minimize"
+             aria-label="Свернуть"
+             title="Свернуть"
             onClick={(event) => handleControlClick(event, "minimize")}
             className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
             style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
@@ -57,8 +57,8 @@ export function WindowControls({ variant = "mac" }: { variant?: "mac" | "windows
           </button>
           <button
             type="button"
-            aria-label="Maximize"
-            title="Maximize"
+             aria-label="Развернуть"
+             title="Развернуть"
             onClick={(event) => handleControlClick(event, "maximize")}
             className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
             style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
@@ -67,8 +67,8 @@ export function WindowControls({ variant = "mac" }: { variant?: "mac" | "windows
           </button>
           <button
             type="button"
-            aria-label="Close"
-            title="Close"
+             aria-label="Закрыть"
+             title="Закрыть"
             onClick={(event) => handleControlClick(event, "close")}
             className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/15 hover:text-destructive"
             style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}

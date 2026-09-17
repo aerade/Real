@@ -23,15 +23,15 @@ function mergeUpdateStatus(previous: UpdateStatus | null, patch: Partial<UpdateS
 }
 
 function statusLabel(update: UpdateStatus) {
-  if (update.status === "downloaded") return `Restart for v${update.latestVersion ?? "update"}`;
+  if (update.status === "downloaded") return `Перезапустить для v${update.latestVersion ?? "обновления"}`;
   if (update.status === "downloading") {
-    return `Downloading${typeof update.percent === "number" ? ` ${Math.round(update.percent)}%` : "..."}`;
+    return `Загрузка${typeof update.percent === "number" ? ` ${Math.round(update.percent)}%` : "…"}`;
   }
-  if (update.status === "available") return `Update to v${update.latestVersion ?? "latest"}`;
-  if (update.status === "checking") return "Checking...";
-  if (update.status === "current") return "Up to date";
-  if (update.status === "error") return "Retry update check";
-  return "Check for updates";
+  if (update.status === "available") return `Обновить до v${update.latestVersion ?? "последней версии"}`;
+  if (update.status === "checking") return "Проверка…";
+  if (update.status === "current") return "Установлена последняя версия";
+  if (update.status === "error") return "Повторить проверку";
+  return "Проверить обновления";
 }
 
 export function UpdateStatus() {
