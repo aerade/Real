@@ -104,3 +104,13 @@ profile quickly and reliably.
 **How to apply:** Keep Parser2GIS for Chromium search and link discovery, then use each discovered
 2GIS URL as the fallback response source. Do not infer a card from the current browser document
 after a timed-out navigation, or records can be duplicated.
+
+On this VPS, the `real` systemd user has no home directory and the snap Chromium process can take
+roughly 50 seconds to establish CDP; a full card search can exceed 90 seconds.
+
+**Why:** The service reached Chromium only after using the direct mounted snap binary with its
+library paths, and the first complete Parser2GIS smoke run took about 103 seconds.
+
+**How to apply:** Run the parser with the project virtualenv Python, set `HOME` and XDG cache paths
+to a writable project directory, pass the direct snap binary environment, and keep the API/proxy
+deadlines above the observed full-search duration.
