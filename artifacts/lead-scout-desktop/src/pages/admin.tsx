@@ -99,7 +99,7 @@ const defaultPreferences: Preferences = {
   theme: "dark",
   font: "bricolage",
   colorfulIcons: false,
-  iconColorShift: 285,
+  iconColorShift: 0,
   macButtons: true,
   titleVersion: false,
   radius: 12,

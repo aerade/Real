@@ -66,7 +66,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         });
         root.style.setProperty("--settings-radius", String(saved.radius ?? 12));
         root.style.setProperty("--settings-border", String(saved.borderThickness ?? 1));
-        root.style.setProperty("--settings-icon-shift", String(saved.iconColorShift ?? 285));
+        root.style.setProperty("--settings-icon-shift", String(saved.iconColorShift ?? 0));
         root.style.setProperty("--settings-animation-speed", String(saved.animationSpeed ?? 1));
         const customTheme = saved.customTheme;
         const customThemeVariables = [

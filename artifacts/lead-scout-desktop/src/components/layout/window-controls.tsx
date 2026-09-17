@@ -24,25 +24,31 @@ export function WindowControls({ variant = "mac" }: { variant?: "mac" | "windows
          aria-label="Закрыть"
          title="Закрыть"
         onClick={(event) => handleControlClick(event, "close")}
-        className="h-3 w-3 rounded-full bg-[#ff5f57] border border-black/10 cursor-pointer pointer-events-auto"
+         className="window-control window-control-close group flex h-3 w-3 items-center justify-center rounded-full border border-black/10 bg-[#ff5f57] cursor-pointer pointer-events-auto"
         style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
-      />}
+       >
+         <X aria-hidden="true" className="window-control-icon h-2.5 w-2.5" />
+       </button>}
       {variant === "mac" && <button
         type="button"
          aria-label="Свернуть"
          title="Свернуть"
         onClick={(event) => handleControlClick(event, "minimize")}
-        className="h-3 w-3 rounded-full bg-[#febc2e] border border-black/10 cursor-pointer pointer-events-auto"
+         className="window-control window-control-minimize group flex h-3 w-3 items-center justify-center rounded-full border border-black/10 bg-[#febc2e] cursor-pointer pointer-events-auto"
         style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
-      />}
+       >
+         <Minus aria-hidden="true" className="window-control-icon h-2.5 w-2.5" />
+       </button>}
       {variant === "mac" && <button
         type="button"
          aria-label="Развернуть"
          title="Развернуть"
         onClick={(event) => handleControlClick(event, "maximize")}
-        className="h-3 w-3 rounded-full bg-[#28c840] border border-black/10 cursor-pointer pointer-events-auto"
+         className="window-control window-control-maximize group flex h-3 w-3 items-center justify-center rounded-full border border-black/10 bg-[#28c840] cursor-pointer pointer-events-auto"
         style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
-      />}
+       >
+         <Square aria-hidden="true" className="window-control-icon h-2 w-2" />
+       </button>}
       {variant === "windows" && (
         <>
           <button
