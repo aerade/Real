@@ -6,12 +6,14 @@ from __future__ import annotations
 import argparse
 import ast
 from collections import Counter
+import html
 import json
 import os
 import re
 import sys
 import time
 import urllib.request
+from urllib.parse import urljoin
 
 from parser_2gis.chrome import browser as chrome_browser
 from parser_2gis.config import Configuration
@@ -84,6 +86,81 @@ def extract_card_initial_state(body: str, expected_id: str = "") -> dict | None:
     return data if isinstance(data, dict) and data.get("id") else None
 
 
+def direct_http_parse(
+    url: str,
+    output_path: str,
+    file_format: str,
+    writer_config,
+    max_records: int,
+    trace,
+) -> int:
+    """Read 2GIS SSR search/card pages without waiting for CDP navigation."""
+    headers = {
+        "Accept": "text/html,application/xhtml+xml",
+        "Accept-Language": "ru-RU,ru;q=0.9",
+        "Cookie": "dg5_museum_accept=true",
+        "User-Agent": (
+            "Mozilla/5.0 (X11; Linux x86_64) "
+            "AppleWebKit/537.36 Chrome/131 Safari/537.36"
+        ),
+    }
+
+    def fetch_html(page_url: str, referer: str = "") -> str:
+        request_headers = dict(headers)
+        if referer:
+            request_headers["Referer"] = referer
+        request = urllib.request.Request(page_url, headers=request_headers)
+        with urllib.request.urlopen(request, timeout=30) as response:
+            if response.status != 200:
+                raise RuntimeError(f"HTTP {response.status}")
+            return response.read().decode("utf-8", errors="replace")
+
+    try:
+        trace("starting direct 2GIS SSR search")
+        search_body = fetch_html(url)
+        links: list[str] = []
+        for href in re.findall(r"""href=["']([^"']+)["']""", search_body):
+            href = html.unescape(href)
+            if not re.search(r"/(?:firm|station)/[^/?#]+(?:[/?#]|$)", href):
+                continue
+            card_url = urljoin(url, href)
+            if card_url not in links:
+                links.append(card_url)
+        trace(f"direct 2GIS SSR links: {len(links)}")
+        if not links:
+            return 0
+
+        written = 0
+        with get_writer(output_path, file_format, writer_config) as writer:
+            for card_url in links[:max_records]:
+                try:
+                    card_body = fetch_html(card_url, referer=url)
+                    card_id_match = re.search(
+                        r"/(?:firm|station)/([^/?#]+)", card_url
+                    )
+                    card_id = card_id_match.group(1) if card_id_match else ""
+                    card_data = extract_card_initial_state(card_body, card_id)
+                    if not card_data:
+                        trace(f"direct 2GIS card has no profile data: {card_url}")
+                        continue
+                    writer.write({
+                        "meta": {"code": 200},
+                        "result": {"items": [card_data]},
+                    })
+                    written += 1
+                    trace(
+                        "direct 2GIS card written: "
+                        f"id={card_data.get('id')} "
+                        f"name={card_data.get('name', '')[:120]}"
+                    )
+                except Exception as error:
+                    trace(f"direct 2GIS card failed: {card_url}: {error}")
+        return written
+    except Exception as error:
+        trace(f"direct 2GIS SSR search failed: {error}")
+        return 0
+
+
 def main() -> None:
     args = parse_args()
     started_at = time.monotonic()
@@ -106,6 +183,18 @@ def main() -> None:
 
     restore_chrome_flags = patch_chrome_launch_flags()
     try:
+        direct_count = direct_http_parse(
+            args.url,
+            args.output_path,
+            args.format,
+            config.writer,
+            args.max_records,
+            trace,
+        )
+        if direct_count:
+            trace(f"direct 2GIS SSR parse finished: records={direct_count}")
+            return
+        trace("direct 2GIS SSR returned no records; falling back to ChromeRemote")
         trace("starting writer")
         with get_writer(args.output_path, args.format, config.writer) as writer:
             trace("starting ChromeRemote")
