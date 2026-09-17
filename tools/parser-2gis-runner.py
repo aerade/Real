@@ -11,6 +11,7 @@ import os
 import re
 import sys
 import time
+import urllib.request
 
 from parser_2gis.chrome import browser as chrome_browser
 from parser_2gis.config import Configuration
@@ -260,12 +261,28 @@ def main() -> None:
                                     current_url,
                                 )
                                 card_id = card_id_match.group(1) if card_id_match else ""
-                                trace(f"reading card HTML response: url={current_url[:240]}")
-                                body = original_get_response_body(response, timeout=10)
+                                trace(f"reading card HTML from 2GIS: url={current_url[:240]}")
+                                request = urllib.request.Request(
+                                    current_url,
+                                    headers={
+                                        "Accept": "text/html,application/xhtml+xml",
+                                        "Accept-Language": "ru-RU,ru;q=0.9",
+                                        "Cookie": "dg5_museum_accept=true",
+                                        "User-Agent": (
+                                            "Mozilla/5.0 (X11; Linux x86_64) "
+                                            "AppleWebKit/537.36 Chrome/131 Safari/537.36"
+                                        ),
+                                    },
+                                )
+                                with urllib.request.urlopen(request, timeout=10) as card_response:
+                                    body = card_response.read().decode("utf-8", errors="replace")
                                 card_data = extract_card_initial_state(body, card_id)
                                 if card_data:
                                     fallback_body = json.dumps(
-                                        {"result": {"items": [card_data]}},
+                                        {
+                                            "meta": {"code": 200},
+                                            "result": {"items": [card_data]},
+                                        },
                                         ensure_ascii=False,
                                     )
                                     trace(
