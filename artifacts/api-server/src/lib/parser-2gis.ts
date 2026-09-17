@@ -54,7 +54,7 @@ type TwoGisItem = {
 
 const parserCache = new Map<string, { expiresAt: number; results: PublicBusiness[] }>();
 const activeParses = new Map<string, Promise<PublicBusiness[]>>();
-const PARSER_TIMEOUT_MS = 75_000;
+const PARSER_TIMEOUT_MS = 180_000;
 
 const cityAliases: Record<string, string> = {
   москва: "moscow",
@@ -121,9 +121,11 @@ function findProjectRoot(): string {
   return process.cwd();
 }
 
-function parserEnvironment(binaryPath: string | null): NodeJS.ProcessEnv {
+function parserEnvironment(binaryPath: string | null, cwd: string): NodeJS.ProcessEnv {
   const environment: NodeJS.ProcessEnv = {
     ...process.env,
+    HOME: cwd,
+    XDG_CACHE_HOME: path.join(cwd, ".cache"),
     PYTHONUNBUFFERED: "1",
   };
   if (!binaryPath?.startsWith("/snap/chromium/")) return environment;
@@ -132,17 +134,24 @@ function parserEnvironment(binaryPath: string | null): NodeJS.ProcessEnv {
 
   const snapRoot = binaryPath.split("/usr/")[0];
   const libraryPaths = [
+    "/var/lib/snapd/lib/gl",
+    "/var/lib/snapd/lib/gl32",
     path.join(snapRoot, "usr", "lib", "chromium-browser"),
     path.join(snapRoot, "usr", "lib", "x86_64-linux-gnu"),
     path.join(snapRoot, "lib", "x86_64-linux-gnu"),
     path.join(snapRoot, "usr", "lib"),
     path.join(snapRoot, "lib"),
+    path.join(snapRoot, "gpu-2404", "usr", "lib", "x86_64-linux-gnu"),
+    path.join(snapRoot, "gpu-2404", "usr", "lib", "x86_64-linux-gnu", "dri"),
+    path.join(snapRoot, "gnome-platform", "lib", "x86_64-linux-gnu"),
+    path.join(snapRoot, "gnome-platform", "usr", "lib", "x86_64-linux-gnu"),
     "/usr/lib/x86_64-linux-gnu",
     "/lib/x86_64-linux-gnu",
     "/usr/lib",
     "/lib",
     environment.LD_LIBRARY_PATH,
   ].filter((value): value is string => Boolean(value));
+  environment.SNAP = snapRoot;
   environment.LD_LIBRARY_PATH = [...new Set(libraryPaths)].join(path.delimiter);
   return environment;
 }
@@ -319,8 +328,11 @@ async function findChromeBinary(): Promise<string | null> {
 
 async function findParserCommand(): Promise<string> {
   const configured = process.env.REAL_PARSER_COMMAND?.trim();
+  const projectRoot = findProjectRoot();
   const candidates = [
     configured,
+    path.join(projectRoot, ".venv", "bin", "python"),
+    "/opt/real/.venv/bin/python",
     "/root/.local/bin/uv",
     "/usr/local/bin/uv",
     "/usr/bin/uv",
@@ -359,9 +371,11 @@ async function runParser(url: string, outputPath: string): Promise<void> {
   const binaryPath = await findChromeBinary();
   const parserCommand = await findParserCommand();
   const cwd = findProjectRoot();
-  const commandArgs = path.basename(parserCommand) === "uv"
+  const parserName = path.basename(parserCommand);
+  const runnerPath = path.join(cwd, "tools", "parser-2gis-runner.py");
+  const commandArgs = parserName === "uv"
     ? ["run", "python", path.join(cwd, "tools", "parser-2gis-runner.py")]
-    : [];
+    : [runnerPath];
   const args = [
     ...commandArgs,
     "-i", url,
@@ -377,7 +391,7 @@ async function runParser(url: string, outputPath: string): Promise<void> {
     const child = spawn(parserCommand, args, {
       cwd,
       detached: process.platform !== "win32",
-      env: parserEnvironment(binaryPath),
+      env: parserEnvironment(binaryPath, cwd),
       stdio: ["ignore", "ignore", "pipe"],
     });
     const terminate = () => {
@@ -396,7 +410,7 @@ async function runParser(url: string, outputPath: string): Promise<void> {
       terminate();
       const details = stderr.trim();
       reject(new Error(
-        `2ГИС-поиск превысил лимит ожидания 75 секунд${details ? `: ${details}` : ""}`,
+        `2ГИС-поиск превысил лимит ожидания ${PARSER_TIMEOUT_MS / 1_000} секунд${details ? `: ${details}` : ""}`,
       ));
     }, PARSER_TIMEOUT_MS);
 
