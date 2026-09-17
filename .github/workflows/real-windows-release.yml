@@ -140,4 +140,18 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             gh release create $env:GITHUB_REF_NAME --repo $env:GITHUB_REPOSITORY --title $env:GITHUB_REF_NAME --generate-notes
           }
-          gh release upload $env:GITHUB_REF_NAME --repo $env:GITHUB_REPOSITORY release/Real-Installer-*.exe release/real-update.json release/installer-verification.json release/Real-Installer-*.zip --clobber
+          $files = @(
+            (Get-ChildItem release -Filter "Real-Installer-*.exe" | Select-Object -First 1).FullName
+            (Join-Path (Get-Location) "release/real-update.json")
+            (Join-Path (Get-Location) "release/installer-verification.json")
+            (Get-ChildItem release -Filter "Real-Installer-*.zip" | Select-Object -First 1).FullName
+          )
+          foreach ($file in $files) {
+            if ([String]::IsNullOrWhiteSpace($file) -or -not (Test-Path $file)) {
+              throw "Release asset was not found: $file"
+            }
+            gh release upload $env:GITHUB_REF_NAME --repo $env:GITHUB_REPOSITORY $file --clobber
+            if ($LASTEXITCODE -ne 0) {
+              throw "Failed to upload release asset: $file"
+            }
+          }
