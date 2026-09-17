@@ -10,4 +10,10 @@ if (!fs.existsSync(path.join(source, "Real.exe"))) {
 fs.rmSync(destination, { recursive: true, force: true });
 fs.mkdirSync(path.dirname(destination), { recursive: true });
 fs.cpSync(source, destination, { recursive: true });
+const applicationArchive = path.join(destination, "resources", "app.asar");
+const portableArchive = path.join(destination, "resources", "real-app.asar");
+if (!fs.existsSync(applicationArchive)) {
+  throw new Error(`Built Real application archive not found at ${applicationArchive}`);
+}
+fs.renameSync(applicationArchive, portableArchive);
 console.log(`Prepared custom installer payload at ${destination}`);
