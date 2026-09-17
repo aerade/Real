@@ -8,3 +8,4 @@
 - [Lead search history](lead-search-history.md) — hide previously returned leads per user by default; assigned and progressed leads stay hidden.
 - [GitHub Git authentication](github-git-auth.md) — this workspace's HTTPS Git remote needs x-access-token Basic auth even when the API token works with Bearer auth.
 - [GitHub LFS push limitation](github-lfs-push.md) — publish small source fixes through the Contents API when full pushes cannot upload Windows LFS artifacts.
+- [Website audit scoring](website-audit-scoring.md) — keep commercial priority on a transparent 0–100 scale and separate it from technical quality.

@@ -257,7 +257,7 @@ components:
         url: { type: string }
     Lead:
       type: object
-      required: [id, name, country, city, industry, status, score, scoreReasons, issues, reviewsCount, branchesCount, contacts, source, updatedAt]
+      required: [id, name, country, city, industry, status, score, scoreReasons, issues, reviewsCount, branchesCount, contacts, source, scoreBreakdown, scoreVersion, updatedAt]
       properties:
         id: { type: integer }
         name: { type: string }
@@ -283,12 +283,59 @@ components:
           items:
             $ref: "#/components/schemas/Contact"
         source: { type: string }
+        websiteAudit:
+          anyOf:
+            - $ref: "#/components/schemas/WebsiteAudit"
+            - type: "null"
+        scoreBreakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScoreFactor"
+        scoreVersion: { type: string }
         assignee:
           anyOf:
             - $ref: "#/components/schemas/User"
             - type: "null"
         note: { type: ["string", "null"] }
         updatedAt: { type: string, format: date-time }
+    ScoreFactor:
+      type: object
+      required: [key, label, category, points, maxPoints, evidence]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        category: { type: string, enum: [market, contactability, opportunity, website] }
+        points: { type: integer }
+        maxPoints: { type: integer }
+        evidence: { type: string }
+    WebsiteAuditCheck:
+      type: object
+      required: [key, label, status, evidence]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        status: { type: string, enum: [pass, warn, fail, unknown] }
+        evidence: { type: string }
+    WebsiteAudit:
+      type: object
+      required: [status, url, finalUrl, checkedAt, responseTimeMs, statusCode, pageSizeKb, qualityScore, title, metaDescription, hasMobileViewport, checks, error]
+      properties:
+        status: { type: string, enum: [checked, unavailable, not_provided] }
+        url: { type: ["string", "null"] }
+        finalUrl: { type: ["string", "null"] }
+        checkedAt: { type: ["string", "null"], format: date-time }
+        responseTimeMs: { type: ["integer", "null"] }
+        statusCode: { type: ["integer", "null"] }
+        pageSizeKb: { type: ["integer", "null"] }
+        qualityScore: { type: ["integer", "null"], minimum: 0, maximum: 100 }
+        title: { type: ["string", "null"] }
+        metaDescription: { type: ["string", "null"] }
+        hasMobileViewport: { type: ["boolean", "null"] }
+        checks:
+          type: array
+          items:
+            $ref: "#/components/schemas/WebsiteAuditCheck"
+        error: { type: ["string", "null"] }
     LeadSearchInput:
       type: object
       required: [country, city, industry]

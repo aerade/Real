@@ -14,6 +14,7 @@ import {
   type UserRow,
 } from "@workspace/db";
 import type { PublicBusiness } from "./osm-leads";
+import type { ScoreFactor, WebsiteAudit } from "./website-audit";
 
 const scrypt = promisify(nodeScrypt);
 
@@ -37,6 +38,9 @@ export type LeadOutput = {
   branchesCount: number;
   contacts: StoredContact[];
   source: string;
+  websiteAudit: WebsiteAudit | null;
+  scoreBreakdown: ScoreFactor[];
+  scoreVersion: string;
   assignee: PublicUser | null;
   note: string | null;
   updatedAt: Date;
@@ -199,6 +203,9 @@ function toLead(row: JoinedLead): LeadOutput {
     branchesCount: lead.branchesCount,
     contacts: lead.contacts,
     source: lead.source,
+    websiteAudit: lead.websiteAudit as WebsiteAudit | null,
+    scoreBreakdown: (lead.scoreBreakdown ?? []) as ScoreFactor[],
+    scoreVersion: lead.scoreVersion,
     note: lead.note,
     updatedAt: lead.updatedAt,
     assignee: row.users ? toPublicUser(row.users) : null,
@@ -325,6 +332,10 @@ export async function upsertSearchedLead(
     branchesCount: 1,
     contacts: business.contacts,
     source: business.source ?? "OpenStreetMap",
+    websiteAudit: business.websiteAudit ?? null,
+    scoreBreakdown: business.scoreBreakdown ?? [],
+    scoreVersion: business.scoreVersion ?? "legacy-v1",
+    auditCheckedAt: business.websiteAudit?.checkedAt ? new Date(business.websiteAudit.checkedAt) : null,
     assigneeId: null,
     note: null,
   }).onConflictDoUpdate({
@@ -340,9 +351,13 @@ export async function upsertSearchedLead(
       issues: business.issues,
       reviewsCount: business.reviewsCount ?? 0,
       rating: business.rating ?? null,
-      branchesCount: 1,
+      branchesCount: business.branchesCount ?? 1,
       contacts: business.contacts,
       source: business.source ?? "OpenStreetMap",
+      websiteAudit: business.websiteAudit ?? null,
+      scoreBreakdown: business.scoreBreakdown ?? [],
+      scoreVersion: business.scoreVersion ?? "legacy-v1",
+      auditCheckedAt: business.websiteAudit?.checkedAt ? new Date(business.websiteAudit.checkedAt) : null,
       updatedAt: new Date(),
     },
   }).returning({ id: leadsTable.id });

@@ -7,7 +7,9 @@
  */
 import type { Contact } from './contact';
 import type { LeadStatus } from './leadStatus';
+import type { ScoreFactor } from './scoreFactor';
 import type { User } from './user';
+import type { WebsiteAudit } from './websiteAudit';
 
 export interface Lead {
   id: number;
@@ -31,6 +33,9 @@ export interface Lead {
   branchesCount: number;
   contacts: Contact[];
   source: string;
+  websiteAudit?: WebsiteAudit | null;
+  scoreBreakdown: ScoreFactor[];
+  scoreVersion: string;
   assignee?: User | null;
   /** @nullable */
   note?: string | null;

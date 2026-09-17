@@ -65,6 +65,82 @@ export const LeadStatus = {
   deal: 'deal',
 } as const;
 
+export type WebsiteAuditStatus = typeof WebsiteAuditStatus[keyof typeof WebsiteAuditStatus];
+
+
+export const WebsiteAuditStatus = {
+  checked: 'checked',
+  unavailable: 'unavailable',
+  not_provided: 'not_provided',
+} as const;
+
+export type WebsiteAuditCheckStatus = typeof WebsiteAuditCheckStatus[keyof typeof WebsiteAuditCheckStatus];
+
+
+export const WebsiteAuditCheckStatus = {
+  pass: 'pass',
+  warn: 'warn',
+  fail: 'fail',
+  unknown: 'unknown',
+} as const;
+
+export interface WebsiteAuditCheck {
+  key: string;
+  label: string;
+  status: WebsiteAuditCheckStatus;
+  evidence: string;
+}
+
+export interface WebsiteAudit {
+  status: WebsiteAuditStatus;
+  /** @nullable */
+  url: string | null;
+  /** @nullable */
+  finalUrl: string | null;
+  /** @nullable */
+  checkedAt: string | null;
+  /** @nullable */
+  responseTimeMs: number | null;
+  /** @nullable */
+  statusCode: number | null;
+  /** @nullable */
+  pageSizeKb: number | null;
+  /**
+     * @minimum 0
+     * @maximum 100
+     * @nullable
+     */
+  qualityScore: number | null;
+  /** @nullable */
+  title: string | null;
+  /** @nullable */
+  metaDescription: string | null;
+  /** @nullable */
+  hasMobileViewport: boolean | null;
+  checks: WebsiteAuditCheck[];
+  /** @nullable */
+  error: string | null;
+}
+
+export type ScoreFactorCategory = typeof ScoreFactorCategory[keyof typeof ScoreFactorCategory];
+
+
+export const ScoreFactorCategory = {
+  market: 'market',
+  contactability: 'contactability',
+  opportunity: 'opportunity',
+  website: 'website',
+} as const;
+
+export interface ScoreFactor {
+  key: string;
+  label: string;
+  category: ScoreFactorCategory;
+  points: number;
+  maxPoints: number;
+  evidence: string;
+}
+
 export interface Lead {
   id: number;
   name: string;
@@ -87,6 +163,9 @@ export interface Lead {
   branchesCount: number;
   contacts: Contact[];
   source: string;
+  websiteAudit?: WebsiteAudit | null;
+  scoreBreakdown: ScoreFactor[];
+  scoreVersion: string;
   assignee?: User | null;
   /** @nullable */
   note?: string | null;

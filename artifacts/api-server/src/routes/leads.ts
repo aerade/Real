@@ -1,5 +1,6 @@
 import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
 import { searchTwoGisBusinesses } from "../lib/parser-2gis";
+import { auditAndScoreBusinesses } from "../lib/website-audit";
 import {
   authenticate,
   claimLead,
@@ -123,7 +124,8 @@ router.post("/leads/search", async (req, res, next) => {
   try {
     let businesses: Awaited<ReturnType<typeof searchTwoGisBusinesses>>;
     try {
-      businesses = await searchTwoGisBusinesses({ country, city, industry });
+      const parsedBusinesses = await searchTwoGisBusinesses({ country, city, industry });
+      businesses = await auditAndScoreBusinesses(parsedBusinesses);
     } catch (error) {
       req.log.error({ err: error }, "2GIS search failed");
       return res.status(502).json({

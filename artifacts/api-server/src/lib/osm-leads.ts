@@ -1,3 +1,5 @@
+import type { ScoreFactor, WebsiteAudit } from "./website-audit";
+
 type OsmTags = Record<string, string | undefined>;
 
 type OverpassElement = {
@@ -31,7 +33,11 @@ export type PublicBusiness = {
   scoreReasons: string[];
   reviewsCount?: number;
   rating?: number | null;
+  branchesCount?: number;
   source?: string;
+  websiteAudit?: WebsiteAudit | null;
+  scoreBreakdown?: ScoreFactor[];
+  scoreVersion?: string;
 };
 
 const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";

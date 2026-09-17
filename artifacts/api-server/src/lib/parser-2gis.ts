@@ -265,6 +265,7 @@ function mapItem(item: TwoGisItem, input: ParserInput): PublicBusiness | null {
     ],
     reviewsCount,
     rating,
+    branchesCount: Math.max(1, item.org?.branch_count ?? 1),
     source: "2ГИС",
   };
 }

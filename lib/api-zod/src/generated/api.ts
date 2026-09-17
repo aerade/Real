@@ -70,6 +70,9 @@ export const ListLeadsQueryParams = zod.object({
 export const listLeadsResponseScoreMin = 0;
 export const listLeadsResponseScoreMax = 100;
 
+export const listLeadsResponseWebsiteAuditOneQualityScoreMin = 0;
+export const listLeadsResponseWebsiteAuditOneQualityScoreMax = 100;
+
 
 
 export const ListLeadsResponseItem = zod.object({
@@ -92,6 +95,35 @@ export const ListLeadsResponseItem = zod.object({
   "url": zod.string()
 })),
   "source": zod.string(),
+  "websiteAudit": zod.union([zod.object({
+  "status": zod.enum(['checked', 'unavailable', 'not_provided']),
+  "url": zod.string().nullable(),
+  "finalUrl": zod.string().nullable(),
+  "checkedAt": zod.coerce.date().nullable(),
+  "responseTimeMs": zod.number().int().nullable(),
+  "statusCode": zod.number().int().nullable(),
+  "pageSizeKb": zod.number().int().nullable(),
+  "qualityScore": zod.number().int().min(listLeadsResponseWebsiteAuditOneQualityScoreMin).max(listLeadsResponseWebsiteAuditOneQualityScoreMax).nullable(),
+  "title": zod.string().nullable(),
+  "metaDescription": zod.string().nullable(),
+  "hasMobileViewport": zod.boolean().nullable(),
+  "checks": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "status": zod.enum(['pass', 'warn', 'fail', 'unknown']),
+  "evidence": zod.string()
+})),
+  "error": zod.string().nullable()
+}),zod.null()]).optional(),
+  "scoreBreakdown": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "category": zod.enum(['market', 'contactability', 'opportunity', 'website']),
+  "points": zod.number().int(),
+  "maxPoints": zod.number().int(),
+  "evidence": zod.string()
+})),
+  "scoreVersion": zod.string(),
   "assignee": zod.union([zod.object({
   "id": zod.number().int(),
   "name": zod.string(),
@@ -117,6 +149,9 @@ export const SearchLeadsBody = zod.object({
 export const searchLeadsResponseScoreMin = 0;
 export const searchLeadsResponseScoreMax = 100;
 
+export const searchLeadsResponseWebsiteAuditOneQualityScoreMin = 0;
+export const searchLeadsResponseWebsiteAuditOneQualityScoreMax = 100;
+
 
 
 export const SearchLeadsResponseItem = zod.object({
@@ -139,6 +174,35 @@ export const SearchLeadsResponseItem = zod.object({
   "url": zod.string()
 })),
   "source": zod.string(),
+  "websiteAudit": zod.union([zod.object({
+  "status": zod.enum(['checked', 'unavailable', 'not_provided']),
+  "url": zod.string().nullable(),
+  "finalUrl": zod.string().nullable(),
+  "checkedAt": zod.coerce.date().nullable(),
+  "responseTimeMs": zod.number().int().nullable(),
+  "statusCode": zod.number().int().nullable(),
+  "pageSizeKb": zod.number().int().nullable(),
+  "qualityScore": zod.number().int().min(searchLeadsResponseWebsiteAuditOneQualityScoreMin).max(searchLeadsResponseWebsiteAuditOneQualityScoreMax).nullable(),
+  "title": zod.string().nullable(),
+  "metaDescription": zod.string().nullable(),
+  "hasMobileViewport": zod.boolean().nullable(),
+  "checks": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "status": zod.enum(['pass', 'warn', 'fail', 'unknown']),
+  "evidence": zod.string()
+})),
+  "error": zod.string().nullable()
+}),zod.null()]).optional(),
+  "scoreBreakdown": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "category": zod.enum(['market', 'contactability', 'opportunity', 'website']),
+  "points": zod.number().int(),
+  "maxPoints": zod.number().int(),
+  "evidence": zod.string()
+})),
+  "scoreVersion": zod.string(),
   "assignee": zod.union([zod.object({
   "id": zod.number().int(),
   "name": zod.string(),
@@ -158,6 +222,9 @@ export const GetLeadParams = zod.object({
 
 export const getLeadResponseScoreMin = 0;
 export const getLeadResponseScoreMax = 100;
+
+export const getLeadResponseWebsiteAuditOneQualityScoreMin = 0;
+export const getLeadResponseWebsiteAuditOneQualityScoreMax = 100;
 
 
 
@@ -181,6 +248,35 @@ export const GetLeadResponse = zod.object({
   "url": zod.string()
 })),
   "source": zod.string(),
+  "websiteAudit": zod.union([zod.object({
+  "status": zod.enum(['checked', 'unavailable', 'not_provided']),
+  "url": zod.string().nullable(),
+  "finalUrl": zod.string().nullable(),
+  "checkedAt": zod.coerce.date().nullable(),
+  "responseTimeMs": zod.number().int().nullable(),
+  "statusCode": zod.number().int().nullable(),
+  "pageSizeKb": zod.number().int().nullable(),
+  "qualityScore": zod.number().int().min(getLeadResponseWebsiteAuditOneQualityScoreMin).max(getLeadResponseWebsiteAuditOneQualityScoreMax).nullable(),
+  "title": zod.string().nullable(),
+  "metaDescription": zod.string().nullable(),
+  "hasMobileViewport": zod.boolean().nullable(),
+  "checks": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "status": zod.enum(['pass', 'warn', 'fail', 'unknown']),
+  "evidence": zod.string()
+})),
+  "error": zod.string().nullable()
+}),zod.null()]).optional(),
+  "scoreBreakdown": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "category": zod.enum(['market', 'contactability', 'opportunity', 'website']),
+  "points": zod.number().int(),
+  "maxPoints": zod.number().int(),
+  "evidence": zod.string()
+})),
+  "scoreVersion": zod.string(),
   "assignee": zod.union([zod.object({
   "id": zod.number().int(),
   "name": zod.string(),
@@ -205,6 +301,9 @@ export const UpdateLeadBody = zod.object({
 export const updateLeadResponseScoreMin = 0;
 export const updateLeadResponseScoreMax = 100;
 
+export const updateLeadResponseWebsiteAuditOneQualityScoreMin = 0;
+export const updateLeadResponseWebsiteAuditOneQualityScoreMax = 100;
+
 
 
 export const UpdateLeadResponse = zod.object({
@@ -227,6 +326,35 @@ export const UpdateLeadResponse = zod.object({
   "url": zod.string()
 })),
   "source": zod.string(),
+  "websiteAudit": zod.union([zod.object({
+  "status": zod.enum(['checked', 'unavailable', 'not_provided']),
+  "url": zod.string().nullable(),
+  "finalUrl": zod.string().nullable(),
+  "checkedAt": zod.coerce.date().nullable(),
+  "responseTimeMs": zod.number().int().nullable(),
+  "statusCode": zod.number().int().nullable(),
+  "pageSizeKb": zod.number().int().nullable(),
+  "qualityScore": zod.number().int().min(updateLeadResponseWebsiteAuditOneQualityScoreMin).max(updateLeadResponseWebsiteAuditOneQualityScoreMax).nullable(),
+  "title": zod.string().nullable(),
+  "metaDescription": zod.string().nullable(),
+  "hasMobileViewport": zod.boolean().nullable(),
+  "checks": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "status": zod.enum(['pass', 'warn', 'fail', 'unknown']),
+  "evidence": zod.string()
+})),
+  "error": zod.string().nullable()
+}),zod.null()]).optional(),
+  "scoreBreakdown": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "category": zod.enum(['market', 'contactability', 'opportunity', 'website']),
+  "points": zod.number().int(),
+  "maxPoints": zod.number().int(),
+  "evidence": zod.string()
+})),
+  "scoreVersion": zod.string(),
   "assignee": zod.union([zod.object({
   "id": zod.number().int(),
   "name": zod.string(),
@@ -245,6 +373,9 @@ export const ClaimLeadParams = zod.object({
 
 export const claimLeadResponseScoreMin = 0;
 export const claimLeadResponseScoreMax = 100;
+
+export const claimLeadResponseWebsiteAuditOneQualityScoreMin = 0;
+export const claimLeadResponseWebsiteAuditOneQualityScoreMax = 100;
 
 
 
@@ -268,6 +399,35 @@ export const ClaimLeadResponse = zod.object({
   "url": zod.string()
 })),
   "source": zod.string(),
+  "websiteAudit": zod.union([zod.object({
+  "status": zod.enum(['checked', 'unavailable', 'not_provided']),
+  "url": zod.string().nullable(),
+  "finalUrl": zod.string().nullable(),
+  "checkedAt": zod.coerce.date().nullable(),
+  "responseTimeMs": zod.number().int().nullable(),
+  "statusCode": zod.number().int().nullable(),
+  "pageSizeKb": zod.number().int().nullable(),
+  "qualityScore": zod.number().int().min(claimLeadResponseWebsiteAuditOneQualityScoreMin).max(claimLeadResponseWebsiteAuditOneQualityScoreMax).nullable(),
+  "title": zod.string().nullable(),
+  "metaDescription": zod.string().nullable(),
+  "hasMobileViewport": zod.boolean().nullable(),
+  "checks": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "status": zod.enum(['pass', 'warn', 'fail', 'unknown']),
+  "evidence": zod.string()
+})),
+  "error": zod.string().nullable()
+}),zod.null()]).optional(),
+  "scoreBreakdown": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "category": zod.enum(['market', 'contactability', 'opportunity', 'website']),
+  "points": zod.number().int(),
+  "maxPoints": zod.number().int(),
+  "evidence": zod.string()
+})),
+  "scoreVersion": zod.string(),
   "assignee": zod.union([zod.object({
   "id": zod.number().int(),
   "name": zod.string(),

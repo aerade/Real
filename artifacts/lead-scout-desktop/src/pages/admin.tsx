@@ -598,7 +598,7 @@ export function AdminPage() {
           <span className="font-mono text-xs text-muted-foreground">860 × 560</span>
         </SettingRow>
         <SettingRow icon={RotateCcw} title="Reset local preferences" description="Clear appearance, search defaults, and profile notes stored on this device.">
-          <Button type="button" variant="outline" size="sm" onClick={resetPreferences}>Reset preferences</Button>
+          <Button data-testid="button-reset-preferences" type="button" variant="outline" size="sm" onClick={resetPreferences}>Reset preferences</Button>
         </SettingRow>
       </div>
       <div className="mt-6 rounded-lg border border-border/70 bg-background/40 p-4">
@@ -625,7 +625,7 @@ export function AdminPage() {
           </div>
         </div>
         <div className="mt-5 flex justify-end">
-          <Button type="submit" size="sm"><Check className="h-3.5 w-3.5" />Save defaults</Button>
+          <Button data-testid="button-save-search-defaults" type="submit" size="sm"><Check className="h-3.5 w-3.5" />Save defaults</Button>
         </div>
       </form>
     </>
@@ -715,7 +715,7 @@ export function AdminPage() {
 
   return (
     <AppLayout>
-       <div className="settings-workspace flex min-h-full flex-col">
+       <div className="settings-workspace flex h-full min-h-0 flex-col">
         <div className="mb-6 flex items-end justify-between border-b border-border/70 pb-5">
           <div>
             <p className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-primary"><Settings2 className="h-3.5 w-3.5" />Workspace configuration</p>
@@ -723,11 +723,11 @@ export function AdminPage() {
             <p className="mt-1 text-sm text-muted-foreground">Configure your Real desktop workspace.</p>
           </div>
         </div>
-        <div className="grid min-h-[640px] flex-1 grid-cols-1 overflow-hidden rounded-lg border border-border/70 bg-card/40 md:grid-cols-[220px_minmax(0,1fr)]">
-          <aside className="border-b border-border/70 bg-background/40 p-3 md:border-b-0 md:border-r">
+         <div className="grid min-h-0 flex-1 grid-cols-1 overflow-hidden rounded-lg border border-border/70 bg-card/40 md:grid-cols-[220px_minmax(0,1fr)]">
+           <aside className="min-h-0 overflow-y-auto border-b border-border/70 bg-background/40 p-3 md:border-b-0 md:border-r">
             <div className="relative mb-4">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-              <Input value={navQuery} onChange={(event) => setNavQuery(event.target.value)} placeholder="Filter settings" className="h-8 border-border/70 bg-card pl-8 text-xs" />
+              <Input data-testid="input-filter-settings" value={navQuery} onChange={(event) => setNavQuery(event.target.value)} placeholder="Filter settings" className="h-8 border-border/70 bg-card pl-8 text-xs" />
               {navQuery && <button type="button" onClick={() => setNavQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" aria-label="Clear settings filter"><X className="h-3.5 w-3.5" /></button>}
             </div>
             <nav className="space-y-1">
@@ -735,7 +735,7 @@ export function AdminPage() {
                 const Icon = section.icon;
                 const isActive = activeSection === section.id;
                 return (
-                  <button key={section.id} type="button" onClick={() => setActiveSection(section.id)} className={cn("group flex w-full items-start gap-2.5 rounded-md px-2.5 py-2.5 text-left transition-colors", isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-foreground")}>
+                   <button data-testid={`button-settings-section-${section.id}`} key={section.id} type="button" onClick={() => setActiveSection(section.id)} className={cn("group flex w-full items-start gap-2.5 rounded-md px-2.5 py-2.5 text-left transition-colors", isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-foreground")}>
                     <Icon className={cn("mt-0.5 h-4 w-4 shrink-0", isActive ? "text-primary" : "text-muted-foreground")} />
                     <span className="min-w-0"><span className="block text-xs font-semibold">{section.label}</span><span className={cn("mt-0.5 block truncate text-[10px]", isActive ? "text-primary/70" : "text-muted-foreground/70")}>{section.description}</span></span>
                   </button>
@@ -751,7 +751,7 @@ export function AdminPage() {
               </div>
             </div>
           </aside>
-          <section className="min-w-0 overflow-y-auto bg-card/20 p-6 md:p-8">
+           <section data-testid="settings-content" className="min-h-0 min-w-0 overflow-y-auto bg-card/20 p-6 md:p-8">
             <div className="mx-auto max-w-3xl">{content}</div>
           </section>
         </div>

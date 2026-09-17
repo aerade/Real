@@ -58,51 +58,42 @@
 }
 
 :root, .dark {
-  --background: 0 0% 3%;
-  --foreground: 0 0% 98%;
-  
-  --card: 0 0% 6%;
-  --card-foreground: 0 0% 98%;
-  --card-border: 0 0% 13%;
-  
-  --popover: 0 0% 7%;
-  --popover-foreground: 0 0% 98%;
-  --popover-border: 0 0% 14%;
-  
-  --primary: 0 0% 98%;
-  --primary-foreground: 0 0% 8%;
-  
-  --secondary: 0 0% 12%;
-  --secondary-foreground: 0 0% 98%;
-  
-  --muted: 0 0% 10%;
-  --muted-foreground: 0 0% 64%;
-  
-  --accent: 0 0% 12%;
-  --accent-foreground: 0 0% 98%;
-  
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 0 0% 100%;
-  
-  --border: 0 0% 13%;
-  --input: 0 0% 13%;
-  --ring: 0 0% 42%;
-  
-  --sidebar: 0 0% 4%;
-  --sidebar-foreground: 0 0% 90%;
-  --sidebar-border: 0 0% 13%;
-  --sidebar-primary: 0 0% 98%;
-  --sidebar-primary-foreground: 0 0% 9%;
-  --sidebar-accent: 0 0% 10%;
-  --sidebar-accent-foreground: 0 0% 98%;
+  --background: 220 18% 10%;
+  --foreground: 36 25% 93%;
+  --card: 220 16% 14%;
+  --card-foreground: 36 25% 93%;
+  --card-border: 220 14% 23%;
+  --popover: 220 17% 16%;
+  --popover-foreground: 36 25% 93%;
+  --popover-border: 220 14% 25%;
+  --primary: 35 74% 64%;
+  --primary-foreground: 220 20% 11%;
+  --secondary: 220 14% 20%;
+  --secondary-foreground: 36 25% 93%;
+  --muted: 220 15% 18%;
+  --muted-foreground: 215 12% 64%;
+  --accent: 35 22% 19%;
+  --accent-foreground: 36 25% 93%;
+  --destructive: 5 68% 63%;
+  --destructive-foreground: 220 20% 10%;
+  --border: 220 14% 23%;
+  --input: 220 14% 23%;
+  --ring: 35 74% 64%;
+  --sidebar: 220 20% 8%;
+  --sidebar-foreground: 36 25% 90%;
+  --sidebar-border: 220 14% 19%;
+  --sidebar-primary: 35 74% 64%;
+  --sidebar-primary-foreground: 220 20% 11%;
+  --sidebar-accent: 35 20% 16%;
+  --sidebar-accent-foreground: 36 25% 93%;
   
   --radius: 0.75rem;
   --app-font-sans: 'Bricolage Grotesque', sans-serif;
   --app-font-mono: 'Spline Sans Mono', monospace;
 
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.35);
-  --shadow: 0 2px 4px 0 rgb(0 0 0 / 0.45);
-  --shadow-md: 0 8px 22px -5px rgb(0 0 0 / 0.65);
+  --shadow-sm: 0 1px 2px 0 rgb(8 11 14 / 0.35);
+  --shadow: 0 2px 4px 0 rgb(8 11 14 / 0.45);
+  --shadow-md: 0 8px 22px -5px rgb(8 11 14 / 0.65);
 }
 
 :root[data-settings-theme="blue"] { --background: 213 28% 8%; --card: 214 24% 12%; --border: 213 20% 20%; --primary: 199 88% 62%; --primary-foreground: 210 36% 8%; --accent: 198 48% 16%; }

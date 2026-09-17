@@ -39,6 +39,13 @@ export async function ensureLeadSearchHistoryTable(): Promise<void> {
           FOREIGN KEY ("lead_id") REFERENCES "leads"("id") ON DELETE CASCADE
       )
     `);
+    await tx.execute(sql`
+      ALTER TABLE "leads"
+        ADD COLUMN IF NOT EXISTS "website_audit" jsonb,
+        ADD COLUMN IF NOT EXISTS "score_breakdown" jsonb NOT NULL DEFAULT '[]'::jsonb,
+        ADD COLUMN IF NOT EXISTS "score_version" text NOT NULL DEFAULT 'legacy-v1',
+        ADD COLUMN IF NOT EXISTS "audit_checked_at" timestamptz
+    `);
   });
 }
 
