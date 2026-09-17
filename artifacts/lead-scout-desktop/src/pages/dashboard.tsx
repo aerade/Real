@@ -1,7 +1,8 @@
 import { useGetDashboard } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout/app-layout";
+import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { Briefcase, Inbox, Target, Activity } from "lucide-react";
+import { Activity, Archive, Briefcase, Inbox, Target } from "lucide-react";
 import { statusMap } from "@/lib/constants";
 
 export function Dashboard() {
@@ -27,11 +28,29 @@ export function Dashboard() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between pb-2">
+        <div className="flex flex-col gap-3 pb-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-lg font-bold tracking-tight">Рабочий обзор</h1>
             <p className="mt-0.5 text-xs text-muted-foreground">Сводка показателей и активность</p>
           </div>
+          <Button
+            data-testid="button-open-client-archive"
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-fit"
+            onClick={() => {
+              if (window.realDesktop?.openArchiveWindow) {
+                void window.realDesktop.openArchiveWindow();
+                return;
+              }
+              const baseUrl = new URL(import.meta.env.BASE_URL, window.location.origin);
+              window.open(new URL("archive", baseUrl).toString(), "_blank", "noopener,noreferrer");
+            }}
+          >
+            <Archive className="h-3.5 w-3.5" />
+            Полный архив
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 gap-3 md:grid-cols-4">

@@ -27,6 +27,7 @@ import type {
   Lead,
   LeadSearchInput,
   LeadUpdate,
+  ListLeadArchiveParams,
   ListLeadsParams,
   LoginInput,
   Session,
@@ -582,6 +583,84 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getSearchLeadsMutationOptions(options));
     }
+
+export const getListLeadArchiveUrl = (params?: ListLeadArchiveParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/leads/archive?${stringifiedParams}` : `/api/leads/archive`
+}
+
+export const listLeadArchive = async (params?: ListLeadArchiveParams, options?: Parameters<typeof customFetch>[1]): Promise<Lead[]> => {
+
+  return customFetch<Lead[]>(getListLeadArchiveUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListLeadArchiveQueryKey = (params?: ListLeadArchiveParams,) => {
+    return [
+    `/api/leads/archive`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListLeadArchiveQueryOptions = <TData = Awaited<ReturnType<typeof listLeadArchive>>, TError = ErrorType<unknown>>(params?: ListLeadArchiveParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listLeadArchive>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListLeadArchiveQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listLeadArchive>>> = ({ signal }) => listLeadArchive(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listLeadArchive>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListLeadArchiveQueryResult = NonNullable<Awaited<ReturnType<typeof listLeadArchive>>>
+export type ListLeadArchiveQueryError = ErrorType<unknown>
+
+
+
+export function useListLeadArchive<TData = Awaited<ReturnType<typeof listLeadArchive>>, TError = ErrorType<unknown>>(
+ params?: ListLeadArchiveParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listLeadArchive>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListLeadArchiveQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetLeadUrl = (id: number,) => {
 

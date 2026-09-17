@@ -1,6 +1,6 @@
 import { randomBytes, scrypt as nodeScrypt, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
-import { and, desc, eq, inArray, isNull, like, or, type SQL } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, isNull, like, or, type SQL } from "drizzle-orm";
 import {
   activitiesTable,
   countriesTable,
@@ -303,6 +303,26 @@ export async function listLeads(user: AuthUser, status?: string, assignedToMe = 
   return queryLeads(conditions);
 }
 
+export async function listLeadArchive(
+  _user: AuthUser,
+  query = "",
+  status?: string,
+): Promise<LeadOutput[]> {
+  const conditions: SQL<unknown>[] = [];
+  const normalizedQuery = query.trim();
+  if (normalizedQuery) {
+    const pattern = `%${normalizedQuery}%`;
+    conditions.push(or(
+      ilike(leadsTable.name, pattern),
+      ilike(leadsTable.city, pattern),
+      ilike(leadsTable.industry, pattern),
+      ilike(leadsTable.website, pattern),
+    )!);
+  }
+  if (status) conditions.push(eq(leadsTable.status, status as LeadStatus));
+  return queryLeads(conditions);
+}
+
 export async function getLead(id: number): Promise<LeadOutput | null> {
   const rows = await db.select().from(leadsTable)
     .leftJoin(usersTable, eq(leadsTable.assigneeId, usersTable.id))
@@ -397,8 +417,15 @@ export async function recordShownLeads(userId: number, leadIds: number[]): Promi
 }
 
 export async function getDashboard(user: AuthUser) {
-  const visible = await listLeads(user);
   const mine = await listLeads(user, undefined, true);
+  const shownAvailable = await db.select({ id: leadsTable.id })
+    .from(leadsTable)
+    .innerJoin(leadSearchHistoryTable, eq(leadSearchHistoryTable.leadId, leadsTable.id))
+    .where(and(
+      eq(leadSearchHistoryTable.userId, user.id),
+      eq(leadsTable.status, "new"),
+      isNull(leadsTable.assigneeId),
+    ));
   const statuses: LeadStatus[] = ["new", "claimed", "contacted", "replied", "rejected", "no_reply", "deal"];
   const recentQuery = db.select().from(activitiesTable)
     .orderBy(desc(activitiesTable.at))
@@ -408,7 +435,7 @@ export async function getDashboard(user: AuthUser) {
     : await recentQuery.where(eq(activitiesTable.userId, user.id));
 
   return {
-    available: visible.filter((lead) => lead.status === "new" && !lead.assignee).length,
+    available: shownAvailable.length,
     inWork: mine.filter((lead) => ["claimed", "contacted"].includes(lead.status)).length,
     replies: mine.filter((lead) => lead.status === "replied").length,
     deals: mine.filter((lead) => lead.status === "deal").length,

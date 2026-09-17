@@ -118,6 +118,9 @@ ipcMain.handle("real:window-control", (event, action) => {
 });
 ipcMain.handle("real:check-updates", () => checkForUpdates());
 ipcMain.handle("real:download-update", () => downloadUpdate());
+ipcMain.handle("real:open-archive-window", () => {
+  createWindow("/archive");
+});
 ipcMain.handle("real:install-update", () => {
   if (updateState.status !== "downloaded" || !downloadedInstallerPath || !fs.existsSync(downloadedInstallerPath)) {
     return { started: false };
@@ -154,12 +157,12 @@ ipcMain.handle("real:request", async (_event, request) => {
   };
 });
 
-function createWindow() {
+function createWindow(hash = "") {
   const window = new BrowserWindow({
-    width: 980,
-    height: 640,
-    minWidth: 860,
-    minHeight: 560,
+    width: 1180,
+    height: 760,
+    minWidth: 760,
+    minHeight: 540,
     backgroundColor: "#00000000",
     show: false,
     frame: false,
@@ -186,7 +189,11 @@ function createWindow() {
   window.webContents.on("will-navigate", (event, url) => {
     if (!url.startsWith("file:")) event.preventDefault();
   });
-  window.loadFile(path.join(__dirname, "../public/index.html"));
+  window.loadFile(
+    path.join(__dirname, "../public/index.html"),
+    hash ? { hash } : undefined,
+  );
+  return window;
 }
 
 app.whenReady().then(() => {
