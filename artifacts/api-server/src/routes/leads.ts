@@ -122,10 +122,36 @@ router.post("/leads/search", async (req, res, next) => {
   if (!requestedCountry && !city && !industry) return res.status(400).json({ error: "Укажите город или отрасль" });
 
   try {
-    let businesses: Awaited<ReturnType<typeof searchTwoGisBusinesses>>;
+    let businesses: Awaited<ReturnType<typeof searchTwoGisBusinesses>> = [];
+    let available: Awaited<ReturnType<typeof upsertSearchedLead>>[] = [];
+    let previouslyShown = new Set<number>();
+    let returned: typeof available = [];
+    let parsedCount = 0;
+    let pagesFetched = 0;
     try {
-      const parsedBusinesses = await searchTwoGisBusinesses({ country, city, industry });
-      businesses = await auditAndScoreBusinesses(parsedBusinesses);
+      // A user may have already seen every company on the first source page
+      // during an older search. Keep walking 2GIS pages until the next
+      // unseen batch is found instead of returning a misleading empty result.
+      for (let attempt = 0; attempt < 100 && returned.length === 0; attempt += 1) {
+        const parsedBusinesses = await searchTwoGisBusinesses({ country, city, industry });
+        if (parsedBusinesses.length <= parsedCount) break;
+
+        const newBusinesses = parsedBusinesses.slice(parsedCount);
+        const scoredBusinesses = await auditAndScoreBusinesses(newBusinesses);
+        businesses = [...businesses, ...scoredBusinesses];
+        parsedCount = parsedBusinesses.length;
+        pagesFetched += 1;
+
+        const found = await Promise.all(
+          businesses.map((business) => upsertSearchedLead(business, country, city)),
+        );
+        available = found.filter((lead) => lead.status === "new" && !lead.assignee);
+        previouslyShown = await getPreviouslyShownLeadIds(user.id, available.map((lead) => lead.id));
+        const results = showPreviouslyFound
+          ? available
+          : available.filter((lead) => !previouslyShown.has(lead.id));
+        returned = results.slice(0, 3);
+      }
     } catch (error) {
       req.log.error({ err: error }, "2GIS search failed");
       return res.status(502).json({
@@ -133,25 +159,17 @@ router.post("/leads/search", async (req, res, next) => {
       });
     }
 
-    const found = await Promise.all(
-      businesses.map((business) => upsertSearchedLead(business, country, city)),
-    );
-    const available = found.filter((lead) => lead.status === "new" && !lead.assignee);
-    const previouslyShown = await getPreviouslyShownLeadIds(user.id, available.map((lead) => lead.id));
-    const results = showPreviouslyFound
-      ? available
-      : available.filter((lead) => !previouslyShown.has(lead.id));
     // Keep the UI batch compact, but record only the rows actually returned.
     // This lets the next identical search continue with the next unseen
     // companies instead of marking the complete parser response as shown.
-    const returned = results.slice(0, 3);
     await recordShownLeads(user.id, returned.map((lead) => lead.id));
     req.log.info({
       parserResults: businesses.length,
-      upserted: found.length,
+      upserted: businesses.length,
       available: available.length,
       previouslyShown: previouslyShown.size,
       returned: returned.length,
+      pagesFetched,
     }, "2GIS search completed");
     return res.json(returned);
   } catch (error) {
