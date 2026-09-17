@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Lead } from "@workspace/api-client-react";
-import { Check, Copy, MessageSquare } from "lucide-react";
+import { Check, Copy, MessageSquare, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -10,11 +10,13 @@ import { createOutreachMessages } from "@/lib/outreach-messages";
 export function OutreachMessagePanel({ lead }: { lead: Lead }) {
   const { toast } = useToast();
   const [selectedVariants, setSelectedVariants] = useState<Record<string, number>>({});
+  const [editedTexts, setEditedTexts] = useState<Record<string, string>>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const families = createOutreachMessages(lead);
 
   useEffect(() => {
     setSelectedVariants({});
+    setEditedTexts({});
     setCopiedId(null);
   }, [lead.id]);
 
@@ -51,7 +53,8 @@ export function OutreachMessagePanel({ lead }: { lead: Lead }) {
         {families.map((family) => {
           const variantIndex = selectedVariants[family.id] ?? 0;
           const messageId = `${family.id}-${variantIndex}`;
-          const text = family.variants[variantIndex];
+          const generatedText = family.variants[variantIndex];
+          const text = editedTexts[messageId] ?? generatedText;
           return (
             <article key={family.id} className="rounded-lg border border-border/70 bg-background/35 p-4">
               <div className="flex items-start justify-between gap-3">
@@ -88,23 +91,47 @@ export function OutreachMessagePanel({ lead }: { lead: Lead }) {
               </div>
 
               <Textarea
-                readOnly
                 value={text}
+                onChange={(event) => {
+                  setEditedTexts((current) => ({ ...current, [messageId]: event.target.value }));
+                  setCopiedId(null);
+                }}
                 aria-label={`${family.title}, вариант ${variantIndex + 1}`}
                 className="mt-3 min-h-36 resize-y bg-card/70 text-xs leading-5"
               />
               <div className="mt-3 flex items-center justify-between gap-3">
-                <span className="text-[10px] text-muted-foreground">Выберите вариант и скопируйте его</span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => copyMessage(messageId, text)}
-                  className="h-8 shrink-0 text-xs"
-                >
-                  {copiedId === messageId ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
-                  {copiedId === messageId ? "Скопировано" : "Копировать"}
-                </Button>
+                <span className="text-[10px] text-muted-foreground">Измените текст перед отправкой или скопируйте как есть</span>
+                <div className="flex shrink-0 items-center gap-2">
+                  {editedTexts[messageId] !== undefined && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setEditedTexts((current) => {
+                          const next = { ...current };
+                          delete next[messageId];
+                          return next;
+                        });
+                        setCopiedId(null);
+                      }}
+                      className="h-8 px-2 text-[10px] text-muted-foreground"
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" />
+                      Вернуть
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyMessage(messageId, text)}
+                    className="h-8 text-xs"
+                  >
+                    {copiedId === messageId ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                    {copiedId === messageId ? "Скопировано" : "Копировать"}
+                  </Button>
+                </div>
               </div>
             </article>
           );

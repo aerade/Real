@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Home, Search, Target, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { WindowControls } from "./window-controls";
+import { CommunicationGuide } from "@/components/communication-guide";
 import realLogoWhite from "@/assets/real-logo-horizontal-white.svg";
 import realLogoBlack from "@/assets/real-logo-horizontal.svg";
 import realMarkWhite from "@/assets/real-mark-white.svg";
@@ -176,6 +177,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <main className="flex-1 overflow-y-auto bg-background/50 relative rounded-b-2xl">
         <div className="max-w-5xl mx-auto h-full px-6 py-6 pb-20">
           {children}
+          <div className="mt-6">
+            <CommunicationGuide />
+          </div>
         </div>
       </main>
     </div>
