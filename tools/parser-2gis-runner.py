@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 from collections import Counter
 import json
 import os
@@ -60,6 +61,26 @@ def patch_chrome_launch_flags():
         chrome_browser.subprocess.Popen = original_popen
 
     return restore
+
+
+def extract_card_initial_state(body: str, expected_id: str = "") -> dict | None:
+    match = re.search(r"var initialState = JSON\.parse\('((?:\\.|[^'])*)'\);", body)
+    if not match:
+        return None
+    try:
+        state_json = ast.literal_eval("'" + match.group(1) + "'")
+        state = json.loads(state_json)
+    except (ValueError, SyntaxError, json.JSONDecodeError):
+        return None
+
+    profiles = state.get("data", {}).get("entity", {}).get("profile", {})
+    if not isinstance(profiles, dict):
+        return None
+    profile = profiles.get(expected_id)
+    if profile is None and len(profiles) == 1:
+        profile = next(iter(profiles.values()))
+    data = profile.get("data") if isinstance(profile, dict) else None
+    return data if isinstance(data, dict) and data.get("id") else None
 
 
 def main() -> None:
@@ -208,42 +229,6 @@ def main() -> None:
                         trace("item response received: false")
                         current_url = ""
                         try:
-                            current_url = parser._chrome_remote.execute_script("location.href")
-                            current_title = parser._chrome_remote.execute_script("document.title")
-                            trace(
-                                f"after item wait: url={current_url!s:.240} "
-                                f"title={current_title!s:.160}"
-                            )
-                        except Exception as error:
-                            trace(f"after item wait: unable to read page state: {error}")
-                        try:
-                            card_data = parser._chrome_remote.execute_script(
-                                r"""(() => {
-                                    const profiles = window.initialState?.data?.entity?.profile ?? {};
-                                    const match = window.location.pathname.match(/\/(?:firm|station)\/([^/?#]+)/);
-                                    const profile = match ? profiles[match[1]] : Object.values(profiles)[0];
-                                    return profile?.data ?? null;
-                                })()"""
-                            )
-                            if isinstance(card_data, dict) and card_data.get("id"):
-                                fallback_body = json.dumps(
-                                    {"result": {"items": [card_data]}},
-                                    ensure_ascii=False,
-                                )
-                                trace(
-                                    "using card initialState as item response: "
-                                    f"id={card_data.get('id')} "
-                                    f"name={card_data.get('name', '')[:120]}"
-                                )
-                                return {
-                                    "status": 200,
-                                    "url": current_url,
-                                    "_fallback_body": fallback_body,
-                                }
-                            trace("card initialState not found")
-                        except Exception as error:
-                            trace(f"card initialState extraction failed: {error}")
-                        try:
                             responses = parser._chrome_remote.get_responses()
                             api_responses = [
                                 response
@@ -259,6 +244,41 @@ def main() -> None:
                                     f"status={response.get('status', 'unknown')} "
                                     f"url={response.get('url', '')[:240]}"
                                 )
+                            card_responses = [
+                                response
+                                for response in responses
+                                if re.search(
+                                    r"/(?:firm|station)/[^/?#]+(?:[/?#]|$)",
+                                    response.get("url", ""),
+                                )
+                                and response.get("status", 0) == 200
+                            ]
+                            for response in reversed(card_responses):
+                                current_url = response.get("url", "")
+                                card_id_match = re.search(
+                                    r"/(?:firm|station)/([^/?#]+)",
+                                    current_url,
+                                )
+                                card_id = card_id_match.group(1) if card_id_match else ""
+                                trace(f"reading card HTML response: url={current_url[:240]}")
+                                body = original_get_response_body(response, timeout=10)
+                                card_data = extract_card_initial_state(body, card_id)
+                                if card_data:
+                                    fallback_body = json.dumps(
+                                        {"result": {"items": [card_data]}},
+                                        ensure_ascii=False,
+                                    )
+                                    trace(
+                                        "using card HTML initialState as item response: "
+                                        f"id={card_data.get('id')} "
+                                        f"name={card_data.get('name', '')[:120]}"
+                                    )
+                                    return {
+                                        "status": 200,
+                                        "url": current_url,
+                                        "_fallback_body": fallback_body,
+                                    }
+                            trace("card HTML initialState not found")
                         except Exception as error:
                             trace(f"post-click response inspection failed: {error}")
                     return result
