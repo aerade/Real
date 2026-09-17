@@ -3,7 +3,6 @@ import { Link, useLocation } from "wouter";
 import { Home, Search, Target, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { WindowControls } from "./window-controls";
-import { CommunicationGuide } from "@/components/communication-guide";
 import realLogoWhite from "@/assets/real-logo-horizontal-white.svg";
 import realLogoBlack from "@/assets/real-logo-horizontal.svg";
 import realMarkWhite from "@/assets/real-mark-white.svg";
@@ -33,6 +32,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [macButtons, setMacButtons] = useState(true);
   const [theme, setTheme] = useState("dark");
   const [version, setVersion] = useState("");
+  const [versionPosition, setVersionPosition] = useState<"left" | "right">("right");
   useEffect(() => {
     const readSettings = () => {
       try {
@@ -41,6 +41,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         setTitleVersion(Boolean(saved.titleVersion));
         setMacButtons(saved.macButtons ?? true);
         setTheme(String(saved.theme ?? "dark"));
+        setVersionPosition(saved.versionPosition === "left" ? "left" : "right");
         const root = document.documentElement;
         const dataset = root.dataset as DOMStringMap & Record<string, string>;
         const settingsMap: Record<string, string | number | boolean | undefined> = {
@@ -53,6 +54,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           settingsIconShift: saved.iconColorShift,
           settingsMacButtons: saved.macButtons ?? true,
           settingsTitleVersion: saved.titleVersion,
+          settingsVersionPosition: saved.versionPosition,
           settingsToolbarPosition: saved.toolbarPosition,
           settingsNavbarPosition: saved.navbarPosition,
           settingsAnimationStyle: saved.animationStyle,
@@ -126,7 +128,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const logo = theme === "light" ? realLogoBlack : realLogoWhite;
 
   return (
-    <div className="real-app-frame flex flex-col h-full w-full bg-background text-foreground overflow-hidden rounded-[24px] border border-border/40 select-none shadow-2xl relative isolate" style={{ borderRadius: "calc(var(--settings-radius, 12) * 1px)", borderWidth: "calc(var(--settings-border, 1) * 1px)", clipPath: "inset(0 round calc(var(--settings-radius, 12) * 1px))" }}>
+    <div className="real-app-frame flex flex-col h-full w-full bg-background text-foreground overflow-hidden rounded-[24px] border border-border/40 select-none shadow-2xl relative" style={{ borderRadius: "calc(var(--settings-radius, 12) * 1px)", borderWidth: "calc(var(--settings-border, 1) * 1px)" }}>
       {/* Top Titlebar / Navbar */}
       <header 
         className="h-14 flex items-center justify-between px-4 shrink-0 bg-background/80 backdrop-blur-md z-50 relative"
@@ -135,8 +137,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <div className="flex w-[170px] shrink-0 items-center">
           {macButtons ? <WindowControls /> : (
             <div className="flex items-center gap-2">
+              {titleVersion && versionPosition === "left" && <span className="text-[10px] font-semibold tracking-wide text-muted-foreground">v{version || "1.0.0"}</span>}
               <img src={logo} alt="Real" className="h-5 w-auto max-w-[112px] object-contain" />
-              {titleVersion && <span className="text-[10px] font-semibold tracking-wide text-muted-foreground">v{version || "1.0.0"}</span>}
+              {titleVersion && versionPosition === "right" && <span className="text-[10px] font-semibold tracking-wide text-muted-foreground">v{version || "1.0.0"}</span>}
             </div>
           )}
         </div>
@@ -165,7 +168,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <div className="flex w-[170px] shrink-0 items-center justify-end gap-3">
           {macButtons ? (
             <div className="flex items-center gap-2">
-               <img src={theme === "light" ? realMarkBlack : realMarkWhite} alt="Логотип Real" className="h-6 w-6 object-contain" />
+              {titleVersion && versionPosition === "left" && <span className="text-[10px] font-semibold tracking-wide text-muted-foreground">v{version || "1.0.0"}</span>}
+              <img src={theme === "light" ? realMarkBlack : realMarkWhite} alt="Логотип Real" className="h-6 w-6 object-contain" />
+              {titleVersion && versionPosition === "right" && <span className="text-[10px] font-semibold tracking-wide text-muted-foreground">v{version || "1.0.0"}</span>}
             </div>
           ) : (
             <WindowControls variant="windows" />
@@ -177,9 +182,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <main className="flex-1 overflow-y-auto bg-background/50 relative rounded-b-2xl">
         <div className="max-w-5xl mx-auto h-full px-6 py-6 pb-20">
           {children}
-          <div className="mt-6">
-            <CommunicationGuide />
-          </div>
         </div>
       </main>
     </div>

@@ -58,34 +58,34 @@
 }
 
 :root, .dark {
-  --background: 0 0% 4%;
-  --foreground: 0 0% 94%;
+  --background: 0 0% 3%;
+  --foreground: 0 0% 98%;
   --card: 0 0% 6%;
-  --card-foreground: 0 0% 94%;
+  --card-foreground: 0 0% 98%;
   --card-border: 0 0% 13%;
   --popover: 0 0% 7%;
-  --popover-foreground: 0 0% 94%;
-  --popover-border: 0 0% 15%;
-  --primary: 0 0% 94%;
-  --primary-foreground: 0 0% 5%;
+  --popover-foreground: 0 0% 98%;
+  --popover-border: 0 0% 14%;
+  --primary: 0 0% 98%;
+  --primary-foreground: 0 0% 8%;
   --secondary: 0 0% 12%;
-  --secondary-foreground: 0 0% 94%;
+  --secondary-foreground: 0 0% 98%;
   --muted: 0 0% 10%;
-  --muted-foreground: 0 0% 61%;
-  --accent: 0 0% 14%;
-  --accent-foreground: 0 0% 94%;
-  --destructive: 0 78% 65%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 0 0% 14%;
-  --input: 0 0% 14%;
-  --ring: 0 0% 82%;
-  --sidebar: 0 0% 3%;
+  --muted-foreground: 0 0% 64%;
+  --accent: 0 0% 12%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 13%;
+  --input: 0 0% 13%;
+  --ring: 0 0% 42%;
+  --sidebar: 0 0% 4%;
   --sidebar-foreground: 0 0% 90%;
-  --sidebar-border: 0 0% 11%;
-  --sidebar-primary: 0 0% 94%;
-  --sidebar-primary-foreground: 0 0% 5%;
-  --sidebar-accent: 0 0% 11%;
-  --sidebar-accent-foreground: 0 0% 94%;
+  --sidebar-border: 0 0% 13%;
+  --sidebar-primary: 0 0% 98%;
+  --sidebar-primary-foreground: 0 0% 9%;
+  --sidebar-accent: 0 0% 10%;
+  --sidebar-accent-foreground: 0 0% 98%;
   --icon-1: #f4f4f5;
   --icon-2: #a1a1aa;
   --icon-3: #d4d4d8;
@@ -170,11 +170,10 @@ html[data-settings-icons="true"] svg:nth-child(4n) { color: var(--icon-3); }
 html[data-settings-icons="true"] svg:nth-child(5n) { color: var(--icon-4); }
 html[data-settings-icons="true"] svg:nth-child(7n) { color: var(--icon-5); }
 html[data-settings-icons="true"] svg { filter: hue-rotate(calc(var(--settings-icon-shift) * 1deg)); }
-html:not([data-settings-icons="true"]) svg { color: #ffffff !important; }
 .window-control-icon { opacity: 0; transition: opacity 120ms ease; }
 .window-control:hover .window-control-icon,
 .window-control:focus-visible .window-control-icon { opacity: 1; }
-.window-control-close .window-control-icon { color: #ffffff !important; }
+.window-control-close .window-control-icon { color: #111111 !important; }
 .window-control-minimize .window-control-icon,
 .window-control-maximize .window-control-icon { color: #111111 !important; }
 html[data-settings-nav-style="icons"] nav a > div > span { display: none; }
@@ -183,11 +182,39 @@ html[data-settings-navbar-position="bottom"] #root > div > header { order: 2; }
 html[data-settings-navbar-position="bottom"] #root > div > main { order: 1; }
 html[data-settings-animation-style="smooth"] button,
 html[data-settings-animation-style="smooth"] a { transition-timing-function: cubic-bezier(.22,.75,.22,1) !important; }
+@keyframes real-page-fade {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes real-page-spring {
+  0% { opacity: 0; transform: translateY(14px) scale(.985); }
+  70% { opacity: 1; transform: translateY(-2px) scale(1.002); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes real-page-slide {
+  from { opacity: 0; transform: translateX(18px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+html[data-settings-animation-style="smooth"] .real-app-frame main > div {
+  animation: real-page-fade calc(360ms / var(--settings-animation-speed, 1)) both;
+}
+html[data-settings-animation-style="spring"] .real-app-frame main > div {
+  animation: real-page-spring calc(520ms / var(--settings-animation-speed, 1)) both;
+}
+html[data-settings-animation-style="slide"] .real-app-frame main > div {
+  animation: real-page-slide calc(300ms / var(--settings-animation-speed, 1)) both;
+}
 html[data-settings-animation-style="snappy"] button,
 html[data-settings-animation-style="snappy"] a { transition-duration: 90ms !important; transition-timing-function: cubic-bezier(.2,.9,.2,1) !important; }
 html[data-settings-animation-style="snappy"] button:active,
 html[data-settings-animation-style="snappy"] a:active { transform: scale(.975); }
+html[data-settings-animation-style="snappy"] .real-app-frame main > div {
+  animation: real-page-fade 160ms both;
+}
 html[data-settings-animation-style="minimal"] * { transition-duration: 80ms !important; transition-timing-function: linear !important; }
+html[data-settings-animation-style="minimal"] .real-app-frame main > div {
+  animation: none;
+}
 html[data-settings-animation-speed] * { transition-duration: calc(180ms / var(--settings-animation-speed, 1)); }
 html[data-settings-animations="false"] *, html[data-settings-animations="false"] *::before, html[data-settings-animations="false"] *::after {
   animation: none !important; transition: none !important;

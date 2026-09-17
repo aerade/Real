@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from "react";
 import {
   Bell,
   Check,
   CircleHelp,
   Download,
   Eye,
-  FileSearch,
   ImagePlus,
   Info,
   KeyRound,
@@ -34,7 +33,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
@@ -45,7 +43,7 @@ import { cn } from "@/lib/utils";
 import realMarkWhite from "@/assets/real-mark-white.svg";
 import realMarkBlack from "@/assets/real-mark.svg";
 
-type SettingsSection = "profile" | "appearance" | "window" | "search" | "workspace" | "about";
+type SettingsSection = "profile" | "appearance" | "window" | "workspace" | "about";
 
 type Preferences = {
   compact: boolean;
@@ -58,13 +56,14 @@ type Preferences = {
   iconColorShift: number;
   macButtons: boolean;
   titleVersion: boolean;
+  versionPosition: "left" | "right";
   radius: number;
   borderThickness: number;
   borderColor: string;
   rainbowBorder: boolean;
   animations: boolean;
   animationSpeed: number;
-  animationStyle: "smooth" | "snappy" | "minimal";
+  animationStyle: "smooth" | "spring" | "snappy" | "slide" | "minimal";
   buttonSound: string;
   topBarStyle: "icons" | "labels";
   startupTab: string;
@@ -102,6 +101,7 @@ const defaultPreferences: Preferences = {
   iconColorShift: 0,
   macButtons: true,
   titleVersion: false,
+  versionPosition: "right",
   radius: 12,
   borderThickness: 1,
   borderColor: "default",
@@ -126,7 +126,6 @@ const sections: Array<{
   { id: "profile", label: "Profile", description: "Данные и доступ к аккаунту", icon: UserIcon },
   { id: "appearance", label: "Appearance", description: "Тема и плотность интерфейса", icon: Palette },
   { id: "window", label: "Window", description: "Запуск и поведение окна", icon: MonitorCog },
-  { id: "search", label: "Search", description: "Параметры поиска лидов", icon: FileSearch },
   { id: "workspace", label: "Workspace", description: "Доступ владельца и управление", icon: Users },
   { id: "about", label: "About", description: "Версия и поддержка", icon: Info },
 ];
@@ -233,8 +232,6 @@ export function AdminPage() {
   const [preferences, setPreferences] = useState<Preferences>(defaultPreferences);
   const [avatar, setAvatar] = useState<string | null>(null);
   const [profileNote, setProfileNote] = useState("");
-  const [searchCity, setSearchCity] = useState("");
-  const [searchIndustry, setSearchIndustry] = useState("");
   const [appInfo, setAppInfo] = useState({
     version: "1.0.0",
     platform: "Web preview",
@@ -255,20 +252,9 @@ export function AdminPage() {
     if (login) {
       setAvatar(window.localStorage.getItem(avatarKey(login)));
       try {
-        const savedSearch = window.localStorage.getItem(`real:search-defaults:${login.toLowerCase()}`) ?? window.localStorage.getItem(`lead-scout:search-defaults:${login.toLowerCase()}`);
         const savedNote = window.localStorage.getItem(`real:profile-note:${login.toLowerCase()}`) ?? window.localStorage.getItem(`lead-scout:profile-note:${login.toLowerCase()}`);
-        if (savedSearch) {
-          const parsed = JSON.parse(savedSearch) as { city?: string; industry?: string };
-          setSearchCity(parsed.city ?? "");
-          setSearchIndustry(parsed.industry ?? "");
-        } else {
-          setSearchCity("");
-          setSearchIndustry("");
-        }
         setProfileNote(savedNote ?? "");
       } catch {
-        setSearchCity("");
-        setSearchIndustry("");
         setProfileNote("");
       }
     }
@@ -284,6 +270,7 @@ export function AdminPage() {
     document.documentElement.dataset.settingsIconShift = String(preferences.iconColorShift);
     document.documentElement.dataset.settingsMacButtons = String(preferences.macButtons);
     document.documentElement.dataset.settingsTitleVersion = String(preferences.titleVersion);
+    document.documentElement.dataset.settingsVersionPosition = preferences.versionPosition;
     document.documentElement.dataset.settingsToolbarPosition = preferences.toolbarPosition;
     document.documentElement.dataset.settingsNavbarPosition = preferences.navbarPosition;
     document.documentElement.dataset.settingsAnimationStyle = preferences.animationStyle;
@@ -379,17 +366,6 @@ export function AdminPage() {
     toast({ title: "Изображение профиля удалено" });
   };
 
-  const saveSearchDefaults = (event: FormEvent) => {
-    event.preventDefault();
-    if (login) {
-      window.localStorage.setItem(
-        `real:search-defaults:${login.toLowerCase()}`,
-        JSON.stringify({ city: searchCity, industry: searchIndustry }),
-      );
-    }
-    toast({ title: "Настройки поиска сохранены" });
-  };
-
   const resetPreferences = () => {
     setPreferences(defaultPreferences);
     const serialized = JSON.stringify(defaultPreferences);
@@ -397,11 +373,8 @@ export function AdminPage() {
     window.localStorage.setItem("lead-scout:settings", serialized);
     if (login) {
       const key = login.toLowerCase();
-      window.localStorage.removeItem(`real:search-defaults:${key}`);
       window.localStorage.removeItem(`real:profile-note:${key}`);
     }
-    setSearchCity("");
-    setSearchIndustry("");
     setProfileNote("");
     window.dispatchEvent(new Event("real:settings-changed"));
     toast({ title: "Настройки сброшены", description: "Real вернулся к стандартному поведению рабочего пространства." });
@@ -563,6 +536,7 @@ export function AdminPage() {
         <div className="rounded-lg border border-border/70 px-5">
            <SettingRow icon={Laptop} title="Расположение кнопок macOS" description="Используйте привычные элементы управления окном слева."><Switch checked={preferences.macButtons} onCheckedChange={(value) => updatePreference("macButtons", value)} /></SettingRow>
            <SettingRow icon={Eye} title="Версия приложения в заголовке" description="Показывать установленную версию Real рядом с названием приложения."><Switch checked={preferences.titleVersion} onCheckedChange={(value) => updatePreference("titleVersion", value)} /></SettingRow>
+           {preferences.titleVersion && <SettingRow icon={Eye} title="Положение версии" description="Показывать версию слева или справа от значка Real."><Select value={preferences.versionPosition} onValueChange={(value) => updatePreference("versionPosition", value as Preferences["versionPosition"])}><SelectTrigger className="h-8 w-32 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="left">Слева</SelectItem><SelectItem value="right">Справа</SelectItem></SelectContent></Select></SettingRow>}
            <SettingRow icon={MonitorCog} title="Радиус углов окна" description={`${preferences.radius}px скругления рамки приложения.`}><div className="flex w-44 items-center gap-3"><Slider value={[preferences.radius]} min={0} max={24} step={1} onValueChange={([value]) => updatePreference("radius", value)} /><span className="w-8 text-right font-mono text-[10px] text-muted-foreground">{preferences.radius}</span></div></SettingRow>
            <SettingRow icon={SlidersHorizontal} title="Толщина рамки окна" description={`${preferences.borderThickness}px толщины контура.`}><div className="flex w-44 items-center gap-3"><Slider value={[preferences.borderThickness]} min={0} max={3} step={0.5} onValueChange={([value]) => updatePreference("borderThickness", value)} /><span className="w-8 text-right font-mono text-[10px] text-muted-foreground">{preferences.borderThickness}</span></div></SettingRow>
            <SettingRow icon={PaletteIcon} title="Цвет рамки окна" description="Переопределите цвет рамки темы."><Select value={preferences.borderColor} onValueChange={(value) => updatePreference("borderColor", value)}><SelectTrigger className="h-8 w-32 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="default">По умолчанию темы</SelectItem><SelectItem value="red">Красный</SelectItem><SelectItem value="blue">Синий</SelectItem><SelectItem value="green">Зелёный</SelectItem><SelectItem value="gold">Золотой</SelectItem></SelectContent></Select></SettingRow>
@@ -572,8 +546,8 @@ export function AdminPage() {
            <SettingRow icon={Sparkles} title="Анимации" description="Включите или отключите движение интерфейса во всём приложении."><Switch checked={preferences.animations} onCheckedChange={(value) => updatePreference("animations", value)} /></SettingRow>
            <SettingRow icon={SlidersHorizontal} title="Скорость анимации" description={`${preferences.animationSpeed.toFixed(1)}× скорости переходов.`}><div className="flex w-44 items-center gap-3"><Slider value={[preferences.animationSpeed]} min={0.5} max={2} step={0.1} onValueChange={([value]) => updatePreference("animationSpeed", value)} /><span className="w-8 text-right font-mono text-[10px] text-muted-foreground">{preferences.animationSpeed.toFixed(1)}×</span></div></SettingRow>
             <SettingRow icon={Play} title="Стиль анимации" description="Выберите характер переходов.">
-              <div className="grid grid-cols-3 gap-1.5">
-                {([["smooth", "Плавный", "Поток"], ["snappy", "Быстрый", "Резкий"], ["minimal", "Минимальный", "Статика"]] as const).map(([value, label, hint]) => (
+              <div className="grid grid-cols-5 gap-1.5">
+                {([["smooth", "Плавный", "Поток"], ["spring", "Пружина", "Мягкий"], ["slide", "Сдвиг", "В сторону"], ["snappy", "Быстрый", "Резкий"], ["minimal", "Минимальный", "Статика"]] as const).map(([value, label, hint]) => (
                  <button key={value} type="button" onClick={() => updatePreference("animationStyle", value)} className={cn("min-w-[66px] rounded-md border px-2 py-1.5 text-left transition-colors", preferences.animationStyle === value ? "border-primary bg-primary/10 text-foreground" : "border-border/70 text-muted-foreground hover:border-primary/50")}>
                    <span className="block text-[10px] font-bold">{label}</span>
                    <span className="mt-0.5 block text-[9px] opacity-70">{hint}</span>
@@ -607,27 +581,6 @@ export function AdminPage() {
            <p className="text-xs leading-5 text-muted-foreground">Настройки окна хранятся только в этой установке и не меняют учётную запись или права доступа.</p>
         </div>
       </div>
-    </>
-  );
-
-  const renderSearch = () => (
-    <>
-       <SectionHeader eyebrow="Поиск лидов" title="Search" description="Задайте значения по умолчанию, чтобы повторный поиск лидов был быстрее и стабильнее." />
-      <form onSubmit={saveSearchDefaults} className="mt-6 rounded-lg border border-border/70 p-5">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-             <Label htmlFor="default-city" className="text-xs text-muted-foreground">Город по умолчанию</Label>
-           <Input id="default-city" value={searchCity} onChange={(event) => setSearchCity(event.target.value)} placeholder="например, Красноярск" className="h-9 text-sm" />
-          </div>
-          <div className="space-y-2">
-             <Label htmlFor="default-industry" className="text-xs text-muted-foreground">Отрасль по умолчанию</Label>
-           <Input id="default-industry" value={searchIndustry} onChange={(event) => setSearchIndustry(event.target.value)} placeholder="например, СТО" className="h-9 text-sm" />
-          </div>
-        </div>
-        <div className="mt-5 flex justify-end">
-           <Button data-testid="button-save-search-defaults" type="submit" size="sm"><Check className="h-3.5 w-3.5" />Сохранить</Button>
-        </div>
-      </form>
     </>
   );
 
@@ -708,7 +661,6 @@ export function AdminPage() {
     profile: renderProfile,
     appearance: renderAppearance,
     window: renderWindow,
-    search: renderSearch,
     workspace: renderWorkspace,
     about: renderAbout,
   }[activeSection]();

@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { AlertCircle } from "lucide-react";
 import realMarkWhite from "@/assets/real-mark-white.svg";
 import { WindowControls } from "@/components/layout/window-controls";
-import { CommunicationGuide } from "@/components/communication-guide";
 import { useQueryClient } from "@tanstack/react-query";
 
 export function Login() {
@@ -109,10 +108,6 @@ export function Login() {
               {loginMutation.isPending ? "Выполняется вход…" : "Войти"}
             </Button>
           </form>
-
-          <div className="mt-8 w-full">
-            <CommunicationGuide compact />
-          </div>
 
           {/* Error Message */}
           <div className={`absolute bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%_-_3rem)] max-w-[340px] p-3 text-sm font-medium text-destructive bg-destructive/10 rounded-xl flex items-center gap-2 justify-center transition-all duration-300 transform ${showError ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-3 scale-95 pointer-events-none'}`}>

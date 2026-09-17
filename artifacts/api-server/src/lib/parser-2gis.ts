@@ -382,7 +382,7 @@ async function runParser(url: string, outputPath: string): Promise<void> {
     "-i", url,
     "-o", outputPath,
     "-f", "json",
-    "--parser.max-records", "5",
+    "--parser.max-records", "25",
     "--chrome.headless", "yes",
     "--chrome.silent-browser", "yes",
   ];
