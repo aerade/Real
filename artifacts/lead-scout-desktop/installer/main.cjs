@@ -37,15 +37,21 @@ function createWindow() {
 
 function payloadDirectory() {
   const candidates = [
-    path.join(path.dirname(process.resourcesPath), "real-app"),
     path.join(process.resourcesPath, "real-app"),
+    path.join(path.dirname(process.resourcesPath), "real-app"),
   ];
   return candidates.find((candidate) => payloadReady(candidate)) || candidates[0];
 }
 
+function payloadArchive(payload) {
+  const renamed = path.join(payload, "resources", "real-app.asar");
+  if (fs.existsSync(renamed)) return renamed;
+  return path.join(payload, "resources", "app.asar");
+}
+
 function payloadReady(payload) {
   return fs.existsSync(path.join(payload, "Real.exe")) &&
-    fs.existsSync(path.join(payload, "resources", "app.asar"));
+    fs.existsSync(payloadArchive(payload));
 }
 
 async function waitForPayload(payload) {
@@ -94,7 +100,10 @@ function copyDirectoryContents(source, target) {
   fs.mkdirSync(target, { recursive: true });
   for (const entry of fs.readdirSync(source, { withFileTypes: true })) {
     const sourcePath = path.join(source, entry.name);
-    const targetPath = path.join(target, entry.name);
+    const targetName = entry.name === "real-app.asar" && path.basename(source) === "resources"
+      ? "app.asar"
+      : entry.name;
+    const targetPath = path.join(target, targetName);
     if (entry.isDirectory()) {
       copyDirectoryContents(sourcePath, targetPath);
     } else if (entry.isSymbolicLink()) {
