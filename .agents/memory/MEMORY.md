@@ -10,3 +10,4 @@
 - [GitHub LFS push limitation](github-lfs-push.md) — publish small source fixes through the Contents API when full pushes cannot upload Windows LFS artifacts.
 - [Website audit scoring](website-audit-scoring.md) — keep commercial priority on a transparent 0–100 scale and separate it from technical quality.
 - [Public GitHub updates](github-public-updates.md) — an unauthenticated desktop updater needs public release assets; private GitHub downloads return 404.
+- [Public Git history cleanup](github-public-history-cleanup.md) — a clean public tree needs a root commit plus removal of old refs, not only deleting files from main.

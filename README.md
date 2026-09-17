@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="attached_assets/real-logo/real-logo-horizontal-black.svg" alt="Real" width="240">
+  <img src="https://raw.githubusercontent.com/aerade/Real/main/attached_assets/real-logo/real-logo-horizontal.svg" alt="Real" width="240">
   <h1>Real</h1>
   <p><strong>Поиск и развитие потенциальных клиентов для веб-студий</strong></p>
   <p>
