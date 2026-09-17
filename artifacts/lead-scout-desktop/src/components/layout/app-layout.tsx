@@ -123,7 +123,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const logo = theme === "light" ? realLogoBlack : realLogoWhite;
 
   return (
-    <div className="real-app-frame flex flex-col h-full w-full bg-background text-foreground overflow-hidden rounded-[24px] border border-border/40 select-none shadow-2xl relative" style={{ borderRadius: "calc(var(--settings-radius, 12) * 1px)", borderWidth: "calc(var(--settings-border, 1) * 1px)" }}>
+    <div className="real-app-frame flex flex-col h-full w-full bg-background text-foreground overflow-hidden rounded-[24px] border border-border/40 select-none shadow-2xl relative isolate" style={{ borderRadius: "calc(var(--settings-radius, 12) * 1px)", borderWidth: "calc(var(--settings-border, 1) * 1px)", clipPath: "inset(0 round calc(var(--settings-radius, 12) * 1px))" }}>
       {/* Top Titlebar / Navbar */}
       <header 
         className="h-14 flex items-center justify-between px-4 shrink-0 bg-background/80 backdrop-blur-md z-50 relative"

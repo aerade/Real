@@ -223,10 +223,16 @@ html[data-settings-compact="true"] .settings-workspace .setting-row {
   }
   body {
     @apply font-sans antialiased text-foreground text-sm selection:bg-primary/20 bg-transparent overflow-hidden;
+    background-color: transparent !important;
   }
   #root {
     @apply h-screen w-screen overflow-hidden p-[6px] m-0;
+    background: transparent !important;
   }
+}
+
+html {
+  background: transparent !important;
 }
 
 /* Custom scrollbar for desktop native feel */
