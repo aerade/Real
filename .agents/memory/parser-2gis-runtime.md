@@ -94,14 +94,13 @@ rejected every one because it required a base64-like `stat` query.
 **How to apply:** Accept both `/firm/<id>` and `/station/<id>` paths, with or without query
 parameters, when extracting result nodes for Parser2GIS.
 
-The remaining production mismatch is at the network-response stage: the VPS DOM exposes firm
-links, but the current 2GIS page produced zero captured `items/byid` responses. The page HTML
-references the `catalog.api.2gis.ru` 2.0/3.0 APIs, so the next investigation must identify the
-actual catalog response URL and payload before changing more browser timing or navigation.
+When the current 2GIS search page renders firm links but emits no `items/byid` responses, fetch
+each exact firm/station URL with the accepted-risk cookie and parse its SSR `initialState`.
 
-**Why:** Chromium, navigation, DOM extraction, and current firm-link matching all passed, while
-every item-response wait expired and direct firm-page navigation also blocked.
+**Why:** The live VPS page had usable card HTML but no item XHRs; CDP navigation/evaluation could
+also remain pending or expose the previous card, while direct card HTTP returned the requested
+profile quickly and reliably.
 
-**How to apply:** Inspect all captured catalog response URLs/statuses from the Parser2GIS browser
-session, then adapt the Parser2GIS response pattern and JSON mapping to the live endpoint while
-keeping Parser2GIS as the source.
+**How to apply:** Keep Parser2GIS for Chromium search and link discovery, then use each discovered
+2GIS URL as the fallback response source. Do not infer a card from the current browser document
+after a timed-out navigation, or records can be duplicated.
