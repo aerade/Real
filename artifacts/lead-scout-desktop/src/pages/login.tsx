@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { AlertCircle } from "lucide-react";
 import realMarkWhite from "@/assets/real-mark-white.svg";
 import { WindowControls } from "@/components/layout/window-controls";
+import { CommunicationGuide } from "@/components/communication-guide";
 import { useQueryClient } from "@tanstack/react-query";
 
 export function Login() {
@@ -72,19 +73,19 @@ export function Login() {
           <div className="flex flex-col items-center mb-10 text-center space-y-4">
             <img src={realMarkWhite} alt="Real" className="w-[72px] h-[72px] object-contain opacity-95" />
             <div className="space-y-1.5 mt-2">
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">Welcome back to Real</h1>
-              <p className="text-sm font-medium text-muted-foreground">Find companies. Find opportunities.</p>
+               <h1 className="text-2xl font-bold tracking-tight text-foreground">С возвращением в Real</h1>
+               <p className="text-sm font-medium text-muted-foreground">Находите компании. Находите возможности.</p>
             </div>
           </div>
           
           <form onSubmit={handleSubmit} className="w-full flex flex-col items-center space-y-4">
             <div className="w-full space-y-3">
-              <Input 
+               <Input
                 id="login" 
                 autoComplete="username"
                 value={login}
                 onChange={(e) => setLogin(e.target.value)}
-                placeholder="Username" 
+                 placeholder="Логин"
                 className="w-full h-12 rounded-xl bg-card border-border/50 text-center px-4 placeholder:text-muted-foreground/70 shadow-sm"
                 disabled={loginMutation.isPending}
               />
@@ -94,7 +95,7 @@ export function Login() {
                 type="password" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
+                 placeholder="Пароль"
                  className="w-full h-12 rounded-xl bg-card border-border/50 text-center px-4 placeholder:text-muted-foreground/70 shadow-sm"
                 disabled={loginMutation.isPending}
               />
@@ -105,9 +106,13 @@ export function Login() {
               className="w-[200px] h-12 rounded-xl bg-primary text-primary-foreground text-sm font-bold mt-4 shadow-md"
               disabled={loginMutation.isPending}
             >
-              {loginMutation.isPending ? "Logging in..." : "Log in"}
+              {loginMutation.isPending ? "Выполняется вход…" : "Войти"}
             </Button>
           </form>
+
+          <div className="mt-8 w-full">
+            <CommunicationGuide compact />
+          </div>
 
           {/* Error Message */}
           <div className={`absolute bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%_-_3rem)] max-w-[340px] p-3 text-sm font-medium text-destructive bg-destructive/10 rounded-xl flex items-center gap-2 justify-center transition-all duration-300 transform ${showError ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-3 scale-95 pointer-events-none'}`}>

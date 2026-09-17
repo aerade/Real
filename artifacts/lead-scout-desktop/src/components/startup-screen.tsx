@@ -86,7 +86,7 @@ export function StartupScreen({ onComplete }: { onComplete: () => void }) {
         <div className="w-full h-1.5 bg-white/15 rounded-full overflow-hidden relative">
             <div className={`absolute inset-y-0 left-0 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.55)] transition-all duration-500 ${phase === "checking" ? "animate-progress-indeterminate w-1/2" : ""}`} style={phase === "checking" ? undefined : { width: `${progress}%` }} />
         </div>
-          {update.status === "available" && <p className="text-center text-[10px] text-white/55">A newer build is available for download.</p>}
+          {update.status === "available" && <p className="text-center text-[10px] text-white/55">Доступна новая сборка для загрузки.</p>}
       </div>
     </div>
   );

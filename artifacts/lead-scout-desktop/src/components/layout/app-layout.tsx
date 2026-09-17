@@ -3,8 +3,11 @@ import { Link, useLocation } from "wouter";
 import { Home, Search, Target, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { WindowControls } from "./window-controls";
+import { CommunicationGuide } from "@/components/communication-guide";
 import realLogoWhite from "@/assets/real-logo-horizontal-white.svg";
 import realLogoBlack from "@/assets/real-logo-horizontal.svg";
+import realMarkWhite from "@/assets/real-mark-white.svg";
+import realMarkBlack from "@/assets/real-mark.svg";
 
 function hexToHsl(hex: string) {
   const value = hex.replace("#", "");
@@ -64,7 +67,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         });
         root.style.setProperty("--settings-radius", String(saved.radius ?? 12));
         root.style.setProperty("--settings-border", String(saved.borderThickness ?? 1));
-        root.style.setProperty("--settings-icon-shift", String(saved.iconColorShift ?? 285));
+        root.style.setProperty("--settings-icon-shift", String(saved.iconColorShift ?? 0));
         root.style.setProperty("--settings-animation-speed", String(saved.animationSpeed ?? 1));
         const customTheme = saved.customTheme;
         const customThemeVariables = [
@@ -162,8 +165,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <div className="flex w-[170px] shrink-0 items-center justify-end gap-3">
           {macButtons ? (
             <div className="flex items-center gap-2">
-              <img src={logo} alt="Real" className="h-5 w-auto max-w-[112px] object-contain" />
-              {titleVersion && <span className="text-[10px] font-semibold tracking-wide text-muted-foreground">v{version || "1.0.0"}</span>}
+               <img src={theme === "light" ? realMarkBlack : realMarkWhite} alt="Логотип Real" className="h-6 w-6 object-contain" />
             </div>
           ) : (
             <WindowControls variant="windows" />
@@ -175,6 +177,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <main className="flex-1 overflow-y-auto bg-background/50 relative rounded-b-2xl">
         <div className="max-w-5xl mx-auto h-full px-6 py-6 pb-20">
           {children}
+          <div className="mt-6">
+            <CommunicationGuide />
+          </div>
         </div>
       </main>
     </div>
