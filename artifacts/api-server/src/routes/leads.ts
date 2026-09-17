@@ -141,7 +141,11 @@ router.post("/leads/search", async (req, res, next) => {
     const results = showPreviouslyFound
       ? available
       : available.filter((lead) => !previouslyShown.has(lead.id));
-    const returned = results.slice(0, 5);
+    // The parser already applies the source limit (currently 25 records).
+    // Do not silently reduce every search to the first five companies:
+    // those five were then recorded as "shown" and the next identical search
+    // appeared empty even though the source had more results.
+    const returned = results;
     await recordShownLeads(user.id, returned.map((lead) => lead.id));
     req.log.info({
       parserResults: businesses.length,

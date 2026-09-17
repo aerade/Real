@@ -217,7 +217,10 @@ def main() -> None:
 
                 last_document = None
                 initial_item_responses = 0
-                target_link_count = max(1, min(args.max_records, 5))
+                # Wait for the complete requested batch. The previous hard
+                # cap of five made every repeated search exhaust the same
+                # five companies and hide the rest of the 2GIS results.
+                target_link_count = max(1, args.max_records)
                 pending_card_url = None
 
                 def get_links():
@@ -255,7 +258,7 @@ def main() -> None:
                                 )
                             )
                     trace(f"result links read: {len(result)}")
-                    for index, node in enumerate(result[:20], start=1):
+                    for index, node in enumerate(result[:args.max_records], start=1):
                         trace(
                             f"result link {index}: "
                             f"{node.attributes.get('href', '')[:300]}"
