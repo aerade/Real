@@ -128,6 +128,7 @@ def main() -> None:
 
                 last_document = None
                 initial_item_responses = 0
+                target_link_count = max(1, min(args.max_records, 5))
 
                 def get_links():
                     nonlocal initial_item_responses
@@ -143,6 +144,26 @@ def main() -> None:
                             ) is not None
                         )
                     )
+                    if len(result) < target_link_count:
+                        deadline = time.monotonic() + 10
+                        while len(result) < target_link_count and time.monotonic() < deadline:
+                            trace(
+                                f"result links still loading: {len(result)}/"
+                                f"{target_link_count}"
+                            )
+                            time.sleep(0.5)
+                            trace("reading result links from DOM")
+                            document = parser._chrome_remote.get_document()
+                            result = document.search(
+                                lambda node: (
+                                    node.local_name == "a"
+                                    and "href" in node.attributes
+                                    and re.search(
+                                        r"/(?:firm|station)/[^/?#]+(?:[/?#]|$)",
+                                        node.attributes["href"],
+                                    ) is not None
+                                )
+                            )
                     trace(f"result links read: {len(result)}")
                     for index, node in enumerate(result[:20], start=1):
                         trace(
