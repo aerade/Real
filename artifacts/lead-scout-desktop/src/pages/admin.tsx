@@ -546,15 +546,17 @@ export function AdminPage() {
            <SettingRow icon={Sparkles} title="Анимации" description="Включите или отключите движение интерфейса во всём приложении."><Switch checked={preferences.animations} onCheckedChange={(value) => updatePreference("animations", value)} /></SettingRow>
            <SettingRow icon={SlidersHorizontal} title="Скорость анимации" description={`${preferences.animationSpeed.toFixed(1)}× скорости переходов.`}><div className="flex w-44 items-center gap-3"><Slider value={[preferences.animationSpeed]} min={0.5} max={2} step={0.1} onValueChange={([value]) => updatePreference("animationSpeed", value)} /><span className="w-8 text-right font-mono text-[10px] text-muted-foreground">{preferences.animationSpeed.toFixed(1)}×</span></div></SettingRow>
             <SettingRow icon={Play} title="Стиль анимации" description="Выберите характер переходов.">
-              <div className="grid grid-cols-5 gap-1.5">
-                {([["smooth", "Плавный", "Поток"], ["spring", "Пружина", "Мягкий"], ["slide", "Сдвиг", "В сторону"], ["snappy", "Быстрый", "Резкий"], ["minimal", "Минимальный", "Статика"]] as const).map(([value, label, hint]) => (
-                 <button key={value} type="button" onClick={() => updatePreference("animationStyle", value)} className={cn("min-w-[66px] rounded-md border px-2 py-1.5 text-left transition-colors", preferences.animationStyle === value ? "border-primary bg-primary/10 text-foreground" : "border-border/70 text-muted-foreground hover:border-primary/50")}>
-                   <span className="block text-[10px] font-bold">{label}</span>
-                   <span className="mt-0.5 block text-[9px] opacity-70">{hint}</span>
-                 </button>
-               ))}
-             </div>
-           </SettingRow>
+              <Select value={preferences.animationStyle} onValueChange={(value) => updatePreference("animationStyle", value as Preferences["animationStyle"])}>
+                <SelectTrigger className="h-8 w-36 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="smooth">Плавный</SelectItem>
+                  <SelectItem value="spring">Пружина</SelectItem>
+                  <SelectItem value="slide">Сдвиг</SelectItem>
+                  <SelectItem value="snappy">Быстрый</SelectItem>
+                  <SelectItem value="minimal">Минимальный</SelectItem>
+                </SelectContent>
+              </Select>
+            </SettingRow>
            <SettingRow icon={Volume2} title="Звук кнопок" description="Проигрывать короткий звук при нажатии кнопки."><Select value={preferences.buttonSound} onValueChange={(value) => updatePreference("buttonSound", value)}><SelectTrigger className="h-8 w-32 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="off">Выкл.</SelectItem><SelectItem value="tap">Щелчок</SelectItem><SelectItem value="soft">Мягкий щелчок</SelectItem><SelectItem value="pop">Короткий звук</SelectItem></SelectContent></Select></SettingRow>
         </div>
       </div>

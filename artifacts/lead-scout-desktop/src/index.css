@@ -169,7 +169,10 @@ html[data-settings-icons="true"] svg:nth-child(3n) { color: var(--icon-2); }
 html[data-settings-icons="true"] svg:nth-child(4n) { color: var(--icon-3); }
 html[data-settings-icons="true"] svg:nth-child(5n) { color: var(--icon-4); }
 html[data-settings-icons="true"] svg:nth-child(7n) { color: var(--icon-5); }
-html[data-settings-icons="true"] svg { filter: hue-rotate(calc(var(--settings-icon-shift) * 1deg)); }
+html[data-settings-icons="true"] svg {
+  filter: hue-rotate(calc(var(--settings-icon-shift, 0) * 1deg));
+  transition: color 160ms ease, filter 160ms ease;
+}
 .window-control-icon { opacity: 0; transition: opacity 120ms ease; }
 .window-control:hover .window-control-icon,
 .window-control:focus-visible .window-control-icon { opacity: 1; }

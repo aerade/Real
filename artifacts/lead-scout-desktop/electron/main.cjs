@@ -156,10 +156,10 @@ ipcMain.handle("real:request", async (_event, request) => {
 
 function createWindow() {
   const window = new BrowserWindow({
-    width: 980,
-    height: 640,
-    minWidth: 860,
-    minHeight: 560,
+    width: 1180,
+    height: 760,
+    minWidth: 760,
+    minHeight: 540,
     backgroundColor: "#00000000",
     show: false,
     frame: false,

@@ -77,6 +77,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           "--primary-foreground", "--accent", "--accent-foreground", "--border", "--input",
           "--card-border", "--muted", "--muted-foreground", "--sidebar", "--sidebar-foreground",
           "--sidebar-border", "--popover", "--popover-foreground", "--popover-border", "--ring",
+          "--icon-1", "--icon-2", "--icon-3", "--icon-4", "--icon-5",
         ];
         if (saved.theme === "custom" && customTheme) {
           const background = typeof customTheme.background === "string" ? hexToHsl(customTheme.background) : "";
@@ -94,6 +95,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
             "--sidebar-foreground": foreground, "--sidebar-border": border,
             "--popover": card, "--popover-foreground": foreground, "--popover-border": border,
             "--ring": primary,
+            "--icon-1": typeof customTheme.primary === "string" ? customTheme.primary : primary,
+            "--icon-2": typeof customTheme.accent === "string" ? customTheme.accent : accent,
+            "--icon-3": typeof customTheme.foreground === "string" ? customTheme.foreground : foreground,
+            "--icon-4": typeof customTheme.border === "string" ? customTheme.border : border,
+            "--icon-5": typeof customTheme.primary === "string" ? customTheme.primary : primary,
           };
           Object.entries(customVariables).forEach(([key, value]) => root.style.setProperty(key, value));
           Object.entries(customTheme).forEach(([key, value]) => {
@@ -180,7 +186,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
       {/* Main Content Area */}
       <main className="flex-1 overflow-y-auto bg-background/50 relative rounded-b-2xl">
-        <div className="max-w-5xl mx-auto h-full px-6 py-6 pb-20">
+        <div className="mx-auto min-h-full w-full px-4 py-5 pb-20 sm:px-6 sm:py-6">
           {children}
         </div>
       </main>

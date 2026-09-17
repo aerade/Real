@@ -120,6 +120,16 @@ function websiteHost(value?: string | null) {
   try { return new URL(value).hostname.replace(/^www\./, ""); } catch { return value; }
 }
 
+function safeWebsiteUrl(value?: string | null) {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:" ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
 function auditSummary(lead: { websiteAudit?: { status: string; qualityScore: number | null; checks: unknown[] } | null; website?: string | null }) {
   if (!lead.websiteAudit || lead.websiteAudit.status === "not_provided") return { label: "Аудит не проводился", tone: "muted" };
   if (lead.websiteAudit.status === "unavailable") return { label: "Сайт недоступен", tone: "warn" };
@@ -211,7 +221,7 @@ export function SearchPage() {
         </form>
 
         {hasSearched && (
-          <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border/70 bg-card/45 shadow-sm">
+           <section className="flex min-h-[24rem] flex-1 flex-col overflow-hidden rounded-xl border border-border/70 bg-card/45 shadow-sm">
             <div className="shrink-0 border-b border-border/70">
               <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                  <div className="flex items-center gap-3"><h2 className="flex items-center gap-2 text-sm font-semibold"><Target className="h-4 w-4 text-primary" />Результаты поиска</h2><span data-testid="status-result-count" className="rounded bg-primary/10 px-2 py-1 font-mono text-[11px] font-semibold text-primary">{results.length}</span><span className="hidden items-center gap-1.5 text-[11px] text-muted-foreground sm:flex"><Database className="h-3.5 w-3.5" />Открытый каталог 2GIS</span></div>
@@ -228,7 +238,7 @@ export function SearchPage() {
                   const audit = auditSummary(lead);
                   return <Link data-testid={`link-search-result-${lead.id}`} key={lead.id} href={`/leads/${lead.id}`} className="group block p-4 transition-colors hover:bg-accent/35">
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-                      <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2.5"><span data-testid={`text-result-name-${lead.id}`} className="truncate text-sm font-semibold">{lead.name}</span><span className="rounded bg-muted px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">{lead.industry}</span></div><div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-muted-foreground"><span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{lead.city}</span>{lead.website ? <span className="flex items-center gap-1.5 text-primary"><Globe2 className="h-3.5 w-3.5" />{websiteHost(lead.website)}<ExternalLink className="h-3 w-3 opacity-60" /></span> : <span className="flex items-center gap-1.5 text-cyan-400"><AlertTriangle className="h-3.5 w-3.5" />Сайт не указан</span>}</div></div>
+                       <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2.5"><span data-testid={`text-result-name-${lead.id}`} className="truncate text-sm font-semibold">{lead.name}</span><span className="rounded bg-muted px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">{lead.industry}</span></div><div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-muted-foreground"><span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{lead.city}</span>{safeWebsiteUrl(lead.website) ? <a href={safeWebsiteUrl(lead.website) ?? undefined} target="_blank" rel="noopener noreferrer" onClick={(event) => event.stopPropagation()} className="flex items-center gap-1.5 text-primary hover:underline"><Globe2 className="h-3.5 w-3.5" />{websiteHost(lead.website)}<ExternalLink className="h-3 w-3 opacity-60" /></a> : <span className="flex items-center gap-1.5 text-cyan-400"><AlertTriangle className="h-3.5 w-3.5" />Сайт не указан</span>}</div></div>
                       <div className="flex flex-wrap items-center gap-2 lg:w-[390px] lg:justify-end"><span data-testid={`status-audit-${lead.id}`} className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px]", audit.tone === "good" ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300" : audit.tone === "warn" ? "border-cyan-500/30 bg-cyan-500/10 text-cyan-300" : "border-border/70 bg-background text-muted-foreground")}>{audit.tone === "good" ? <CheckCircle2 className="h-3 w-3" /> : audit.tone === "warn" ? <XCircle className="h-3 w-3" /> : <Globe2 className="h-3 w-3" />}{audit.label}</span>{lead.issues.slice(0, 1).map((issue, index) => <span key={`${lead.id}-${index}`} className="max-w-44 truncate rounded border border-border/60 bg-background px-2 py-1 text-[10px] text-muted-foreground">{issue}</span>)}<span className={cn("border-l border-border/60 pl-3 font-mono text-lg font-semibold", lead.score >= 80 ? "text-emerald-300" : lead.score >= 50 ? "text-cyan-300" : "text-rose-300")}>{lead.score}<span className="ml-1 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">приоритет</span></span><span className="text-lg text-muted-foreground transition-transform group-hover:translate-x-0.5">→</span></div>
                     </div>
                   </Link>;

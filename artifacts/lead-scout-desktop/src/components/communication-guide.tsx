@@ -1,4 +1,4 @@
-import { CheckCircle2, ShieldAlert } from "lucide-react";
+import { ShieldAlert } from "lucide-react";
 
 export function CommunicationGuide({ compact = false }: { compact?: boolean }) {
   return (
@@ -13,14 +13,8 @@ export function CommunicationGuide({ compact = false }: { compact?: boolean }) {
             </span>
           </div>
           <div className={`mt-3 grid gap-3 text-[11px] leading-4 text-muted-foreground ${compact ? "" : "sm:grid-cols-2"}`}>
-            <div className="flex items-start gap-2">
-              <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" />
-              <p><span className="font-semibold text-foreground">Нужно:</span> представиться, опираться на известные факты, уточнить задачу, говорить о пользе и договориться о следующем шаге.</p>
-            </div>
-            <div className="flex items-start gap-2">
-              <ShieldAlert className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-              <p><span className="font-semibold text-foreground">Не нужно:</span> давить, спамить, обещать результат без согласования или утверждать то, чего вы не проверяли на сайте.</p>
-            </div>
+             <p><span className="font-semibold text-foreground">Нужно:</span> представиться, опираться на известные факты, уточнить задачу, говорить о пользе и договориться о следующем шаге.</p>
+             <p><span className="font-semibold text-foreground">Не нужно:</span> давить, спамить, обещать результат без согласования или утверждать то, чего вы не проверяли на сайте.</p>
           </div>
         </div>
       </div>
