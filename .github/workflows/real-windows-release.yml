@@ -121,6 +121,17 @@ jobs:
         with:
           name: Real-installer-verification
           path: release
+      - name: Create Windows release archive
+        run: |
+          $installer = Get-ChildItem release -Filter "Real-Installer-*.exe" | Select-Object -First 1
+          if (-not $installer) { throw "Custom Real installer was not found." }
+          $archive = Join-Path "release" ("{0}.zip" -f [IO.Path]::GetFileNameWithoutExtension($installer.Name))
+          $files = @(
+            $installer.FullName
+            (Join-Path (Get-Location) "release/real-update.json")
+            (Join-Path (Get-Location) "release/installer-verification.json")
+          )
+          Compress-Archive -Path $files -DestinationPath $archive -Force
       - name: Publish tagged release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -129,4 +140,4 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             gh release create $env:GITHUB_REF_NAME --repo $env:GITHUB_REPOSITORY --title $env:GITHUB_REF_NAME --generate-notes
           }
-          gh release upload $env:GITHUB_REF_NAME --repo $env:GITHUB_REPOSITORY release/Real-Installer-*.exe release/real-update.json release/installer-verification.json --clobber
+          gh release upload $env:GITHUB_REF_NAME --repo $env:GITHUB_REPOSITORY release/Real-Installer-*.exe release/real-update.json release/installer-verification.json release/Real-Installer-*.zip --clobber
