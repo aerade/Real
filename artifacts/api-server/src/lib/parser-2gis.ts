@@ -468,6 +468,8 @@ export async function searchTwoGisBusinesses(input: ParserInput): Promise<Public
       const results = items
         .map((item) => mapItem(item, input))
         .filter((item): item is PublicBusiness => Boolean(item));
+      const previousSourceIds = new Set((current?.results ?? []).map((item) => item.sourceId));
+      const hasNewResults = results.some((item) => !previousSourceIds.has(item.sourceId));
       const mergedBySourceId = new Map((current?.results ?? []).map((item) => [item.sourceId, item]));
       results.forEach((item) => mergedBySourceId.set(item.sourceId, item));
       const mergedResults = [...mergedBySourceId.values()];
@@ -475,7 +477,7 @@ export async function searchTwoGisBusinesses(input: ParserInput): Promise<Public
         expiresAt: current?.expiresAt ?? Date.now() + 30 * 60 * 1_000,
         results: mergedResults,
         nextPage: page + 1,
-        exhausted: results.length === 0,
+        exhausted: results.length === 0 || (Boolean(current) && !hasNewResults),
       });
       return mergedResults;
     } finally {
