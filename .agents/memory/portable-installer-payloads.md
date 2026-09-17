@@ -1,10 +1,10 @@
 ---
 name: Portable installer payloads
-description: Electron-builder portable installers can fail to extract a nested application app.asar when the bundled payload is placed under the installer's resources directory.
+description: Electron-builder portable installers can omit nested files with an .asar extension from an embedded application payload.
 ---
 
-For a custom Electron portable installer that copies a complete unpacked Electron application, place the payload beside the installer's resources directory and resolve it from the parent of process.resourcesPath. Keep a fallback for the older resources-relative layout when supporting already-built installers.
+For a custom Electron portable installer that copies a complete unpacked Electron application, keep the payload in the configured installer resources directory but rename the embedded application archive from app.asar to a neutral extension such as .bin. The installer can restore app.asar when copying into the final application directory. Keep compatibility checks for older app.asar and renamed .asar payloads when supporting already-built installers.
 
-**Why:** Real's portable installer could start its custom UI but then report ENOENT for `resources/real-app/resources/app.asar` during installation. The Windows build and manifest checks passed, but the nested app.asar was not reliably available from the portable extraction directory.
+**Why:** A native Windows build and manifest verification can pass while the running portable installer reports ENOENT for a nested `resources/real-app/resources/*.asar` file. The portable extraction step does not reliably preserve nested `.asar` files.
 
-**How to apply:** Use electron-builder `extraFiles` for the unpacked application payload with `to: real-app`, validate both `Real.exe` and `real-app/resources/app.asar` before copying, and build/release on a native Windows runner.
+**How to apply:** Rename the application archive during payload preparation, validate `Real.exe` and the neutral archive path before copying, map the neutral filename back to `resources/app.asar`, and always build/release on a native Windows runner.
