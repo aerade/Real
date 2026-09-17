@@ -44,6 +44,8 @@ function payloadDirectory() {
 }
 
 function payloadArchive(payload) {
+  const portableBinary = path.join(payload, "resources", "real-app.bin");
+  if (fs.existsSync(portableBinary)) return portableBinary;
   const renamed = path.join(payload, "resources", "real-app.asar");
   if (fs.existsSync(renamed)) return renamed;
   return path.join(payload, "resources", "app.asar");
@@ -100,7 +102,7 @@ function copyDirectoryContents(source, target) {
   fs.mkdirSync(target, { recursive: true });
   for (const entry of fs.readdirSync(source, { withFileTypes: true })) {
     const sourcePath = path.join(source, entry.name);
-    const targetName = entry.name === "real-app.asar" && path.basename(source) === "resources"
+    const targetName = ["real-app.bin", "real-app.asar"].includes(entry.name) && path.basename(source) === "resources"
       ? "app.asar"
       : entry.name;
     const targetPath = path.join(target, targetName);

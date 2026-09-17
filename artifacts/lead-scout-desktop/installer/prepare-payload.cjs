@@ -11,7 +11,7 @@ fs.rmSync(destination, { recursive: true, force: true });
 fs.mkdirSync(path.dirname(destination), { recursive: true });
 fs.cpSync(source, destination, { recursive: true });
 const applicationArchive = path.join(destination, "resources", "app.asar");
-const portableArchive = path.join(destination, "resources", "real-app.asar");
+const portableArchive = path.join(destination, "resources", "real-app.bin");
 if (!fs.existsSync(applicationArchive)) {
   throw new Error(`Built Real application archive not found at ${applicationArchive}`);
 }
