@@ -52,7 +52,14 @@ type TwoGisItem = {
   };
 };
 
-const parserCache = new Map<string, { expiresAt: number; results: PublicBusiness[] }>();
+type ParserCacheEntry = {
+  expiresAt: number;
+  results: PublicBusiness[];
+  nextPage: number;
+  exhausted: boolean;
+};
+
+const parserCache = new Map<string, ParserCacheEntry>();
 const activeParses = new Map<string, Promise<PublicBusiness[]>>();
 const PARSER_TIMEOUT_MS = 180_000;
 
@@ -156,10 +163,11 @@ function parserEnvironment(binaryPath: string | null, cwd: string): NodeJS.Proce
   return environment;
 }
 
-function searchUrl(input: ParserInput): string {
+function searchUrl(input: ParserInput, page = 1): string {
   const alias = cityToAlias(input.city);
   if (!alias) throw new Error("Не удалось определить город 2ГИС");
-  return `https://2gis.ru/${alias}/search/${encodeURIComponent(input.industry.trim())}`;
+  const baseUrl = `https://2gis.ru/${alias}/search/${encodeURIComponent(input.industry.trim())}`;
+  return page > 1 ? `${baseUrl}/page/${page}` : baseUrl;
 }
 
 function normalizedContactUrl(contact: TwoGisContact): string {
@@ -438,7 +446,9 @@ export async function searchTwoGisBusinesses(input: ParserInput): Promise<Public
   if (!isRussia(input.country) || !input.city.trim() || !input.industry.trim()) return [];
   const key = [input.city, input.industry].map((value) => value.trim().toLowerCase()).join("|");
   const cached = parserCache.get(key);
-  if (cached && cached.expiresAt > Date.now()) return cached.results;
+  if (cached && cached.expiresAt <= Date.now()) parserCache.delete(key);
+  const current = cached && cached.expiresAt > Date.now() ? cached : undefined;
+  if (current?.exhausted) return current.results;
 
   const active = activeParses.get(key);
   if (active) return active;
@@ -446,8 +456,9 @@ export async function searchTwoGisBusinesses(input: ParserInput): Promise<Public
   const request = (async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "real-2gis-"));
     const outputPath = path.join(tempDir, "result.json");
+    const page = current?.nextPage ?? 1;
     try {
-      await runParser(searchUrl(input), outputPath);
+      await runParser(searchUrl(input, page), outputPath);
       await access(outputPath);
       const raw = await readFile(outputPath, "utf8");
       const parsed = JSON.parse(raw.replace(/^\uFEFF/, "").trim()) as
@@ -457,8 +468,16 @@ export async function searchTwoGisBusinesses(input: ParserInput): Promise<Public
       const results = items
         .map((item) => mapItem(item, input))
         .filter((item): item is PublicBusiness => Boolean(item));
-      parserCache.set(key, { expiresAt: Date.now() + 30 * 60 * 1_000, results });
-      return results;
+      const mergedBySourceId = new Map((current?.results ?? []).map((item) => [item.sourceId, item]));
+      results.forEach((item) => mergedBySourceId.set(item.sourceId, item));
+      const mergedResults = [...mergedBySourceId.values()];
+      parserCache.set(key, {
+        expiresAt: current?.expiresAt ?? Date.now() + 30 * 60 * 1_000,
+        results: mergedResults,
+        nextPage: page + 1,
+        exhausted: results.length === 0,
+      });
+      return mergedResults;
     } finally {
       await rm(tempDir, { recursive: true, force: true });
     }
