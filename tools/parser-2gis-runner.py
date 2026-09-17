@@ -122,6 +122,11 @@ def main() -> None:
                         )
                     )
                     trace(f"result links read: {len(result)}")
+                    for index, node in enumerate(result[:20], start=1):
+                        trace(
+                            f"result link {index}: "
+                            f"{node.attributes.get('href', '')[:300]}"
+                        )
                     responses = parser._chrome_remote.get_responses()
                     api_responses = [
                         response
