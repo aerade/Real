@@ -125,13 +125,14 @@ jobs:
         run: |
           $installer = Get-ChildItem release -Filter "Real-Installer-*.exe" | Select-Object -First 1
           if (-not $installer) { throw "Custom Real installer was not found." }
-          $archive = Join-Path "release" ("{0}.zip" -f [IO.Path]::GetFileNameWithoutExtension($installer.Name))
+          $archive = Join-Path (Get-Location) ("release/{0}.zip" -f [IO.Path]::GetFileNameWithoutExtension($installer.Name))
           $files = @(
             $installer.FullName
             (Join-Path (Get-Location) "release/real-update.json")
             (Join-Path (Get-Location) "release/installer-verification.json")
           )
           Compress-Archive -Path $files -DestinationPath $archive -Force
+          if (-not (Test-Path $archive)) { throw "Release archive was not created: $archive" }
       - name: Publish tagged release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -140,11 +141,13 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             gh release create $env:GITHUB_REF_NAME --repo $env:GITHUB_REPOSITORY --title $env:GITHUB_REF_NAME --generate-notes
           }
+          $installer = Get-ChildItem release -Filter "Real-Installer-*.exe" | Select-Object -First 1
+          $archive = Get-ChildItem release -Filter "Real-Installer-*.zip" | Select-Object -First 1
           $files = @(
-            (Get-ChildItem release -Filter "Real-Installer-*.exe" | Select-Object -First 1).FullName
+            $installer.FullName
             (Join-Path (Get-Location) "release/real-update.json")
             (Join-Path (Get-Location) "release/installer-verification.json")
-            (Get-ChildItem release -Filter "Real-Installer-*.zip" | Select-Object -First 1).FullName
+            $archive.FullName
           )
           foreach ($file in $files) {
             if ([String]::IsNullOrWhiteSpace($file) -or -not (Test-Path $file)) {
