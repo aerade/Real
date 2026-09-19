@@ -59,7 +59,7 @@ export function WindowControls({ variant = "mac" }: { variant?: "mac" | "windows
             className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
             style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
           >
-            <Minus className="h-3 w-3" />
+             <Minus className="window-control-icon h-3 w-3" />
           </button>
           <button
             type="button"
@@ -69,7 +69,7 @@ export function WindowControls({ variant = "mac" }: { variant?: "mac" | "windows
             className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
             style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
           >
-            <Square className="h-2.5 w-2.5" />
+             <Square className="window-control-icon h-2.5 w-2.5" />
           </button>
           <button
             type="button"
@@ -79,7 +79,7 @@ export function WindowControls({ variant = "mac" }: { variant?: "mac" | "windows
             className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/15 hover:text-destructive"
             style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
           >
-            <X className="h-3 w-3" />
+             <X className="window-control-icon h-3 w-3" />
           </button>
         </>
       )}

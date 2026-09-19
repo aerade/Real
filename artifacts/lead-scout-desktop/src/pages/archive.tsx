@@ -1,13 +1,14 @@
 import { useMemo, useState } from "react";
 import { useListLeadArchive } from "@workspace/api-client-react";
 import { Link } from "wouter";
-import { Archive, ArrowRight, Filter, History, Search, Target, TriangleAlert } from "lucide-react";
+import { Archive, ArrowLeft, ArrowRight, Filter, History, Search, Target, TriangleAlert } from "lucide-react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { statusMap } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { useLocation } from "wouter";
 
 function formatUpdatedAt(value: string) {
   const date = new Date(value);
@@ -16,6 +17,7 @@ function formatUpdatedAt(value: string) {
 }
 
 export function ArchivePage() {
+  const [, setLocation] = useLocation();
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
   const archiveParams = useMemo(
@@ -32,6 +34,10 @@ export function ArchivePage() {
     <AppLayout>
       <div className="flex h-full min-h-0 flex-col gap-5">
         <header className="shrink-0 border-b border-border/70 pb-5">
+          <Button type="button" variant="ghost" size="sm" onClick={() => setLocation("/")} className="mb-4 -ml-2 h-8 gap-1.5 px-2 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Выйти из архива
+          </Button>
           <p className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
             <Archive className="h-3.5 w-3.5" />
             Полная история

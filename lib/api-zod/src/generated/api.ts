@@ -442,6 +442,79 @@ export const UpdateLeadResponse = zod.object({
 })
 
 
+export const AuditLeadParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const auditLeadResponseScoreMin = 0;
+export const auditLeadResponseScoreMax = 100;
+
+export const auditLeadResponseWebsiteAuditOneQualityScoreMin = 0;
+export const auditLeadResponseWebsiteAuditOneQualityScoreMax = 100;
+
+
+
+export const AuditLeadResponse = zod.object({
+  "id": zod.number().int(),
+  "name": zod.string(),
+  "country": zod.string(),
+  "city": zod.string(),
+  "industry": zod.string(),
+  "website": zod.string().nullish(),
+  "status": zod.enum(['new', 'claimed', 'contacted', 'replied', 'rejected', 'no_reply', 'deal']),
+  "score": zod.number().int().min(auditLeadResponseScoreMin).max(auditLeadResponseScoreMax),
+  "scoreReasons": zod.array(zod.string()),
+  "issues": zod.array(zod.string()),
+  "reviewsCount": zod.number().int(),
+  "rating": zod.number().nullish(),
+  "branchesCount": zod.number().int(),
+  "contacts": zod.array(zod.object({
+  "type": zod.string(),
+  "value": zod.string(),
+  "url": zod.string()
+})),
+  "source": zod.string(),
+  "websiteAudit": zod.union([zod.object({
+  "status": zod.enum(['checked', 'unavailable', 'not_provided']),
+  "url": zod.string().nullable(),
+  "finalUrl": zod.string().nullable(),
+  "checkedAt": zod.coerce.date().nullable(),
+  "responseTimeMs": zod.number().int().nullable(),
+  "statusCode": zod.number().int().nullable(),
+  "pageSizeKb": zod.number().int().nullable(),
+  "qualityScore": zod.number().int().min(auditLeadResponseWebsiteAuditOneQualityScoreMin).max(auditLeadResponseWebsiteAuditOneQualityScoreMax).nullable(),
+  "title": zod.string().nullable(),
+  "metaDescription": zod.string().nullable(),
+  "hasMobileViewport": zod.boolean().nullable(),
+  "checks": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "status": zod.enum(['pass', 'warn', 'fail', 'unknown']),
+  "evidence": zod.string()
+})),
+  "error": zod.string().nullable()
+}),zod.null()]).optional(),
+  "scoreBreakdown": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "category": zod.enum(['market', 'contactability', 'opportunity', 'website']),
+  "points": zod.number().int(),
+  "maxPoints": zod.number().int(),
+  "evidence": zod.string()
+})),
+  "scoreVersion": zod.string(),
+  "assignee": zod.union([zod.object({
+  "id": zod.number().int(),
+  "name": zod.string(),
+  "login": zod.string(),
+  "role": zod.enum(['owner', 'manager']),
+  "active": zod.boolean()
+}),zod.null()]).optional(),
+  "note": zod.string().nullish(),
+  "updatedAt": zod.coerce.date()
+})
+
+
 export const ClaimLeadParams = zod.object({
   "id": zod.coerce.number().int()
 })

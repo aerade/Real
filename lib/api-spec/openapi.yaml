@@ -165,6 +165,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Lead"
+  /leads/{id}/audit:
+    post:
+      operationId: auditLead
+      tags: [leads]
+      parameters:
+        - $ref: "#/components/parameters/LeadId"
+      responses:
+        "200":
+          description: Lead with a freshly checked website audit
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
   /leads/{id}/claim:
     post:
       operationId: claimLead

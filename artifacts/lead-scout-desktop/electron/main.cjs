@@ -118,9 +118,6 @@ ipcMain.handle("real:window-control", (event, action) => {
 });
 ipcMain.handle("real:check-updates", () => checkForUpdates());
 ipcMain.handle("real:download-update", () => downloadUpdate());
-ipcMain.handle("real:open-archive-window", () => {
-  createWindow("/archive");
-});
 ipcMain.handle("real:install-update", () => {
   if (updateState.status !== "downloaded" || !downloadedInstallerPath || !fs.existsSync(downloadedInstallerPath)) {
     return { started: false };
@@ -168,6 +165,7 @@ function createWindow(hash = "") {
     frame: false,
     transparent: true,
     resizable: true,
+    maximizable: true,
     movable: true,
     thickFrame: true,
     hasShadow: true,
@@ -180,6 +178,8 @@ function createWindow(hash = "") {
       sandbox: true,
     },
   });
+  window.setResizable(true);
+  window.setMinimumSize(860, 560);
   window.removeMenu();
   window.once("ready-to-show", () => window.show());
   window.webContents.setWindowOpenHandler(({ url }) => {

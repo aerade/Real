@@ -816,6 +816,74 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getUpdateLeadMutationOptions(options));
     }
 
+export const getAuditLeadUrl = (id: number,) => {
+
+
+
+
+  return `/api/leads/${id}/audit`
+}
+
+export const auditLead = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<Lead> => {
+
+  return customFetch<Lead>(getAuditLeadUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getAuditLeadMutationKey = () => ['auditLead'] as const;
+
+export const getAuditLeadMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof auditLead>>, TError,AuditLeadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof auditLead>>, TError,AuditLeadMutationVariables, TContext> => {
+
+const mutationKey = getAuditLeadMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof auditLead>>, AuditLeadMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  auditLead(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AuditLeadMutationResult = NonNullable<Awaited<ReturnType<typeof auditLead>>>
+
+    export type AuditLeadMutationError = ErrorType<unknown>
+    export type AuditLeadMutationVariables = {id: number}
+
+    export const useAuditLead = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof auditLead>>, TError,AuditLeadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof auditLead>>,
+        TError,
+        AuditLeadMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAuditLeadMutationOptions(options));
+    }
+
 export const getClaimLeadUrl = (id: number,) => {
 
 

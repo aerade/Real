@@ -162,12 +162,8 @@ html[data-settings-rainbow="true"] .real-app-frame::before {
   mask-composite: exclude;
   animation: rainbow-frame 4s linear infinite;
 }
-html[data-settings-icons="true"] svg { color: var(--icon-1); }
-html[data-settings-icons="true"] svg:nth-child(3n) { color: var(--icon-2); }
-html[data-settings-icons="true"] svg:nth-child(4n) { color: var(--icon-3); }
-html[data-settings-icons="true"] svg:nth-child(5n) { color: var(--icon-4); }
-html[data-settings-icons="true"] svg:nth-child(7n) { color: var(--icon-5); }
-html[data-settings-icons="true"] svg {
+html[data-settings-icons="true"] .real-app-frame svg:not(.window-control-icon) {
+  color: var(--icon-1);
   filter: hue-rotate(calc(var(--settings-icon-shift, 0) * 1deg));
   transition: color 160ms ease, filter 160ms ease;
 }

@@ -14,6 +14,7 @@ import {
   listLeads,
   listUsers,
   recordShownLeads,
+  runLeadAudit,
   updateLead,
   upsertSearchedLead,
   type AuthUser,
@@ -196,6 +197,16 @@ router.post("/leads/search", async (req, res, next) => {
 router.get("/leads/:id", async (req, res, next) => {
   try {
     const lead = await getLead(Number(req.params.id));
+    if (!lead) return res.status(404).json({ error: "Компания не найдена" });
+    return res.json(lead);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post("/leads/:id/audit", async (req, res, next) => {
+  try {
+    const lead = await runLeadAudit(Number(req.params.id));
     if (!lead) return res.status(404).json({ error: "Компания не найдена" });
     return res.json(lead);
   } catch (error) {

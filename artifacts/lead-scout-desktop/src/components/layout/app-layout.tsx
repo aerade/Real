@@ -134,7 +134,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         className="h-14 flex items-center justify-between px-4 shrink-0 bg-background/80 backdrop-blur-md z-50 relative"
         style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
       >
-         <div className="flex w-[170px] shrink-0 items-center" style={{ WebkitAppRegion: "drag" } as React.CSSProperties}>
+         <div className="flex shrink-0 items-center" style={{ WebkitAppRegion: "drag" } as React.CSSProperties}>
           {macButtons ? <WindowControls /> : (
             <div className="flex items-center gap-2">
               {titleVersion && versionPosition === "left" && <span className="text-[10px] font-semibold tracking-wide text-muted-foreground">v{version || "1.0.0"}</span>}
@@ -145,7 +145,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </div>
         
         {/* Navigation - Centered */}
-        <nav className="flex h-full items-center gap-1 flex-1 justify-center" style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}>
+        <div className="min-w-4 flex-1 self-stretch" style={{ WebkitAppRegion: "drag" } as React.CSSProperties} />
+        <nav className="flex h-full shrink-0 items-center gap-1" style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}>
           {navItems.map((item) => {
             const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
             return (
@@ -165,7 +166,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
           })}
         </nav>
         
-         <div className="flex w-[170px] shrink-0 items-center justify-end gap-3" style={{ WebkitAppRegion: "drag" } as React.CSSProperties}>
+         <div className="min-w-4 flex-1 self-stretch" style={{ WebkitAppRegion: "drag" } as React.CSSProperties} />
+         <div className="flex shrink-0 items-center justify-end gap-3" style={{ WebkitAppRegion: "drag" } as React.CSSProperties}>
           {macButtons ? (
             <div className="flex items-center gap-2">
               {titleVersion && versionPosition === "left" && <span className="text-[10px] font-semibold tracking-wide text-muted-foreground">v{version || "1.0.0"}</span>}

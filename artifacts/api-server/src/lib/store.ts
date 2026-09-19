@@ -1,4 +1,4 @@
-import { randomBytes, scrypt as nodeScrypt, timingSafeEqual } from "node:crypto";
+import { scrypt as nodeScrypt, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 import { and, desc, eq, ilike, inArray, isNull, like, or, type SQL } from "drizzle-orm";
 import {
@@ -14,7 +14,7 @@ import {
   type UserRow,
 } from "@workspace/db";
 import type { PublicBusiness } from "./osm-leads";
-import type { ScoreFactor, WebsiteAudit } from "./website-audit";
+import { auditWebsite, scoreBusiness, type ScoreFactor, type WebsiteAudit } from "./website-audit";
 
 const scrypt = promisify(nodeScrypt);
 
@@ -51,7 +51,6 @@ type JoinedLead = {
   users: UserRow | null;
 };
 
-const DEFAULT_PASSWORD = "lead2026";
 const DEFAULT_COUNTRIES = [
   { code: "RU", name: "Россия", enabled: true },
   { code: "US", name: "США", enabled: true },
@@ -63,9 +62,11 @@ const DEFAULT_COUNTRIES = [
 ];
 
 const DEFAULT_USERS = [
-  { name: "Владелец", login: "owner", role: "owner" as const, active: true },
-  { name: "Анна", login: "anna", role: "manager" as const, active: true },
-  { name: "Максим", login: "max", role: "manager" as const, active: true },
+  { name: "Владелец", login: "owner", role: "owner" as const, active: true, passwordHash: "ed539a0914f8d4e62ff18bf93a134ad4:859f05beed5dc888426e084dbeca9d83689172e772d657f1b5ceeb47687fb0dc9b45dd529039f034c5af75ff6b93057beb2b756e3dfb19cd29f281ecc1f959ab" },
+  { name: "Анна", login: "anna", role: "manager" as const, active: true, passwordHash: "04008fed9ebf65a85225cd45b1626934:c627c4b337dc978c1c36390694f7ec32832528cde6eb86461ba7621100c37964c258ab5c627d9ad5c4d5e2d3214a0cf30a3edb5583372ebd68f7423c435cabcd" },
+  { name: "Максим", login: "max", role: "manager" as const, active: true, passwordHash: "78b4603b361a3356c98aa2971dec98e0:79e07310e880877262d84153b5bad42c1759e431c483aa4e578d4de88c1398f3f595c1c3ada94fd991c2ed2f6a1faa4a0c7b69aecc6cb09ff12f2b8fcbf7bcba" },
+  { name: "Peregarik", login: "peregarik", role: "manager" as const, active: true, passwordHash: "12e4573c67053c80b00ab64dd65fe9c9:a2af2c806feac327487d80e31e87ec73d55e82e125c22fea89cae99bbe4f457a8064a58156fc923377c32c32ae2c9c322fc54c7b7116339615603bee77fd50cf" },
+  { name: "Stepochka", login: "stepochka", role: "manager" as const, active: true, passwordHash: "08af686897f6f510f7a8e2fce837a0e0:75435675d1e3d91893598124ed93c6e5792adf0efc01ba9b50f80301be01e3c526eb65e2757bb161e9d4ecc4b2a4081f7d46fb4d3b911ace059c8a4bac06735b" },
 ];
 
 const DEFAULT_LEADS = [
@@ -212,12 +213,6 @@ function toLead(row: JoinedLead): LeadOutput {
   };
 }
 
-async function hashPassword(password: string): Promise<string> {
-  const salt = randomBytes(16).toString("hex");
-  const derivedKey = (await scrypt(password, salt, 64)) as Buffer;
-  return `${salt}:${derivedKey.toString("hex")}`;
-}
-
 async function verifyPassword(password: string, encoded: string): Promise<boolean> {
   const [salt, expectedHex] = encoded.split(":");
   if (!salt || !expectedHex) return false;
@@ -229,10 +224,8 @@ async function verifyPassword(password: string, encoded: string): Promise<boolea
 export async function initializeDatabase(): Promise<void> {
   await ensureLeadSearchHistoryTable();
 
-  const passwordHash = await hashPassword(DEFAULT_PASSWORD);
-
   await db.insert(usersTable).values(
-    DEFAULT_USERS.map((user) => ({ ...user, passwordHash })),
+    DEFAULT_USERS,
   ).onConflictDoNothing({ target: usersTable.login });
 
   await db.insert(countriesTable).values(DEFAULT_COUNTRIES).onConflictDoNothing({ target: countriesTable.code });
@@ -329,6 +322,42 @@ export async function getLead(id: number): Promise<LeadOutput | null> {
     .where(eq(leadsTable.id, id))
     .limit(1);
   return rows[0] ? toLead(rows[0]) : null;
+}
+
+export async function runLeadAudit(id: number): Promise<LeadOutput | null> {
+  const rows = await db.select().from(leadsTable).where(eq(leadsTable.id, id)).limit(1);
+  const lead = rows[0];
+  if (!lead) return null;
+
+  const websiteAudit = await auditWebsite(lead.website);
+  const scored = scoreBusiness({
+    sourceId: lead.sourceId,
+    name: lead.name,
+    city: lead.city,
+    industry: lead.industry,
+    website: lead.website,
+    contacts: lead.contacts,
+    issues: lead.issues,
+    score: lead.score,
+    scoreReasons: lead.scoreReasons,
+    reviewsCount: lead.reviewsCount,
+    rating: lead.rating,
+    branchesCount: lead.branchesCount,
+    source: lead.source,
+  }, websiteAudit);
+
+  await db.update(leadsTable).set({
+    websiteAudit,
+    score: scored.score,
+    scoreReasons: scored.scoreReasons,
+    issues: scored.issues,
+    scoreBreakdown: scored.scoreBreakdown,
+    scoreVersion: "opportunity-v2",
+    auditCheckedAt: websiteAudit.checkedAt ? new Date(websiteAudit.checkedAt) : null,
+    updatedAt: new Date(),
+  }).where(eq(leadsTable.id, id));
+
+  return getLead(id);
 }
 
 export async function upsertSearchedLead(

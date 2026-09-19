@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { getListUsersQueryKey, useListUsers } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout/app-layout";
+import { UpdateStatus } from "@/components/update-status";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -648,7 +649,7 @@ export function AdminPage() {
             <SettingRow icon={Info} title="Канал сборки" description="Текущая стабильная сборка приложения для вашего рабочего пространства."><span className="font-mono text-xs text-muted-foreground">{appInfo.packaged ? "стабильный" : "разработка"}</span></SettingRow>
              <SettingRow icon={Laptop} title="Среда выполнения" description="Платформа и архитектура процессора для этой сборки Real."><span className="font-mono text-xs text-muted-foreground">{appInfo.platform} · {appInfo.arch}</span></SettingRow>
             <SettingRow icon={Settings2} title="Движок приложения" description="Среда Electron, используемая установленной сборкой."><span className="font-mono text-xs text-muted-foreground">{appInfo.electronVersion}</span></SettingRow>
-            <SettingRow icon={Download} title="Обновления" description="Настроен ли канал выпуска для этой установки."><span className={cn("text-xs font-semibold", appInfo.updateConfigured ? "text-emerald-400" : "text-muted-foreground")}>{appInfo.updateConfigured ? "Настроены" : "Не настроены"}</span></SettingRow>
+             <SettingRow icon={Download} title="Обновления" description="Проверяйте новые версии, скачивайте установщик и перезапускайте Real прямо из приложения."><UpdateStatus /></SettingRow>
             <SettingRow icon={CircleHelp} title="Поддержка пространства" description="Обратитесь к владельцу рабочего пространства по вопросам доступа и настройки."><span className="text-xs text-muted-foreground">Связаться с владельцем</span></SettingRow>
         </div>
       </div>

@@ -53,7 +53,6 @@ interface Window {
       latestVersion?: string;
     }>;
     installUpdate(): Promise<{ started: boolean }>;
-    openArchiveWindow?(): Promise<void>;
     windowControl(action: "minimize" | "maximize" | "close"): Promise<void>;
     onUpdateStatus(listener: (status: unknown) => void): () => void;
   };
