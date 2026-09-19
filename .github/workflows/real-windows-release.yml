@@ -43,6 +43,12 @@ jobs:
           $current | ConvertTo-Json | Set-Content $configPath
       - name: Build Real application payload
         run: pnpm --filter @workspace/lead-scout-desktop run build:desktop:dir
+      - name: Verify updater configuration is bundled
+        run: |
+          $runtimeConfig = "artifacts/lead-scout-desktop/release/win-unpacked/resources/runtime-config.json"
+          if (-not (Test-Path $runtimeConfig)) { throw "Updater runtime-config.json was not bundled into the Windows payload." }
+          $config = Get-Content $runtimeConfig -Raw | ConvertFrom-Json
+          if ([String]::IsNullOrWhiteSpace($config.updateUrl)) { throw "Bundled updater configuration has no updateUrl." }
       - name: Build custom Real installer
         run: pnpm --filter @workspace/lead-scout-desktop run build:installer
       - name: Create custom update manifest

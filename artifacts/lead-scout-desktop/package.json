@@ -1,6 +1,6 @@
 {
   "name": "@workspace/lead-scout-desktop",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "private": true,
   "type": "module",
   "main": "dist/electron/main.cjs",
@@ -9,7 +9,7 @@
     "build": "vite build --config vite.config.ts",
     "build:electron": "node electron/build-main.cjs && cp electron/preload.cjs dist/electron/preload.cjs",
     "build:desktop": "vite build --mode desktop --config vite.config.ts && pnpm run build:electron && electron-builder --config electron-builder.yml --win dir --x64 && pnpm run build:installer",
-    "build:desktop:dir": "vite build --mode desktop --config vite.config.ts && pnpm run build:electron && electron-builder --win dir --x64",
+    "build:desktop:dir": "vite build --mode desktop --config vite.config.ts && pnpm run build:electron && electron-builder --config electron-builder.yml --win dir --x64",
     "build:installer": "node installer/prepare-payload.cjs && electron-builder --config electron-builder-installer.yml --win portable --x64",
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit"
