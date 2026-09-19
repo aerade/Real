@@ -5,6 +5,7 @@ import startupBg from "@assets/image_1789532603940.png";
 type StartupUpdate = {
   configured: boolean;
   status: string;
+  currentVersion?: string;
   percent?: number;
   latestVersion?: string;
   message?: string;
@@ -77,6 +78,7 @@ export function StartupScreen({ onComplete }: { onComplete: () => void }) {
       
       <div className="relative z-10">
         <h1 className="text-[86px] font-bold tracking-[0.38em] pl-[0.38em] text-white drop-shadow-2xl uppercase">REAL</h1>
+        <p className="mt-2 text-center font-mono text-[10px] tracking-[0.22em] text-white/55">v{update.currentVersion ?? __REAL_APP_VERSION__}</p>
       </div>
 
       <div className="absolute z-10 bottom-12 left-1/2 -translate-x-1/2 w-[72%] space-y-4">

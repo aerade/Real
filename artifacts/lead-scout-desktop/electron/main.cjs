@@ -5,7 +5,15 @@ const fs = require("node:fs");
 
 app.setAppUserModelId("com.real.leadscout");
 
-let updateState = { configured: false, status: "idle", currentVersion: app.getVersion() };
+const buildVersion = typeof __REAL_APP_VERSION__ === "string" && __REAL_APP_VERSION__
+  ? __REAL_APP_VERSION__
+  : app.getVersion();
+
+function currentVersion() {
+  return buildVersion || app.getVersion();
+}
+
+let updateState = { configured: false, status: "idle", currentVersion: currentVersion() };
 let downloadedInstallerPath = "";
 
 function runtimeConfig() {
@@ -46,7 +54,7 @@ function manifestUrl(baseUrl) {
 async function checkForUpdates() {
   const { updateUrl } = runtimeConfig();
   if (!app.isPackaged || !updateUrl || updateUrl.includes("example.invalid")) {
-    updateState = { configured: false, status: "unconfigured", currentVersion: app.getVersion() };
+    updateState = { configured: false, status: "unconfigured", currentVersion: currentVersion() };
     return updateState;
   }
 
@@ -57,7 +65,7 @@ async function checkForUpdates() {
     const manifest = await response.json();
     const latestVersion = String(manifest.version || "");
     if (!latestVersion || !manifest.installerUrl) throw new Error("Update manifest is incomplete");
-    if (compareVersions(latestVersion, app.getVersion()) > 0) {
+    if (compareVersions(latestVersion, currentVersion()) > 0) {
       sendUpdateStatus({
         status: "available",
         latestVersion,
@@ -65,7 +73,7 @@ async function checkForUpdates() {
         releaseName: manifest.releaseName || "",
       });
     } else {
-      sendUpdateStatus({ status: "current", latestVersion: app.getVersion() });
+      sendUpdateStatus({ status: "current", currentVersion: currentVersion(), latestVersion });
     }
   } catch (error) {
     sendUpdateStatus({ status: "error", message: error instanceof Error ? error.message : String(error) });
@@ -92,7 +100,7 @@ async function downloadUpdate() {
 function configureUpdates() {
   const { updateUrl } = runtimeConfig();
   if (!app.isPackaged || !updateUrl || updateUrl.includes("example.invalid")) {
-    updateState = { configured: false, status: "unconfigured", currentVersion: app.getVersion() };
+    updateState = { configured: false, status: "unconfigured", currentVersion: currentVersion() };
     return;
   }
   checkForUpdates().catch(() => undefined);
@@ -101,7 +109,7 @@ function configureUpdates() {
 
 ipcMain.handle("real:get-config", () => runtimeConfig());
 ipcMain.handle("real:get-app-info", () => ({
-  version: app.getVersion(),
+  version: currentVersion(),
   platform: process.platform,
   arch: process.arch,
   electronVersion: process.versions.electron,

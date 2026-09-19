@@ -29,7 +29,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [titleVersion, setTitleVersion] = useState(false);
   const [macButtons, setMacButtons] = useState(true);
   const [theme, setTheme] = useState("dark");
-  const [version, setVersion] = useState("");
+  const [version, setVersion] = useState(__REAL_APP_VERSION__);
   const [versionPosition, setVersionPosition] = useState<"left" | "right">("right");
   useEffect(() => {
     const readSettings = () => {
@@ -113,7 +113,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     readSettings();
     const handler = () => readSettings();
     window.addEventListener("real:settings-changed", handler);
-    window.realDesktop?.getAppInfo().then((info) => setVersion(info.version)).catch(() => undefined);
+    window.realDesktop?.getAppInfo().then((info) => setVersion(info.version || __REAL_APP_VERSION__)).catch(() => undefined);
     return () => window.removeEventListener("real:settings-changed", handler);
   }, []);
   
@@ -135,9 +135,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
          <div className="flex shrink-0 items-center" style={{ WebkitAppRegion: "drag" } as React.CSSProperties}>
            {macButtons ? <WindowControls /> : (
             <div className="flex items-center gap-2">
-              {titleVersion && versionPosition === "left" && <span className="text-[10px] font-semibold tracking-wide text-muted-foreground">v{version || "1.0.0"}</span>}
+              {titleVersion && versionPosition === "left" && <span className="text-[10px] font-semibold tracking-wide text-muted-foreground">v{version}</span>}
                <img src={realMarkWhite} alt="Real" className="h-6 w-6 object-contain" />
-              {titleVersion && versionPosition === "right" && <span className="text-[10px] font-semibold tracking-wide text-muted-foreground">v{version || "1.0.0"}</span>}
+              {titleVersion && versionPosition === "right" && <span className="text-[10px] font-semibold tracking-wide text-muted-foreground">v{version}</span>}
             </div>
           )}
         </div>
@@ -168,9 +168,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
          <div className="flex shrink-0 items-center justify-end gap-3" style={{ WebkitAppRegion: "drag" } as React.CSSProperties}>
           {macButtons ? (
             <div className="flex items-center gap-2">
-              {titleVersion && versionPosition === "left" && <span className="text-[10px] font-semibold tracking-wide text-muted-foreground">v{version || "1.0.0"}</span>}
+               {titleVersion && versionPosition === "left" && <span className="text-[10px] font-semibold tracking-wide text-muted-foreground">v{version}</span>}
               <img src={theme === "light" ? realMarkBlack : realMarkWhite} alt="Логотип Real" className="h-6 w-6 object-contain" />
-              {titleVersion && versionPosition === "right" && <span className="text-[10px] font-semibold tracking-wide text-muted-foreground">v{version || "1.0.0"}</span>}
+               {titleVersion && versionPosition === "right" && <span className="text-[10px] font-semibold tracking-wide text-muted-foreground">v{version}</span>}
             </div>
           ) : (
             <WindowControls variant="windows" />

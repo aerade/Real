@@ -1,4 +1,5 @@
 import path from 'path';
+import fs from 'node:fs';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
@@ -6,6 +7,9 @@ import { defineConfig } from 'vite';
 import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal';
 
 export default defineConfig(async ({ mode }) => {
+  const packageJson = JSON.parse(
+    fs.readFileSync(path.resolve(import.meta.dirname, 'package.json'), 'utf8'),
+  ) as { version: string };
   const rawPort = process.env.PORT ?? (mode === 'desktop' ? '4173' : '5173');
   const port = Number(rawPort);
 
@@ -18,6 +22,9 @@ export default defineConfig(async ({ mode }) => {
 
   return {
     base: basePath,
+    define: {
+      __REAL_APP_VERSION__: JSON.stringify(packageJson.version),
+    },
     plugins: [
       react(),
       tailwindcss(),

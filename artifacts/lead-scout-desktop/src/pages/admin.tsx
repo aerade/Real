@@ -236,7 +236,7 @@ export function AdminPage() {
   const [avatar, setAvatar] = useState<string | null>(null);
   const [profileNote, setProfileNote] = useState("");
   const [appInfo, setAppInfo] = useState({
-    version: "1.0.0",
+    version: __REAL_APP_VERSION__,
     platform: "Web preview",
     arch: "—",
     electronVersion: "—",
@@ -251,7 +251,9 @@ export function AdminPage() {
   });
   useEffect(() => {
     setPreferences(readPreferences());
-    window.realDesktop?.getAppInfo().then(setAppInfo).catch(() => undefined);
+    window.realDesktop?.getAppInfo().then((info) => {
+      setAppInfo((current) => ({ ...current, ...info, version: info.version || current.version }));
+    }).catch(() => undefined);
     if (login) {
       setAvatar(window.localStorage.getItem(avatarKey(login)));
       try {

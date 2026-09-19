@@ -1,13 +1,13 @@
 {
   "name": "@workspace/lead-scout-desktop",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "private": true,
   "type": "module",
   "main": "dist/electron/main.cjs",
   "scripts": {
     "dev": "vite --config vite.config.ts --host 0.0.0.0",
     "build": "vite build --config vite.config.ts",
-    "build:electron": "esbuild electron/main.cjs --bundle --platform=node --format=cjs --external:electron --outfile=dist/electron/main.cjs && cp electron/preload.cjs dist/electron/preload.cjs",
+    "build:electron": "node electron/build-main.cjs && cp electron/preload.cjs dist/electron/preload.cjs",
     "build:desktop": "vite build --mode desktop --config vite.config.ts && pnpm run build:electron && electron-builder --config electron-builder.yml --win dir --x64 && pnpm run build:installer",
     "build:desktop:dir": "vite build --mode desktop --config vite.config.ts && pnpm run build:electron && electron-builder --win dir --x64",
     "build:installer": "node installer/prepare-payload.cjs && electron-builder --config electron-builder-installer.yml --win portable --x64",

@@ -161,9 +161,15 @@ html[data-settings-rainbow="true"] .real-app-frame::before {
 }
 html[data-settings-icons="true"] .real-app-frame svg:not(.window-control-icon),
 html[data-settings-icon-shift]:not([data-settings-icon-shift="0"]) .real-app-frame svg:not(.window-control-icon) {
-  color: hsl(calc(28 + var(--settings-icon-shift, 0) * 1deg) 82% 64%);
+  --real-icon-color: hsl(calc(28 + var(--settings-icon-shift, 0) * 1deg) 82% 64%);
+  color: var(--real-icon-color) !important;
+  stroke: var(--real-icon-color) !important;
   filter: none;
   transition: color 160ms ease, filter 160ms ease;
+}
+html[data-settings-icons="true"] .real-app-frame svg:not(.window-control-icon) * ,
+html[data-settings-icon-shift]:not([data-settings-icon-shift="0"]) .real-app-frame svg:not(.window-control-icon) * {
+  stroke: currentColor !important;
 }
 .window-control .window-control-icon { opacity: 0; transition: opacity 120ms ease; }
 .window-control:hover .window-control-icon,

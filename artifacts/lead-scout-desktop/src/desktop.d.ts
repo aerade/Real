@@ -12,6 +12,8 @@ type DesktopResponse = {
   body: string;
 };
 
+declare const __REAL_APP_VERSION__: string;
+
 interface Window {
   realDesktop?: {
     request(request: DesktopRequest): Promise<DesktopResponse>;
