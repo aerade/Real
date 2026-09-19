@@ -53,6 +53,8 @@ interface Window {
       message?: string;
       currentVersion?: string;
       latestVersion?: string;
+      releaseName?: string;
+      installerUrl?: string;
     }>;
     installUpdate(): Promise<{ started: boolean }>;
     windowControl(action: "minimize" | "maximize" | "close"): Promise<void>;

@@ -51,16 +51,26 @@ function manifestUrl(baseUrl) {
   return `${baseUrl.replace(/\/?$/, "/")}real-update.json`;
 }
 
-async function checkForUpdates() {
-  const { updateUrl } = runtimeConfig();
-  if (!app.isPackaged || !updateUrl || updateUrl.includes("example.invalid")) {
-    updateState = { configured: false, status: "unconfigured", currentVersion: currentVersion() };
-    return updateState;
-  }
-
-  sendUpdateStatus("checking");
+async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const response = await fetch(manifestUrl(updateUrl), { cache: "no-store" });
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function checkForUpdates() {
+  try {
+    const { updateUrl } = runtimeConfig();
+    if (!app.isPackaged || !updateUrl || updateUrl.includes("example.invalid")) {
+      updateState = { configured: false, status: "unconfigured", currentVersion: currentVersion() };
+      return updateState;
+    }
+
+    sendUpdateStatus("checking");
+    const response = await fetchWithTimeout(manifestUrl(updateUrl), { cache: "no-store" });
     if (!response.ok) throw new Error(`Update manifest returned ${response.status}`);
     const manifest = await response.json();
     const latestVersion = String(manifest.version || "");
@@ -85,7 +95,7 @@ async function downloadUpdate() {
   if (updateState.status !== "available" || !updateState.installerUrl) return updateState;
   try {
     sendUpdateStatus({ status: "downloading", percent: 0 });
-    const response = await fetch(updateState.installerUrl);
+    const response = await fetchWithTimeout(updateState.installerUrl);
     if (!response.ok) throw new Error(`Installer download returned ${response.status}`);
     const buffer = Buffer.from(await response.arrayBuffer());
     downloadedInstallerPath = path.join(app.getPath("temp"), `Real-Installer-${updateState.latestVersion}.exe`);

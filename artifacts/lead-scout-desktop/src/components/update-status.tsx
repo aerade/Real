@@ -10,6 +10,7 @@ type UpdateStatus = {
   currentVersion?: string;
   latestVersion?: string;
   releaseName?: string;
+  installerUrl?: string;
 };
 
 function mergeUpdateStatus(previous: UpdateStatus | null, patch: Partial<UpdateStatus>): UpdateStatus {
@@ -19,6 +20,10 @@ function mergeUpdateStatus(previous: UpdateStatus | null, patch: Partial<UpdateS
     status: patch.status ?? previous?.status ?? "idle",
     percent: patch.percent ?? previous?.percent,
     message: patch.message ?? previous?.message,
+    currentVersion: patch.currentVersion ?? previous?.currentVersion,
+    latestVersion: patch.latestVersion ?? previous?.latestVersion,
+    releaseName: patch.releaseName ?? previous?.releaseName,
+    installerUrl: patch.installerUrl ?? previous?.installerUrl,
   };
 }
 
@@ -87,15 +92,26 @@ export function UpdateStatus() {
   const Icon = isReady ? Download : update.status === "current" ? Check : isBusy ? Loader2 : RefreshCw;
 
   const handleClick = async () => {
+    const desktop = window.realDesktop;
+    if (!desktop) return;
     if (isReady) {
-      await window.realDesktop?.installUpdate();
+      await desktop.installUpdate();
       return;
     }
     if (update.status === "available") {
-      const downloaded = await window.realDesktop?.downloadUpdate();
-      if (downloaded) setUpdate((previous) => mergeUpdateStatus(previous, downloaded));
+      const downloaded = await desktop.downloadUpdate();
+      setUpdate((previous) => downloaded ? mergeUpdateStatus(previous, downloaded) : previous);
     } else {
-      await window.realDesktop?.checkForUpdates();
+      setUpdate((previous) => mergeUpdateStatus(previous, { status: "checking" }));
+      try {
+        const checked = await desktop.checkForUpdates();
+        if (checked) setUpdate((previous) => mergeUpdateStatus(previous, checked));
+      } catch (error) {
+        setUpdate((previous) => mergeUpdateStatus(previous, {
+          status: "error",
+          message: error instanceof Error ? error.message : "Не удалось проверить обновления",
+        }));
+      }
     }
   };
 
