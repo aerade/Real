@@ -161,7 +161,7 @@ html[data-settings-rainbow="true"] .real-app-frame::before {
 }
 html[data-settings-icons="true"] .real-app-frame svg:not(.window-control-icon),
 html[data-settings-icon-shift]:not([data-settings-icon-shift="0"]) .real-app-frame svg:not(.window-control-icon) {
-  --real-icon-color: hsl(calc(28 + var(--settings-icon-shift, 0) * 1deg) 82% 64%);
+  --real-icon-color: hsl(calc(28deg + var(--settings-icon-shift, 0) * 1deg) 82% 64%);
   color: var(--real-icon-color) !important;
   stroke: var(--real-icon-color) !important;
   filter: none;
