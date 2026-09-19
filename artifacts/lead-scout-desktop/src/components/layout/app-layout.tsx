@@ -3,8 +3,6 @@ import { Link, useLocation } from "wouter";
 import { Home, Search, Target, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { WindowControls } from "./window-controls";
-import realLogoWhite from "@/assets/real-logo-horizontal-white.svg";
-import realLogoBlack from "@/assets/real-logo-horizontal.svg";
 import realMarkWhite from "@/assets/real-mark-white.svg";
 import realMarkBlack from "@/assets/real-mark.svg";
 
@@ -125,7 +123,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     { href: "/leads", label: "Clients", icon: Target },
     { href: "/admin", label: "Settings", icon: Settings },
   ];
-  const logo = theme === "light" ? realLogoBlack : realLogoWhite;
+   const isSettingsPage = location === "/admin";
 
   return (
     <div className="real-app-frame flex flex-col h-full w-full bg-background text-foreground overflow-hidden rounded-[24px] border border-border/40 select-none shadow-2xl relative" style={{ borderRadius: "calc(var(--settings-radius, 12) * 1px)", borderWidth: "calc(var(--settings-border, 1) * 1px)" }}>
@@ -135,10 +133,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
         style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
       >
          <div className="flex shrink-0 items-center" style={{ WebkitAppRegion: "drag" } as React.CSSProperties}>
-          {macButtons ? <WindowControls /> : (
+           {macButtons ? <WindowControls /> : (
             <div className="flex items-center gap-2">
               {titleVersion && versionPosition === "left" && <span className="text-[10px] font-semibold tracking-wide text-muted-foreground">v{version || "1.0.0"}</span>}
-              <img src={logo} alt="Real" className="h-5 w-auto max-w-[112px] object-contain" />
+               <img src={realMarkWhite} alt="Real" className="h-6 w-6 object-contain" />
               {titleVersion && versionPosition === "right" && <span className="text-[10px] font-semibold tracking-wide text-muted-foreground">v{version || "1.0.0"}</span>}
             </div>
           )}
@@ -181,8 +179,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto bg-background/50 relative rounded-b-2xl">
-        <div className="mx-auto min-h-full w-full px-4 py-5 pb-20 sm:px-6 sm:py-6">
+       <main className={cn("relative flex-1 bg-background/50 rounded-b-2xl", isSettingsPage ? "overflow-hidden" : "overflow-y-auto")}>
+         <div className={cn("mx-auto w-full", isSettingsPage ? "h-full min-h-0 px-4 py-5 sm:px-6 sm:py-6" : "min-h-full px-4 py-5 pb-20 sm:px-6 sm:py-6")}>
           {children}
         </div>
       </main>

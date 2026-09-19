@@ -5,7 +5,7 @@ import type {
 } from "@/components/ui/toast"
 
 const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 1000000
+const TOAST_REMOVE_DELAY = 260
 
 type ToasterToast = ToastProps & {
   id: string
@@ -22,6 +22,46 @@ const actionTypes = {
 } as const
 
 let count = 0
+let notificationAudioContext: AudioContext | null = null
+
+function notificationSoundEnabled() {
+  try {
+    const raw = window.localStorage.getItem("real:settings") ?? window.localStorage.getItem("lead-scout:settings")
+    const settings = raw ? JSON.parse(raw) as { notificationSound?: boolean } : {}
+    return settings.notificationSound !== false
+  } catch {
+    return true
+  }
+}
+
+function playNotificationSound() {
+  if (typeof window === "undefined" || !notificationSoundEnabled()) return
+  const AudioContextConstructor = window.AudioContext
+  if (!AudioContextConstructor) return
+
+  notificationAudioContext ??= new AudioContextConstructor()
+  const context = notificationAudioContext
+  const start = () => {
+    const now = context.currentTime
+    const oscillator = context.createOscillator()
+    const gain = context.createGain()
+    oscillator.type = "sine"
+    oscillator.frequency.setValueAtTime(660, now)
+    oscillator.frequency.exponentialRampToValueAtTime(820, now + 0.08)
+    gain.gain.setValueAtTime(0.0001, now)
+    gain.gain.exponentialRampToValueAtTime(0.035, now + 0.012)
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18)
+    oscillator.connect(gain).connect(context.destination)
+    oscillator.start(now)
+    oscillator.stop(now + 0.2)
+  }
+
+  if (context.state === "suspended") {
+    context.resume().then(start).catch(() => undefined)
+  } else {
+    start()
+  }
+}
 
 function genId() {
   count = (count + 1) % Number.MAX_SAFE_INTEGER
@@ -138,6 +178,7 @@ type Toast = Omit<ToasterToast, "id">
 
 function toast({ ...props }: Toast) {
   const id = genId()
+  playNotificationSound()
 
   const update = (props: ToasterToast) =>
     dispatch({
@@ -179,7 +220,7 @@ function useToast() {
         listeners.splice(index, 1)
       }
     }
-  }, [state])
+  }, [])
 
   return {
     ...state,

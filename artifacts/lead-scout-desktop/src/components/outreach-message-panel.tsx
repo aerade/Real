@@ -66,15 +66,15 @@ export function OutreachMessagePanel({ lead }: { lead: Lead }) {
         </div>
          <div className="flex min-w-0 w-full gap-2 sm:w-auto">
           <Select value={family?.id ?? ""} onValueChange={selectFamily}>
-             <SelectTrigger aria-label="Тип сообщения" className="h-8 min-w-0 flex-1 truncate text-xs sm:w-48 sm:flex-none">
-              <SelectValue placeholder="Тип сообщения" />
+             <SelectTrigger aria-label="Тип сообщения" className="h-8 min-w-0 flex-1 text-xs sm:w-48 sm:flex-none">
+               <SelectValue className="min-w-0 truncate" placeholder="Тип сообщения" />
             </SelectTrigger>
             <SelectContent>
               {families.map((item) => <SelectItem key={item.id} value={item.id}>{item.title}</SelectItem>)}
             </SelectContent>
           </Select>
            <Select value={String(variantIndex)} onValueChange={selectVariant}>
-             <SelectTrigger aria-label="Вариант сообщения" className="h-8 w-28 min-w-0 shrink-0 text-xs">
+              <SelectTrigger aria-label="Вариант сообщения" className="h-8 w-28 min-w-0 shrink-0 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

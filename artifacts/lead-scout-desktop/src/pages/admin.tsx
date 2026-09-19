@@ -66,6 +66,7 @@ type Preferences = {
   animationSpeed: number;
   animationStyle: "smooth" | "spring" | "snappy" | "slide" | "minimal";
   buttonSound: string;
+  notificationSound: boolean;
   topBarStyle: "icons" | "labels";
   startupTab: string;
   toolbarPosition: "top" | "bottom";
@@ -111,6 +112,7 @@ const defaultPreferences: Preferences = {
   animationSpeed: 1,
   animationStyle: "smooth",
   buttonSound: "off",
+  notificationSound: true,
   topBarStyle: "labels",
   startupTab: "overview",
   toolbarPosition: "top",
@@ -540,7 +542,7 @@ export function AdminPage() {
            {preferences.titleVersion && <SettingRow icon={Eye} title="Положение версии" description="Показывать версию слева или справа от значка Real."><Select value={preferences.versionPosition} onValueChange={(value) => updatePreference("versionPosition", value as Preferences["versionPosition"])}><SelectTrigger className="h-8 w-32 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="left">Слева</SelectItem><SelectItem value="right">Справа</SelectItem></SelectContent></Select></SettingRow>}
            <SettingRow icon={MonitorCog} title="Радиус углов окна" description={`${preferences.radius}px скругления рамки приложения.`}><div className="flex w-44 items-center gap-3"><Slider value={[preferences.radius]} min={0} max={24} step={1} onValueChange={([value]) => updatePreference("radius", value)} /><span className="w-8 text-right font-mono text-[10px] text-muted-foreground">{preferences.radius}</span></div></SettingRow>
            <SettingRow icon={SlidersHorizontal} title="Толщина рамки окна" description={`${preferences.borderThickness}px толщины контура.`}><div className="flex w-44 items-center gap-3"><Slider value={[preferences.borderThickness]} min={0} max={3} step={0.5} onValueChange={([value]) => updatePreference("borderThickness", value)} /><span className="w-8 text-right font-mono text-[10px] text-muted-foreground">{preferences.borderThickness}</span></div></SettingRow>
-           <SettingRow icon={PaletteIcon} title="Цвет рамки окна" description="Переопределите цвет рамки темы."><Select value={preferences.borderColor} onValueChange={(value) => updatePreference("borderColor", value)}><SelectTrigger className="h-8 w-32 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="default">По умолчанию темы</SelectItem><SelectItem value="red">Красный</SelectItem><SelectItem value="blue">Синий</SelectItem><SelectItem value="green">Зелёный</SelectItem><SelectItem value="gold">Золотой</SelectItem></SelectContent></Select></SettingRow>
+            {!preferences.rainbowBorder && <SettingRow icon={PaletteIcon} title="Цвет рамки окна" description="Переопределите цвет рамки темы."><Select value={preferences.borderColor} onValueChange={(value) => updatePreference("borderColor", value)}><SelectTrigger className="h-8 w-32 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="default">По умолчанию темы</SelectItem><SelectItem value="red">Красный</SelectItem><SelectItem value="blue">Синий</SelectItem><SelectItem value="green">Зелёный</SelectItem><SelectItem value="gold">Золотой</SelectItem></SelectContent></Select></SettingRow>}
            <SettingRow icon={Sparkles} title="Радужная рамка" description="Анимировать контур приложения всеми цветами спектра."><Switch checked={preferences.rainbowBorder} onCheckedChange={(value) => updatePreference("rainbowBorder", value)} /></SettingRow>
         </div>
         <div className="rounded-lg border border-border/70 px-5">
@@ -559,6 +561,7 @@ export function AdminPage() {
               </Select>
             </SettingRow>
            <SettingRow icon={Volume2} title="Звук кнопок" description="Проигрывать короткий звук при нажатии кнопки."><Select value={preferences.buttonSound} onValueChange={(value) => updatePreference("buttonSound", value)}><SelectTrigger className="h-8 w-32 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="off">Выкл.</SelectItem><SelectItem value="tap">Щелчок</SelectItem><SelectItem value="soft">Мягкий щелчок</SelectItem><SelectItem value="pop">Короткий звук</SelectItem></SelectContent></Select></SettingRow>
+            <SettingRow icon={Bell} title="Звук уведомлений" description="Проигрывать короткий звук при появлении уведомления."><Switch checked={preferences.notificationSound} onCheckedChange={(value) => updatePreference("notificationSound", value)} /></SettingRow>
         </div>
       </div>
     </>
@@ -706,7 +709,7 @@ export function AdminPage() {
               </div>
             </div>
           </aside>
-           <section data-testid="settings-content" className="min-h-0 min-w-0 overflow-y-auto bg-card/20 p-6 md:p-8">
+           <section data-testid="settings-content" className="min-h-0 min-w-0 overflow-y-auto overscroll-contain bg-card/20 p-6 md:p-8">
             <div className="mx-auto max-w-3xl">{content}</div>
           </section>
         </div>

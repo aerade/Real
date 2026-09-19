@@ -21,7 +21,8 @@ import {
 function safeUrl(value?: string | null) {
   if (!value) return null;
   try {
-    const url = new URL(value);
+    const normalized = /^(https?:\/\/|mailto:|tel:)/i.test(value) ? value : `https://${value}`;
+    const url = new URL(normalized);
       return ["http:", "https:", "mailto:", "tel:"].includes(url.protocol) ? url.href : null;
   } catch { return null; }
 }
