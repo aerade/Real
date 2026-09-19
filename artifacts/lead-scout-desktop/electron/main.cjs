@@ -118,6 +118,9 @@ ipcMain.handle("real:window-control", (event, action) => {
 });
 ipcMain.handle("real:check-updates", () => checkForUpdates());
 ipcMain.handle("real:download-update", () => downloadUpdate());
+ipcMain.handle("real:open-archive-window", () => {
+  createWindow("/archive");
+});
 ipcMain.handle("real:install-update", () => {
   if (updateState.status !== "downloaded" || !downloadedInstallerPath || !fs.existsSync(downloadedInstallerPath)) {
     return { started: false };
@@ -158,8 +161,8 @@ function createWindow(hash = "") {
   const window = new BrowserWindow({
     width: 1180,
     height: 760,
-     minWidth: 860,
-     minHeight: 560,
+    minWidth: 860,
+    minHeight: 560,
     backgroundColor: "#00000000",
     show: false,
     frame: false,
