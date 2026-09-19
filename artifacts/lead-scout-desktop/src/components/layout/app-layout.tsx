@@ -72,13 +72,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
         root.style.setProperty("--settings-icon-shift", String(saved.iconColorShift ?? 0));
         root.style.setProperty("--settings-animation-speed", String(saved.animationSpeed ?? 1));
         const customTheme = saved.customTheme;
-        const customThemeVariables = [
-          "--background", "--foreground", "--card", "--card-foreground", "--primary",
-          "--primary-foreground", "--accent", "--accent-foreground", "--border", "--input",
-          "--card-border", "--muted", "--muted-foreground", "--sidebar", "--sidebar-foreground",
-          "--sidebar-border", "--popover", "--popover-foreground", "--popover-border", "--ring",
-          "--icon-1", "--icon-2", "--icon-3", "--icon-4", "--icon-5",
-        ];
+         const customThemeVariables = [
+           "--background", "--foreground", "--card", "--card-foreground", "--primary",
+           "--primary-foreground", "--accent", "--accent-foreground", "--border", "--input",
+           "--card-border", "--muted", "--muted-foreground", "--sidebar", "--sidebar-foreground",
+           "--sidebar-border", "--popover", "--popover-foreground", "--popover-border", "--ring",
+         ];
         if (saved.theme === "custom" && customTheme) {
           const background = typeof customTheme.background === "string" ? hexToHsl(customTheme.background) : "";
           const foreground = typeof customTheme.foreground === "string" ? hexToHsl(customTheme.foreground) : "";
@@ -94,12 +93,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             "--muted-foreground": foreground, "--sidebar": background,
             "--sidebar-foreground": foreground, "--sidebar-border": border,
             "--popover": card, "--popover-foreground": foreground, "--popover-border": border,
-            "--ring": primary,
-            "--icon-1": typeof customTheme.primary === "string" ? customTheme.primary : primary,
-            "--icon-2": typeof customTheme.accent === "string" ? customTheme.accent : accent,
-            "--icon-3": typeof customTheme.foreground === "string" ? customTheme.foreground : foreground,
-            "--icon-4": typeof customTheme.border === "string" ? customTheme.border : border,
-            "--icon-5": typeof customTheme.primary === "string" ? customTheme.primary : primary,
+             "--ring": primary,
           };
           Object.entries(customVariables).forEach(([key, value]) => root.style.setProperty(key, value));
           Object.entries(customTheme).forEach(([key, value]) => {
@@ -140,7 +134,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         className="h-14 flex items-center justify-between px-4 shrink-0 bg-background/80 backdrop-blur-md z-50 relative"
         style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
       >
-        <div className="flex w-[170px] shrink-0 items-center">
+         <div className="flex w-[170px] shrink-0 items-center" style={{ WebkitAppRegion: "drag" } as React.CSSProperties}>
           {macButtons ? <WindowControls /> : (
             <div className="flex items-center gap-2">
               {titleVersion && versionPosition === "left" && <span className="text-[10px] font-semibold tracking-wide text-muted-foreground">v{version || "1.0.0"}</span>}
@@ -171,7 +165,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           })}
         </nav>
         
-        <div className="flex w-[170px] shrink-0 items-center justify-end gap-3">
+         <div className="flex w-[170px] shrink-0 items-center justify-end gap-3" style={{ WebkitAppRegion: "drag" } as React.CSSProperties}>
           {macButtons ? (
             <div className="flex items-center gap-2">
               {titleVersion && versionPosition === "left" && <span className="text-[10px] font-semibold tracking-wide text-muted-foreground">v{version || "1.0.0"}</span>}

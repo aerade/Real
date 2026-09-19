@@ -507,7 +507,7 @@ export function AdminPage() {
             <Select value={preferences.font} onValueChange={(value) => updatePreference("font", value)}><SelectTrigger className="h-8 w-40 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="bricolage">Bricolage Grotesque</SelectItem><SelectItem value="dm-sans">DM Sans</SelectItem><SelectItem value="plus-jakarta">Plus Jakarta Sans</SelectItem><SelectItem value="space-mono">Spline Mono</SelectItem><SelectItem value="system">Системный</SelectItem></SelectContent></Select>
           </SettingRow>
            <SettingRow icon={Sparkles} title="Цветные иконки" description="Добавьте иконкам интерфейса выразительную цветовую палитру."><Switch checked={preferences.colorfulIcons} onCheckedChange={(value) => updatePreference("colorfulIcons", value)} /></SettingRow>
-           <SettingRow icon={PaletteIcon} title="Сдвиг цвета иконок" description={`Сдвигайте палитру иконок, сохраняя разноцветный вид.`}>
+            <SettingRow icon={PaletteIcon} title="Сдвиг цвета иконок" description="Настройка работает одинаково при любой выбранной теме.">
             <div className="flex w-44 items-center gap-3"><Slider value={[preferences.iconColorShift]} min={0} max={360} step={1} onValueChange={([value]) => updatePreference("iconColorShift", value)} /><span className="w-8 text-right font-mono text-[10px] text-muted-foreground">{preferences.iconColorShift}°</span></div>
           </SettingRow>
            <SettingRow icon={SlidersHorizontal} title="Компактное пространство" description="Уменьшите высоту строк и дополнительные отступы в списках лидов."><Switch checked={preferences.compact} onCheckedChange={(value) => updatePreference("compact", value)} /></SettingRow>
@@ -545,9 +545,9 @@ export function AdminPage() {
         <div className="rounded-lg border border-border/70 px-5">
            <SettingRow icon={Sparkles} title="Анимации" description="Включите или отключите движение интерфейса во всём приложении."><Switch checked={preferences.animations} onCheckedChange={(value) => updatePreference("animations", value)} /></SettingRow>
            <SettingRow icon={SlidersHorizontal} title="Скорость анимации" description={`${preferences.animationSpeed.toFixed(1)}× скорости переходов.`}><div className="flex w-44 items-center gap-3"><Slider value={[preferences.animationSpeed]} min={0.5} max={2} step={0.1} onValueChange={([value]) => updatePreference("animationSpeed", value)} /><span className="w-8 text-right font-mono text-[10px] text-muted-foreground">{preferences.animationSpeed.toFixed(1)}×</span></div></SettingRow>
-            <SettingRow icon={Play} title="Стиль анимации" description="Выберите характер переходов.">
+             <SettingRow icon={Play} title="Стиль анимации" description="Выберите характер переходов в компактном меню.">
               <Select value={preferences.animationStyle} onValueChange={(value) => updatePreference("animationStyle", value as Preferences["animationStyle"])}>
-                <SelectTrigger className="h-8 w-36 text-xs"><SelectValue /></SelectTrigger>
+                <SelectTrigger aria-label="Стиль анимации" className="h-8 w-28 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="smooth">Плавный</SelectItem>
                   <SelectItem value="spring">Пружина</SelectItem>

@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Activity, Archive, Briefcase, Inbox, Target } from "lucide-react";
 import { statusMap } from "@/lib/constants";
+import { useLocation } from "wouter";
 
 export function Dashboard() {
   const { data, isLoading } = useGetDashboard();
+  const [, setLocation] = useLocation();
 
   if (isLoading || !data) {
     return (
@@ -39,14 +41,7 @@ export function Dashboard() {
             variant="outline"
             size="sm"
             className="w-fit"
-            onClick={() => {
-              if (window.realDesktop?.openArchiveWindow) {
-                void window.realDesktop.openArchiveWindow();
-                return;
-              }
-              const baseUrl = new URL(import.meta.env.BASE_URL, window.location.origin);
-              window.open(new URL("archive", baseUrl).toString(), "_blank", "noopener,noreferrer");
-            }}
+             onClick={() => setLocation("/archive")}
           >
             <Archive className="h-3.5 w-3.5" />
             Полный архив
