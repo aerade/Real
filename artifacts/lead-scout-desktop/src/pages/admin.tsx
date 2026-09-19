@@ -512,8 +512,8 @@ export function AdminPage() {
             <Select value={preferences.font} onValueChange={(value) => updatePreference("font", value)}><SelectTrigger className="h-8 w-40 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="bricolage">Bricolage Grotesque</SelectItem><SelectItem value="dm-sans">DM Sans</SelectItem><SelectItem value="plus-jakarta">Plus Jakarta Sans</SelectItem><SelectItem value="space-mono">Spline Mono</SelectItem><SelectItem value="system">Системный</SelectItem></SelectContent></Select>
           </SettingRow>
            <SettingRow icon={Sparkles} title="Цветные иконки" description="Добавьте иконкам интерфейса выразительную цветовую палитру."><Switch checked={preferences.colorfulIcons} onCheckedChange={(value) => updatePreference("colorfulIcons", value)} /></SettingRow>
-            <SettingRow icon={PaletteIcon} title="Сдвиг цвета иконок" description="Настройка работает одинаково при любой выбранной теме.">
-            <div className="flex w-44 items-center gap-3"><Slider value={[preferences.iconColorShift]} min={0} max={360} step={1} onValueChange={([value]) => updatePreference("iconColorShift", value)} /><span className="w-8 text-right font-mono text-[10px] text-muted-foreground">{preferences.iconColorShift}°</span></div>
+            <SettingRow icon={PaletteIcon} title="Сдвиг цвета иконок" description="Работает, когда включены цветные иконки.">
+            <div className="flex w-44 items-center gap-3"><Slider value={[preferences.iconColorShift]} min={0} max={360} step={1} disabled={!preferences.colorfulIcons} onValueChange={([value]) => updatePreference("iconColorShift", value)} /><span className="w-8 text-right font-mono text-[10px] text-muted-foreground">{preferences.iconColorShift}°</span></div>
           </SettingRow>
            <SettingRow icon={SlidersHorizontal} title="Компактное пространство" description="Уменьшите высоту строк и дополнительные отступы в списках лидов."><Switch checked={preferences.compact} onCheckedChange={(value) => updatePreference("compact", value)} /></SettingRow>
         </div>
