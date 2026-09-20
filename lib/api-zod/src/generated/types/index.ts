@@ -17,6 +17,7 @@ export * from './leadSearchInput';
 export * from './leadStatus';
 export * from './leadUpdate';
 export * from './leadUpdateStatus';
+export * from './leadWebsiteStatus';
 export * from './listLeadArchiveParams';
 export * from './listLeadsParams';
 export * from './loginInput';

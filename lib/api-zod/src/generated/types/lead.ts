@@ -7,6 +7,7 @@
  */
 import type { Contact } from './contact';
 import type { LeadStatus } from './leadStatus';
+import type { LeadWebsiteStatus } from './leadWebsiteStatus';
 import type { ScoreFactor } from './scoreFactor';
 import type { User } from './user';
 import type { WebsiteAudit } from './websiteAudit';
@@ -19,6 +20,8 @@ export interface Lead {
   industry: string;
   /** @nullable */
   website?: string | null;
+  /** Whether the source provided a company website URL. */
+  websiteStatus: LeadWebsiteStatus;
   status: LeadStatus;
   /**
      * @minimum 0

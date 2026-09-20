@@ -52,6 +52,17 @@ export interface Contact {
   url: string;
 }
 
+/**
+ * Whether the source provided a company website URL.
+ */
+export type LeadWebsiteStatus = typeof LeadWebsiteStatus[keyof typeof LeadWebsiteStatus];
+
+
+export const LeadWebsiteStatus = {
+  present: 'present',
+  missing: 'missing',
+} as const;
+
 export type LeadStatus = typeof LeadStatus[keyof typeof LeadStatus];
 
 
@@ -149,6 +160,8 @@ export interface Lead {
   industry: string;
   /** @nullable */
   website?: string | null;
+  /** Whether the source provided a company website URL. */
+  websiteStatus: LeadWebsiteStatus;
   status: LeadStatus;
   /**
      * @minimum 0

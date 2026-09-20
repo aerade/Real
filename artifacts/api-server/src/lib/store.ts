@@ -14,7 +14,7 @@ import {
   type UserRow,
 } from "@workspace/db";
 import type { PublicBusiness } from "./osm-leads";
-import { auditWebsite, scoreBusiness, type ScoreFactor, type WebsiteAudit } from "./website-audit";
+import { auditWebsite, SCORE_VERSION, scoreBusiness, type ScoreFactor, type WebsiteAudit } from "./website-audit";
 
 const scrypt = promisify(nodeScrypt);
 
@@ -29,6 +29,7 @@ export type LeadOutput = {
   city: string;
   industry: string;
   website: string | null;
+  websiteStatus: "present" | "missing";
   status: LeadStatus;
   score: number;
   scoreReasons: string[];
@@ -195,6 +196,7 @@ function toLead(row: JoinedLead): LeadOutput {
     city: lead.city,
     industry: lead.industry,
     website: lead.website,
+    websiteStatus: lead.website ? "present" : "missing",
     status: lead.status,
     score: lead.score,
     scoreReasons: lead.scoreReasons,
@@ -352,7 +354,7 @@ export async function runLeadAudit(id: number): Promise<LeadOutput | null> {
     scoreReasons: scored.scoreReasons,
     issues: scored.issues,
     scoreBreakdown: scored.scoreBreakdown,
-    scoreVersion: "opportunity-v2",
+    scoreVersion: SCORE_VERSION,
     auditCheckedAt: websiteAudit.checkedAt ? new Date(websiteAudit.checkedAt) : null,
     updatedAt: new Date(),
   }).where(eq(leadsTable.id, id));

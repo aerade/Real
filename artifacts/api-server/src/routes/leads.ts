@@ -23,6 +23,7 @@ import {
 
 const router: IRouter = Router();
 const LEAD_STATUSES: LeadStatus[] = ["new", "claimed", "contacted", "replied", "rejected", "no_reply", "deal"];
+const SEARCH_RESULT_LIMIT = 10;
 
 async function requestUser(req: Request): Promise<AuthUser | null> {
   const id = Number(req.cookies?.lead_scout_user);
@@ -164,7 +165,7 @@ router.post("/leads/search", async (req, res, next) => {
         const results = showPreviouslyFound
           ? available
           : available.filter((lead) => !previouslyShown.has(lead.id));
-        returned = results.slice(0, 3);
+        returned = results.slice(0, SEARCH_RESULT_LIMIT);
       }
     } catch (error) {
       req.log.error({ err: error }, "2GIS search failed");

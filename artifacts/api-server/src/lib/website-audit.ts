@@ -1,6 +1,6 @@
 import type { PublicBusiness } from "./osm-leads";
 
-export const SCORE_VERSION = "opportunity-v2";
+export const SCORE_VERSION = "opportunity-v3";
 
 export type AuditCheckStatus = "pass" | "warn" | "fail" | "unknown";
 
@@ -226,11 +226,11 @@ function websiteFactors(audit: WebsiteAudit): ScoreFactor[] {
   if (audit.status === "not_provided") {
     return [{
       key: "website-opportunity",
-      label: "Нет сайта",
+      label: "Сайта нет",
       category: "opportunity",
-      points: 24,
+      points: 40,
       maxPoints: 40,
-      evidence: "Компания может выиграть от создания первого сайта",
+      evidence: "Максимальный потенциал: компании нужен первый сайт",
     }];
   }
   if (audit.status === "unavailable") {
@@ -238,14 +238,14 @@ function websiteFactors(audit: WebsiteAudit): ScoreFactor[] {
       key: "website-opportunity",
       label: "Сайт не подтверждён",
       category: "opportunity",
-      points: 18,
+      points: 30,
       maxPoints: 40,
       evidence: audit.error ?? "Сайт не ответил",
     }];
   }
   const failingChecks = audit.checks.filter((check) => check.status === "fail").length;
   const warningChecks = audit.checks.filter((check) => check.status === "warn").length;
-  const points = Math.min(40, failingChecks * 10 + warningChecks * 5);
+  const points = Math.min(40, failingChecks * 12 + warningChecks * 6);
   return [{
     key: "website-opportunity",
     label: "Потенциал улучшения сайта",
@@ -268,7 +268,11 @@ export function scoreBusiness(business: PublicBusiness, audit: WebsiteAudit): {
   const reviewConfidence = business.reviewsCount
     ? Math.min(15, Math.round(Math.log10(business.reviewsCount + 1) * 5))
     : 0;
-  const contactPoints = Math.min(20, business.contacts.length * 5);
+  const directContacts = business.contacts.filter((contact) => {
+    const type = contact.type.toLowerCase();
+    return !type.includes("сайт") && !type.includes("website") && !type.includes("site");
+  });
+  const contactPoints = Math.min(20, directContacts.length * 5);
   const factors: ScoreFactor[] = [
     {
       key: "market-rating",
@@ -292,7 +296,7 @@ export function scoreBusiness(business: PublicBusiness, audit: WebsiteAudit): {
       category: "contactability",
       points: contactPoints,
       maxPoints: 20,
-      evidence: business.contacts.length ? `${business.contacts.length} публичных контакта` : "Публичные контакты не найдены",
+      evidence: directContacts.length ? `${directContacts.length} прямых публичных контакта` : "Телефон, email или соцсети не найдены",
     },
     ...websiteFactors(audit),
   ];
