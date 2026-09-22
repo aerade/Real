@@ -1,5 +1,6 @@
 import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
 import { searchTwoGisBusinesses } from "../lib/parser-2gis";
+import { searchPublicBusinesses } from "../lib/osm-leads";
 import { auditAndScoreBusinesses } from "../lib/website-audit";
 import {
   authenticate,
@@ -24,6 +25,19 @@ import {
 const router: IRouter = Router();
 const LEAD_STATUSES: LeadStatus[] = ["new", "claimed", "contacted", "replied", "rejected", "no_reply", "deal"];
 const SEARCH_RESULT_LIMIT = 10;
+const BROAD_SEARCH_POOL_LIMIT = 24;
+
+function pickRandomProspects<T extends { score: number }>(businesses: T[], limit: number): T[] {
+  const pool = [...businesses]
+    .sort((left, right) => right.score - left.score)
+    .slice(0, BROAD_SEARCH_POOL_LIMIT);
+  const selected: T[] = [];
+  while (pool.length > 0 && selected.length < limit) {
+    const index = Math.floor(Math.random() * pool.length);
+    selected.push(pool.splice(index, 1)[0]!);
+  }
+  return selected.sort((left, right) => right.score - left.score);
+}
 
 async function requestUser(req: Request): Promise<AuthUser | null> {
   const id = Number(req.cookies?.lead_scout_user);
@@ -144,33 +158,52 @@ router.post("/leads/search", async (req, res, next) => {
     let parsedCount = 0;
     let pagesFetched = 0;
     try {
-      // A user may have already seen every company on the first source page
-      // during an older search. Keep walking 2GIS pages until the next
-      // unseen batch is found instead of returning a misleading empty result.
-      for (let attempt = 0; attempt < 100 && returned.length === 0; attempt += 1) {
-        const parsedBusinesses = await searchTwoGisBusinesses({ country, city, industry });
-        if (parsedBusinesses.length <= parsedCount) break;
-
-        const newBusinesses = parsedBusinesses.slice(parsedCount);
-        const scoredBusinesses = await auditAndScoreBusinesses(newBusinesses);
-        businesses = [...businesses, ...scoredBusinesses];
-        parsedCount = parsedBusinesses.length;
-        pagesFetched += 1;
+      if (!city || !industry) {
+        const broadBusinesses = await searchPublicBusinesses({ country, city, industry });
+        const candidates = broadBusinesses.slice(0, BROAD_SEARCH_POOL_LIMIT);
+        businesses = await auditAndScoreBusinesses(candidates);
+        pagesFetched = 1;
 
         const found = await Promise.all(
-          businesses.map((business) => upsertSearchedLead(business, country, city)),
+          businesses.map((business) => upsertSearchedLead(business, country, business.city ?? city)),
         );
         available = found.filter((lead) => lead.status === "new" && !lead.assignee);
         previouslyShown = await getPreviouslyShownLeadIds(user.id, available.map((lead) => lead.id));
         const results = showPreviouslyFound
           ? available
           : available.filter((lead) => !previouslyShown.has(lead.id));
-        returned = results.slice(0, SEARCH_RESULT_LIMIT);
+        returned = pickRandomProspects(results, SEARCH_RESULT_LIMIT);
+      } else {
+        // A user may have already seen every company on the first source page
+        // during an older search. Keep walking 2GIS pages until the next
+        // unseen batch is found instead of returning a misleading empty result.
+        for (let attempt = 0; attempt < 100 && returned.length === 0; attempt += 1) {
+          const parsedBusinesses = await searchTwoGisBusinesses({ country, city, industry });
+          if (parsedBusinesses.length <= parsedCount) break;
+
+          const newBusinesses = parsedBusinesses.slice(parsedCount);
+          const scoredBusinesses = await auditAndScoreBusinesses(newBusinesses);
+          businesses = [...businesses, ...scoredBusinesses];
+          parsedCount = parsedBusinesses.length;
+          pagesFetched += 1;
+
+          const found = await Promise.all(
+            businesses.map((business) => upsertSearchedLead(business, country, city)),
+          );
+          available = found.filter((lead) => lead.status === "new" && !lead.assignee);
+          previouslyShown = await getPreviouslyShownLeadIds(user.id, available.map((lead) => lead.id));
+          const results = showPreviouslyFound
+            ? available
+            : available.filter((lead) => !previouslyShown.has(lead.id));
+          returned = results.slice(0, SEARCH_RESULT_LIMIT);
+        }
       }
     } catch (error) {
-      req.log.error({ err: error }, "2GIS search failed");
+      req.log.error({ err: error }, city && industry ? "2GIS search failed" : "Broad lead search failed");
       return res.status(502).json({
-        error: "Источник 2ГИС временно недоступен. Результаты из OpenStreetMap отключены.",
+        error: city && industry
+          ? "Источник 2ГИС временно недоступен. Результаты из OpenStreetMap отключены."
+          : "Не удалось собрать широкую подборку компаний из открытых каталогов.",
       });
     }
 

@@ -203,10 +203,10 @@ async function searchPublicBusinessesUncached(input: {
         city,
         industry: input.industry || broadIndustries[index]!,
       });
-      countryResults.push(...cityResults.slice(0, 4));
+      countryResults.push(...cityResults.slice(0, 5));
       if (city !== popularCities.at(-1)) await new Promise((resolve) => setTimeout(resolve, 1_050));
     }
-    if (countryResults.length > 0) return countryResults.slice(0, 5);
+    if (countryResults.length > 0) return countryResults.slice(0, 40);
   }
 
   const directResults = await searchNominatimBusinesses(input);
@@ -292,13 +292,13 @@ async function searchPublicBusinessesUncached(input: {
       };
     })
     .sort((a, b) => b.score - a.score)
-    .slice(0, 5);
+    .slice(0, 40);
 
   const merged = new Map<string, PublicBusiness>();
   for (const business of [...directResults, ...overpassResults]) {
     merged.set(business.sourceId, business);
   }
-  return [...merged.values()].sort((a, b) => b.score - a.score).slice(0, 5);
+  return [...merged.values()].sort((a, b) => b.score - a.score).slice(0, 40);
 }
 
 export async function searchPublicBusinesses(input: {

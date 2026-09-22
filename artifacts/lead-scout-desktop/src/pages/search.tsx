@@ -114,11 +114,13 @@ function editDistance(a: string, b: string) {
   return row[b.length];
 }
 
-function SuggestionInput({ value, onChange, options, placeholder, icon: Icon, disabled = false }: {
+function SuggestionInput({ value, onChange, options, placeholder, anyLabel, anyTestId, icon: Icon, disabled = false }: {
   value: string;
   onChange: (value: string) => void;
   options: Array<{ value: string; aliases: string[] }>;
   placeholder: string;
+  anyLabel: string;
+  anyTestId: string;
   icon: ElementType;
   disabled?: boolean;
 }) {
@@ -161,6 +163,10 @@ function SuggestionInput({ value, onChange, options, placeholder, icon: Icon, di
       </PopoverAnchor>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-1" align="start">
         <div className="max-h-52 overflow-y-auto">
+          {!normalizedInput && <button data-testid={anyTestId} type="button" onClick={() => choose("")} className="flex w-full items-center justify-between rounded bg-primary/10 px-3 py-2 text-left text-sm font-semibold text-primary hover:bg-primary/15">
+            {anyLabel}
+            {!value && <Check className="h-4 w-4" />}
+          </button>}
           {canUseCustomValue && <button data-testid="button-use-search-value" type="button" onClick={() => choose(inputValue.trim())} className="flex w-full items-center gap-2 rounded bg-primary/10 px-3 py-2 text-left text-sm font-medium text-primary hover:bg-primary/15">
             Искать «{inputValue.trim()}»
           </button>}
@@ -239,7 +245,6 @@ export function SearchPage() {
   }, [city, industry, showPreviouslyFound, preferencesLoaded, session?.user?.login]);
 
   const runSearch = () => {
-    if (!city.trim() || !industry.trim()) return;
     setHasSearched(true);
     searchMutation.mutate({ data: { country: "Россия", city: city.trim(), industry: industry.trim(), showPreviouslyFound } });
   };
@@ -264,7 +269,7 @@ export function SearchPage() {
          <header className="shrink-0 border-b border-border/70 pb-5">
            <p className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-primary"><SearchIcon className="h-3.5 w-3.5" />Поиск лидов</p>
           <div className="flex items-end justify-between gap-4">
-           <div><h1 className="text-2xl font-semibold tracking-tight">Найдите следующий разговор</h1><p className="mt-1 text-sm text-muted-foreground">Ищите до 10 российских компаний и сразу видите, есть ли у каждой сайт.</p></div>
+            <div><h1 className="text-2xl font-semibold tracking-tight">Найдите следующий разговор</h1><p className="mt-1 text-sm text-muted-foreground">Выберите город и отрасль или оставьте «Любой» для случайной подборки перспективных клиентов.</p></div>
              {hasSearched && <div className="hidden text-right sm:block"><p data-testid="text-search-result-count" className="font-mono text-2xl font-semibold">{results.length}</p><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">найдено компаний</p></div>}
           </div>
         </header>
@@ -272,9 +277,9 @@ export function SearchPage() {
         <form onSubmit={handleSearch} className="shrink-0 rounded-xl border border-border/70 bg-card p-4 shadow-sm md:p-5">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-[.7fr_1fr_1fr_auto]">
              <div className="space-y-2"><Label className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">Страна</Label><div className="flex h-11 items-center gap-2 rounded-md border border-border/70 bg-background px-3 text-sm font-semibold"><LockKeyhole className="h-4 w-4 text-muted-foreground" />Россия</div></div>
-              <div className="space-y-2"><Label className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">Город</Label><SuggestionInput value={city} onChange={setCity} options={POPULAR_CITIES} placeholder="любой город, например Красноярск" icon={MapPin} /></div>
-              <div className="space-y-2"><Label className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">Отрасль</Label><SuggestionInput value={industry} onChange={setIndustry} options={POPULAR_INDUSTRIES} placeholder="любая отрасль, например Стоматология" icon={Building2} /></div>
-             <Button data-testid="button-search-leads" type="submit" disabled={searchMutation.isPending || !city.trim() || !industry.trim()} className="h-11 self-end font-semibold"><SearchIcon className="mr-2 h-4 w-4" />Искать</Button>
+              <div className="space-y-2"><Label className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">Город</Label><SuggestionInput value={city} onChange={setCity} options={POPULAR_CITIES} placeholder="Любой город или введите свой" anyLabel="Любой город" anyTestId="button-any-city" icon={MapPin} /></div>
+               <div className="space-y-2"><Label className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">Отрасль</Label><SuggestionInput value={industry} onChange={setIndustry} options={POPULAR_INDUSTRIES} placeholder="Любая отрасль или введите свою" anyLabel="Любая отрасль" anyTestId="button-any-industry" icon={Building2} /></div>
+              <Button data-testid="button-search-leads" type="submit" disabled={searchMutation.isPending} className="h-11 self-end font-semibold"><SearchIcon className="mr-2 h-4 w-4" />Искать</Button>
           </div>
           <div className="mt-4 flex items-center justify-between gap-3 rounded-md border border-border/60 bg-background/50 px-3 py-2.5">
              <div className="flex items-center gap-2.5"><History className="h-4 w-4 text-muted-foreground" /><div><p className="text-xs font-semibold">Включать ранее найденные компании</p><p className="text-[11px] text-muted-foreground">История поиска доступна только вам.</p></div></div>
@@ -286,7 +291,7 @@ export function SearchPage() {
            <section className="flex min-h-[24rem] flex-1 flex-col overflow-hidden rounded-xl border border-border/70 bg-card/45 shadow-sm">
             <div className="shrink-0 border-b border-border/70">
               <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-                  <div className="flex items-center gap-3"><h2 className="flex items-center gap-2 text-sm font-semibold"><Target className="h-4 w-4 text-primary" />Результаты поиска</h2><span data-testid="status-result-count" className="rounded bg-primary/10 px-2 py-1 font-mono text-[11px] font-semibold text-primary">{results.length}</span><span className="hidden items-center gap-1.5 text-[11px] text-muted-foreground sm:flex"><Database className="h-3.5 w-3.5" />До 10 компаний · каталог 2GIS</span></div>
+                  <div className="flex items-center gap-3"><h2 className="flex items-center gap-2 text-sm font-semibold"><Target className="h-4 w-4 text-primary" />Результаты поиска</h2><span data-testid="status-result-count" className="rounded bg-primary/10 px-2 py-1 font-mono text-[11px] font-semibold text-primary">{results.length}</span><span className="hidden items-center gap-1.5 text-[11px] text-muted-foreground sm:flex"><Database className="h-3.5 w-3.5" />До 10 компаний · 2ГИС и открытые каталоги</span></div>
                  <div className="flex items-center gap-2"><span className="hidden items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:flex"><ArrowUpDown className="h-3.5 w-3.5" />Сортировка</span><Select value={sortBy} onValueChange={setSortBy}><SelectTrigger data-testid="select-sort-results" className="h-8 w-32 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="score">Приоритет</SelectItem><SelectItem value="issues">Сигналы</SelectItem><SelectItem value="name">Название</SelectItem></SelectContent></Select><span className="hidden items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:flex"><Filter className="h-3.5 w-3.5" />Фильтр</span><Select value={minimumScore} onValueChange={setMinimumScore}><SelectTrigger data-testid="select-score-filter" className="h-8 w-28 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Все оценки</SelectItem><SelectItem value="80">Оценка от 80</SelectItem><SelectItem value="60">Оценка от 60</SelectItem></SelectContent></Select></div>
               </div>
                 {!searchMutation.isPending && results.length > 0 && <div className="grid grid-cols-2 border-t border-border/60 sm:grid-cols-5"><div className="px-4 py-2.5"><p data-testid="text-average-score" className="font-mono text-base font-semibold">{summary.average}</p><p className="text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground">средний приоритет</p></div><div className="border-l border-border/60 px-4 py-2.5"><p data-testid="text-website-count" className="font-mono text-base font-semibold">{summary.withWebsite}</p><p className="text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground">с сайтом</p></div><div className="border-l border-border/60 px-4 py-2.5"><p data-testid="text-no-website-count" className="font-mono text-base font-semibold">{summary.withoutWebsite}</p><p className="text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground">без сайта</p></div><div className="border-l border-border/60 px-4 py-2.5"><p data-testid="text-audited-count" className="font-mono text-base font-semibold">{summary.audited}</p><p className="text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground">аудитов завершено</p></div><div className="hidden border-l border-border/60 px-4 py-2.5 sm:block"><p className="font-mono text-base font-semibold">{visibleResults.length}</p><p className="text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground">показано сейчас</p></div></div>}
