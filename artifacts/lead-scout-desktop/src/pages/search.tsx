@@ -25,6 +25,38 @@ const POPULAR_CITIES = [
   { value: "Нижний Новгород", aliases: ["nn", "nizhny", "нижний", "нн"] },
   { value: "Красноярск", aliases: ["krsk", "краснояр", "крас"] },
   { value: "Самара", aliases: ["samara", "самар"] },
+  { value: "Омск", aliases: ["omsk", "омск"] },
+  { value: "Челябинск", aliases: ["chel", "челябин", "челяба"] },
+  { value: "Ростов-на-Дону", aliases: ["rostov", "ростов", "рнд"] },
+  { value: "Уфа", aliases: ["ufa", "уф"] },
+  { value: "Волгоград", aliases: ["volgograd", "волгоград"] },
+  { value: "Пермь", aliases: ["perm", "перм"] },
+  { value: "Краснодар", aliases: ["krasnodar", "краснодар"] },
+  { value: "Воронеж", aliases: ["voronezh", "воронеж"] },
+  { value: "Саратов", aliases: ["saratov", "саратов"] },
+  { value: "Тюмень", aliases: ["tumen", "тюмен"] },
+  { value: "Тольятти", aliases: ["tolyatti", "тольят"] },
+  { value: "Ижевск", aliases: ["izhevsk", "ижевск"] },
+  { value: "Барнаул", aliases: ["barnaul", "барнаул"] },
+  { value: "Иркутск", aliases: ["irkutsk", "иркутск"] },
+  { value: "Хабаровск", aliases: ["khabarovsk", "хабаровск"] },
+  { value: "Ярославль", aliases: ["yaroslavl", "ярослав"] },
+  { value: "Владивосток", aliases: ["vladivostok", "владивосток"] },
+  { value: "Томск", aliases: ["tomsk", "томск"] },
+  { value: "Оренбург", aliases: ["orenburg", "оренбург"] },
+  { value: "Кемерово", aliases: ["kemerovo", "кемеров"] },
+  { value: "Рязань", aliases: ["ryazan", "рязан"] },
+  { value: "Астрахань", aliases: ["astrakhan", "астрахан"] },
+  { value: "Пенза", aliases: ["penza", "пенз"] },
+  { value: "Калининград", aliases: ["kaliningrad", "калининград"] },
+  { value: "Сочи", aliases: ["sochi", "сочи"] },
+  { value: "Ставрополь", aliases: ["stavropol", "ставропол"] },
+  { value: "Белгород", aliases: ["belgorod", "белгород"] },
+  { value: "Владимир", aliases: ["vladimir", "владимир"] },
+  { value: "Архангельск", aliases: ["arkhangelsk", "архангел"] },
+  { value: "Мурманск", aliases: ["murmansk", "мурманск"] },
+  { value: "Сургут", aliases: ["surgut", "сургут"] },
+  { value: "Нижневартовск", aliases: ["nizhnevartovsk", "нижневартовск"] },
 ];
 const POPULAR_INDUSTRIES = [
   { value: "СТО", aliases: ["car service", "автосервис", "авто сервис", "ремонт авто", "шин"] },
@@ -37,6 +69,35 @@ const POPULAR_INDUSTRIES = [
   { value: "Юридические услуги", aliases: ["lawyer", "legal", "юрист", "адвокат", "юрид"] },
   { value: "Фитнес", aliases: ["gym", "fitness", "фитнес", "тренажерный зал"] },
   { value: "Отель", aliases: ["hotel", "hostel", "отел", "гостиница"] },
+  { value: "Кафе и кофейня", aliases: ["cafe", "coffee", "кофе", "кофейня"] },
+  { value: "Автомойка", aliases: ["car wash", "автомой", "мойка"] },
+  { value: "Автозапчасти", aliases: ["автозапчаст", "запчасти", "auto parts"] },
+  { value: "Грузоперевозки", aliases: ["cargo", "перевозки", "груз"] },
+  { value: "Логистика", aliases: ["logistics", "склад", "доставка"] },
+  { value: "Ремонт техники", aliases: ["сервисный центр", "ремонт телефонов", "ремонт техники"] },
+  { value: "Клининг", aliases: ["cleaning", "клининг", "уборка"] },
+  { value: "Медицинская клиника", aliases: ["медицина", "клиника", "медцентр"] },
+  { value: "Ветеринарная клиника", aliases: ["ветеринар", "ветклиника", "животные"] },
+  { value: "Детский сад", aliases: ["садик", "дошкольный", "детский центр"] },
+  { value: "Образовательный центр", aliases: ["education", "курсы", "учебный центр"] },
+  { value: "Интернет-магазин", aliases: ["ecommerce", "онлайн магазин", "магазин"] },
+  { value: "Производство", aliases: ["factory", "завод", "производитель"] },
+  { value: "Оптовая торговля", aliases: ["опт", "торговая компания", "дистрибьютор"] },
+  { value: "Дизайн интерьера", aliases: ["interior", "дизайнер", "интерьер"] },
+  { value: "Архитектурное бюро", aliases: ["архитектор", "архитектура", "проектирование"] },
+  { value: "Бухгалтерские услуги", aliases: ["бухгалтер", "аутсорсинг", "налоги"] },
+  { value: "Рекламное агентство", aliases: ["marketing", "реклама", "агентство"] },
+  { value: "Туристическое агентство", aliases: ["туризм", "турагентство", "путешествия"] },
+  { value: "Фото и видеостудия", aliases: ["фотостудия", "видеостудия", "фото"] },
+  { value: "Барбершоп", aliases: ["barber", "барбер", "мужская парикмахерская"] },
+  { value: "Пекарня", aliases: ["bakery", "выпечка", "кондитерская"] },
+  { value: "Доставка еды", aliases: ["food delivery", "доставка", "еда на заказ"] },
+  { value: "Магазин одежды", aliases: ["fashion", "одежда", "бутик"] },
+  { value: "Мебельный салон", aliases: ["мебель", "кухни", "шкафы"] },
+  { value: "Оконная компания", aliases: ["окна", "пластиковые окна", "остекление"] },
+  { value: "Электромонтаж", aliases: ["электрик", "электрика", "монтаж"] },
+  { value: "Сервис кондиционеров", aliases: ["кондиционер", "вентиляция", "климат"] },
+  { value: "Тату-студия", aliases: ["tattoo", "тату", "пирсинг"] },
 ];
 
 function editDistance(a: string, b: string) {
@@ -73,6 +134,9 @@ function SuggestionInput({ value, onChange, options, placeholder, icon: Icon, di
         editDistance(normalized, query) <= Math.max(1, Math.floor(query.length * 0.34));
     });
   });
+  const normalizedInput = inputValue.trim().toLowerCase();
+  const canUseCustomValue = Boolean(normalizedInput) &&
+    !options.some((option) => option.value.toLowerCase() === normalizedInput);
   const choose = (next: string) => {
     setInputValue(next);
     onChange(next);
@@ -96,20 +160,17 @@ function SuggestionInput({ value, onChange, options, placeholder, icon: Icon, di
         </div>
       </PopoverAnchor>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-1" align="start">
-        {filtered.length ? (
-          <div className="max-h-52 overflow-y-auto">
-            {filtered.map((option) => (
-              <button data-testid={`suggestion-${option.value}`} type="button" key={option.value} onClick={() => choose(option.value)} className="flex w-full items-center justify-between rounded px-3 py-2 text-left text-sm hover:bg-accent">
-                {option.value}
-                {value === option.value && <Check className="h-4 w-4 text-primary" />}
-              </button>
-            ))}
-          </div>
-        ) : (
-          <button data-testid="button-use-search-value" type="button" onClick={() => choose(inputValue.trim())} className="w-full rounded px-3 py-2 text-left text-sm hover:bg-accent">
-             Использовать «{inputValue.trim()}»
-          </button>
-        )}
+        <div className="max-h-52 overflow-y-auto">
+          {canUseCustomValue && <button data-testid="button-use-search-value" type="button" onClick={() => choose(inputValue.trim())} className="flex w-full items-center gap-2 rounded bg-primary/10 px-3 py-2 text-left text-sm font-medium text-primary hover:bg-primary/15">
+            Искать «{inputValue.trim()}»
+          </button>}
+          {filtered.map((option) => (
+            <button data-testid={`suggestion-${option.value}`} type="button" key={option.value} onClick={() => choose(option.value)} className="flex w-full items-center justify-between rounded px-3 py-2 text-left text-sm hover:bg-accent">
+              {option.value}
+              {value === option.value && <Check className="h-4 w-4 text-primary" />}
+            </button>
+          ))}
+        </div>
       </PopoverContent>
     </Popover>
   );
@@ -211,8 +272,8 @@ export function SearchPage() {
         <form onSubmit={handleSearch} className="shrink-0 rounded-xl border border-border/70 bg-card p-4 shadow-sm md:p-5">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-[.7fr_1fr_1fr_auto]">
              <div className="space-y-2"><Label className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">Страна</Label><div className="flex h-11 items-center gap-2 rounded-md border border-border/70 bg-background px-3 text-sm font-semibold"><LockKeyhole className="h-4 w-4 text-muted-foreground" />Россия</div></div>
-             <div className="space-y-2"><Label className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">Город</Label><SuggestionInput value={city} onChange={setCity} options={POPULAR_CITIES} placeholder="например, Красноярск" icon={MapPin} /></div>
-             <div className="space-y-2"><Label className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">Отрасль</Label><SuggestionInput value={industry} onChange={setIndustry} options={POPULAR_INDUSTRIES} placeholder="например, Стоматология" icon={Building2} /></div>
+              <div className="space-y-2"><Label className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">Город</Label><SuggestionInput value={city} onChange={setCity} options={POPULAR_CITIES} placeholder="любой город, например Красноярск" icon={MapPin} /></div>
+              <div className="space-y-2"><Label className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">Отрасль</Label><SuggestionInput value={industry} onChange={setIndustry} options={POPULAR_INDUSTRIES} placeholder="любая отрасль, например Стоматология" icon={Building2} /></div>
              <Button data-testid="button-search-leads" type="submit" disabled={searchMutation.isPending || !city.trim() || !industry.trim()} className="h-11 self-end font-semibold"><SearchIcon className="mr-2 h-4 w-4" />Искать</Button>
           </div>
           <div className="mt-4 flex items-center justify-between gap-3 rounded-md border border-border/60 bg-background/50 px-3 py-2.5">
