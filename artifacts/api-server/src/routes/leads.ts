@@ -1,6 +1,5 @@
 import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
 import { searchTwoGisBusinesses, supportsTwoGisCountry } from "../lib/parser-2gis";
-import { searchGoogleMapsBusinesses } from "../lib/google-maps-leads";
 import { auditAndScoreBusinesses } from "../lib/website-audit";
 import {
   authenticate,
@@ -25,19 +24,6 @@ import {
 const router: IRouter = Router();
 const LEAD_STATUSES: LeadStatus[] = ["new", "claimed", "contacted", "replied", "rejected", "no_reply", "deal"];
 const SEARCH_RESULT_LIMIT = 10;
-const BROAD_SEARCH_POOL_LIMIT = 24;
-
-function pickRandomProspects<T extends { score: number }>(businesses: T[], limit: number): T[] {
-  const pool = [...businesses]
-    .sort((left, right) => right.score - left.score)
-    .slice(0, BROAD_SEARCH_POOL_LIMIT);
-  const selected: T[] = [];
-  while (pool.length > 0 && selected.length < limit) {
-    const index = Math.floor(Math.random() * pool.length);
-    selected.push(pool.splice(index, 1)[0]!);
-  }
-  return selected.sort((left, right) => right.score - left.score);
-}
 
 async function requestUser(req: Request): Promise<AuthUser | null> {
   const id = Number(req.cookies?.lead_scout_user);
@@ -147,9 +133,11 @@ router.post("/leads/search", async (req, res, next) => {
     return res.status(400).json({ error: "Параметры поиска слишком длинные" });
   }
   const country = requestedCountry || "Россия";
-  const useTwoGis = supportsTwoGisCountry(country);
   if (!requestedCountry && !city && !industry) return res.status(400).json({ error: "Укажите город или отрасль" });
-  if (useTwoGis && (!city || !industry)) {
+  if (!supportsTwoGisCountry(country)) {
+    return res.status(400).json({ error: "Поддерживаются только Россия и Казахстан. Поиск выполняется через 2ГИС." });
+  }
+  if (!city || !industry) {
     return res.status(400).json({ error: "Для поиска через 2ГИС укажите город и отрасль" });
   }
 
@@ -161,54 +149,32 @@ router.post("/leads/search", async (req, res, next) => {
     let parsedCount = 0;
     let pagesFetched = 0;
     try {
-      if (!useTwoGis) {
-        const googleBusinesses = await searchGoogleMapsBusinesses({ country, city, industry });
-        const candidates = googleBusinesses.slice(0, BROAD_SEARCH_POOL_LIMIT);
-        businesses = await auditAndScoreBusinesses(candidates);
-        pagesFetched = 1;
+      // Continue through 2GIS pages when older searches have already shown the
+      // companies on the first page, so users receive the next unseen batch.
+      for (let attempt = 0; attempt < 100 && returned.length === 0; attempt += 1) {
+        const parsedBusinesses = await searchTwoGisBusinesses({ country, city, industry });
+        if (parsedBusinesses.length <= parsedCount) break;
+
+        const newBusinesses = parsedBusinesses.slice(parsedCount);
+        const scoredBusinesses = await auditAndScoreBusinesses(newBusinesses);
+        businesses = [...businesses, ...scoredBusinesses];
+        parsedCount = parsedBusinesses.length;
+        pagesFetched += 1;
 
         const found = await Promise.all(
-          businesses.map((business) => upsertSearchedLead(business, country, business.city ?? city)),
+          businesses.map((business) => upsertSearchedLead(business, country, city)),
         );
         available = found.filter((lead) => lead.status === "new" && !lead.assignee);
         previouslyShown = await getPreviouslyShownLeadIds(user.id, available.map((lead) => lead.id));
         const results = showPreviouslyFound
           ? available
           : available.filter((lead) => !previouslyShown.has(lead.id));
-        returned = pickRandomProspects(results, SEARCH_RESULT_LIMIT);
-      } else {
-        // A user may have already seen every company on the first source page
-        // during an older search. Keep walking 2GIS pages until the next
-        // unseen batch is found instead of returning a misleading empty result.
-        for (let attempt = 0; attempt < 100 && returned.length === 0; attempt += 1) {
-          const parsedBusinesses = await searchTwoGisBusinesses({ country, city, industry });
-          if (parsedBusinesses.length <= parsedCount) break;
-
-          const newBusinesses = parsedBusinesses.slice(parsedCount);
-          const scoredBusinesses = await auditAndScoreBusinesses(newBusinesses);
-          businesses = [...businesses, ...scoredBusinesses];
-          parsedCount = parsedBusinesses.length;
-          pagesFetched += 1;
-
-          const found = await Promise.all(
-            businesses.map((business) => upsertSearchedLead(business, country, city)),
-          );
-          available = found.filter((lead) => lead.status === "new" && !lead.assignee);
-          previouslyShown = await getPreviouslyShownLeadIds(user.id, available.map((lead) => lead.id));
-          const results = showPreviouslyFound
-            ? available
-            : available.filter((lead) => !previouslyShown.has(lead.id));
-          returned = results.slice(0, SEARCH_RESULT_LIMIT);
-        }
+        returned = results.slice(0, SEARCH_RESULT_LIMIT);
       }
     } catch (error) {
-      req.log.error({ err: error }, useTwoGis ? "2GIS search failed" : "Google Maps search failed");
+      req.log.error({ err: error }, "2GIS search failed");
       return res.status(502).json({
-        error: useTwoGis
-          ? "Источник 2ГИС временно недоступен."
-          : error instanceof Error
-            ? error.message
-            : "Не удалось собрать подборку компаний из Google Maps.",
+        error: "Источник 2ГИС временно недоступен.",
       });
     }
 
@@ -223,7 +189,7 @@ router.post("/leads/search", async (req, res, next) => {
       previouslyShown: previouslyShown.size,
       returned: returned.length,
       pagesFetched,
-    }, useTwoGis ? "2GIS search completed" : "Google Maps search completed");
+    }, "2GIS search completed");
     return res.json(returned);
   } catch (error) {
     req.log.error({ err: error }, "Public lead search failed");
