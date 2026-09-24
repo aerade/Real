@@ -171,7 +171,7 @@ function SuggestionInput({ value, onChange, options, placeholder, anyLabel, anyT
       </PopoverAnchor>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-1" align="start">
         <div className="max-h-52 overflow-y-auto">
-          {!normalizedInput && anyLabel && anyTestId && <button data-testid={anyTestId} type="button" onClick={() => choose("")} className="flex w-full items-center justify-between rounded bg-primary/10 px-3 py-2 text-left text-sm font-semibold text-primary hover:bg-primary/15">
+          {anyLabel && anyTestId && <button data-testid={anyTestId} type="button" onClick={() => choose("")} className="flex w-full items-center justify-between rounded bg-primary/10 px-3 py-2 text-left text-sm font-semibold text-primary hover:bg-primary/15">
             {anyLabel}
             {!value && <Check className="h-4 w-4" />}
           </button>}
