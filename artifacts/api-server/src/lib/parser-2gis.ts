@@ -85,11 +85,25 @@ const cityAliases: Record<string, string> = {
   тулa: "tula",
   тюмень: "tyumen",
   иркутск: "irkutsk",
+  алматы: "almaty",
+  астана: "astana",
+  "нур-султан": "astana",
+  шимкент: "shymkent",
+  караганда: "karaganda",
+  актобе: "aktobe",
+  атырау: "atyrau",
+  актау: "aktau",
+  павлодар: "pavlodar",
 };
 
-function isRussia(country: string): boolean {
+export function supportsTwoGisCountry(country: string): boolean {
   const value = country.trim().toLowerCase();
-  return value === "ru" || value.includes("рос") || value.includes("russia");
+  return ["ru", "россия", "russia", "kz", "казахстан", "kazakhstan"].includes(value);
+}
+
+function twoGisHost(country: string): string {
+  const value = country.trim().toLowerCase();
+  return ["kz", "казахстан", "kazakhstan"].includes(value) ? "https://2gis.kz" : "https://2gis.ru";
 }
 
 function cityToAlias(city: string): string {
@@ -166,7 +180,7 @@ function parserEnvironment(binaryPath: string | null, cwd: string): NodeJS.Proce
 function searchUrl(input: ParserInput, page = 1): string {
   const alias = cityToAlias(input.city);
   if (!alias) throw new Error("Не удалось определить город 2ГИС");
-  const baseUrl = `https://2gis.ru/${alias}/search/${encodeURIComponent(input.industry.trim())}`;
+  const baseUrl = `${twoGisHost(input.country)}/${alias}/search/${encodeURIComponent(input.industry.trim())}`;
   return page > 1 ? `${baseUrl}/page/${page}` : baseUrl;
 }
 
@@ -443,8 +457,8 @@ async function runParser(url: string, outputPath: string): Promise<void> {
 }
 
 export async function searchTwoGisBusinesses(input: ParserInput): Promise<PublicBusiness[]> {
-  if (!isRussia(input.country) || !input.city.trim() || !input.industry.trim()) return [];
-  const key = [input.city, input.industry].map((value) => value.trim().toLowerCase()).join("|");
+  if (!supportsTwoGisCountry(input.country) || !input.city.trim() || !input.industry.trim()) return [];
+  const key = [input.country, input.city, input.industry].map((value) => value.trim().toLowerCase()).join("|");
   const cached = parserCache.get(key);
   if (cached && cached.expiresAt <= Date.now()) parserCache.delete(key);
   const current = cached && cached.expiresAt > Date.now() ? cached : undefined;

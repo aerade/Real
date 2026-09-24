@@ -59,6 +59,7 @@ const POPULAR_CITIES = [
   { value: "Нижневартовск", aliases: ["nizhnevartovsk", "нижневартовск"] },
 ];
 const CITIES_BY_COUNTRY: Record<string, Array<{ value: string; aliases: string[] }>> = {
+  "Казахстан": ["Алматы", "Астана", "Шымкент", "Караганда", "Актобе", "Атырау", "Актау", "Павлодар"].map((value) => ({ value, aliases: [] })),
   "США": ["New York", "Los Angeles", "Chicago", "Houston", "Miami", "Boston", "Seattle"].map((value) => ({ value, aliases: [] })),
   "Канада": ["Toronto", "Vancouver", "Montreal", "Calgary", "Ottawa", "Edmonton"].map((value) => ({ value, aliases: [] })),
   "Мексика": ["Mexico City", "Guadalajara", "Monterrey", "Puebla", "Tijuana"].map((value) => ({ value, aliases: [] })),
@@ -91,6 +92,7 @@ const CITIES_BY_COUNTRY: Record<string, Array<{ value: string; aliases: string[]
 };
 const SEARCH_COUNTRIES = [
   { value: "Россия", label: "Россия" },
+  { value: "Казахстан", label: "Казахстан" },
   { value: "США", label: "США" },
   { value: "Канада", label: "Канада" },
   { value: "Мексика", label: "Мексика" },
@@ -260,6 +262,17 @@ function safeWebsiteUrl(value?: string | null) {
   }
 }
 
+function searchErrorMessage(error: unknown): string {
+  if (error && typeof error === "object") {
+    const response = (error as { response?: { data?: unknown } }).response;
+    if (response?.data && typeof response.data === "object") {
+      const message = (response.data as { error?: unknown }).error;
+      if (typeof message === "string" && message.trim()) return message;
+    }
+  }
+  return "Не удалось подключиться к источнику. Проверьте настройки и повторите поиск.";
+}
+
 function auditSummary(lead: { websiteAudit?: { status: string; qualityScore: number | null; checks: unknown[] } | null; website?: string | null }) {
   if (!lead.websiteAudit || lead.websiteAudit.status === "not_provided") return { label: "Аудит не проводился", tone: "muted" };
   if (lead.websiteAudit.status === "unavailable") return { label: "Сайт недоступен", tone: "warn" };
@@ -280,6 +293,8 @@ export function SearchPage() {
   const [showPreviouslyFound, setShowPreviouslyFound] = useState(false);
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
   const searchMutation = useSearchLeads();
+  const usesTwoGis = country === "Россия" || country === "Казахстан";
+  const missingTwoGisFilters = usesTwoGis && (!city.trim() || !industry.trim());
 
   useEffect(() => {
     const login = session?.user?.login;
@@ -311,6 +326,7 @@ export function SearchPage() {
   }, [country, city, industry, showPreviouslyFound, preferencesLoaded, session?.user?.login]);
 
   const runSearch = () => {
+    if (missingTwoGisFilters) return;
     setHasSearched(true);
     searchMutation.mutate({ data: { country, city: city.trim(), industry: industry.trim(), showPreviouslyFound } });
   };
@@ -335,7 +351,7 @@ export function SearchPage() {
          <header className="shrink-0 border-b border-border/70 pb-5">
            <p className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-primary"><SearchIcon className="h-3.5 w-3.5" />Поиск лидов</p>
           <div className="flex items-end justify-between gap-4">
-            <div><h1 className="text-2xl font-semibold tracking-tight">Найдите следующий разговор</h1><p className="mt-1 text-sm text-muted-foreground">Выберите город и отрасль или оставьте «Любой» для случайной подборки перспективных клиентов.</p></div>
+            <div><h1 className="text-2xl font-semibold tracking-tight">Найдите следующий разговор</h1><p className="mt-1 text-sm text-muted-foreground">Россия и Казахстан — через 2ГИС (город и отрасль обязательны); другие страны — через Google Maps.</p></div>
              {hasSearched && <div className="hidden text-right sm:block"><p data-testid="text-search-result-count" className="font-mono text-2xl font-semibold">{results.length}</p><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">найдено компаний</p></div>}
           </div>
         </header>
@@ -345,8 +361,9 @@ export function SearchPage() {
              <div className="space-y-2"><Label className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">Страна</Label><Select value={country} onValueChange={(value) => { setCountry(value); setCity(""); }}><SelectTrigger data-testid="select-search-country" className="h-11 border-border/70 bg-background text-sm"><SelectValue /></SelectTrigger><SelectContent className="max-h-72">{SEARCH_COUNTRIES.map((item) => <SelectItem data-testid={`country-${item.value}`} key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectContent></Select></div>
               <div className="space-y-2"><Label className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">Город</Label><SuggestionInput value={city} onChange={setCity} options={CITIES_BY_COUNTRY[country] ?? POPULAR_CITIES} placeholder="Любой город или введите свой" anyLabel="Любой город" anyTestId="button-any-city" icon={MapPin} /></div>
                <div className="space-y-2"><Label className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">Отрасль</Label><SuggestionInput value={industry} onChange={setIndustry} options={POPULAR_INDUSTRIES} placeholder="Любая отрасль или введите свою" anyLabel="Любая отрасль" anyTestId="button-any-industry" icon={Building2} /></div>
-              <Button data-testid="button-search-leads" type="submit" disabled={searchMutation.isPending} className="h-11 self-end font-semibold"><SearchIcon className="mr-2 h-4 w-4" />Искать</Button>
+              <Button data-testid="button-search-leads" type="submit" disabled={searchMutation.isPending || missingTwoGisFilters} className="h-11 self-end font-semibold"><SearchIcon className="mr-2 h-4 w-4" />Искать</Button>
           </div>
+          {missingTwoGisFilters && <p className="mt-3 text-xs text-muted-foreground">Для поиска через 2ГИС укажите город и отрасль.</p>}
           <div className="mt-4 flex items-center justify-between gap-3 rounded-md border border-border/60 bg-background/50 px-3 py-2.5">
              <div className="flex items-center gap-2.5"><History className="h-4 w-4 text-muted-foreground" /><div><p className="text-xs font-semibold">Включать ранее найденные компании</p><p className="text-[11px] text-muted-foreground">История поиска доступна только вам.</p></div></div>
              <Switch data-testid="switch-include-previous" checked={showPreviouslyFound} onCheckedChange={setShowPreviouslyFound} aria-label="Включать ранее найденные компании" />
@@ -357,14 +374,14 @@ export function SearchPage() {
            <section className="flex min-h-[24rem] flex-1 flex-col overflow-hidden rounded-xl border border-border/70 bg-card/45 shadow-sm">
             <div className="shrink-0 border-b border-border/70">
               <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-                  <div className="flex items-center gap-3"><h2 className="flex items-center gap-2 text-sm font-semibold"><Target className="h-4 w-4 text-primary" />Результаты поиска</h2><span data-testid="status-result-count" className="rounded bg-primary/10 px-2 py-1 font-mono text-[11px] font-semibold text-primary">{results.length}</span><span className="hidden items-center gap-1.5 text-[11px] text-muted-foreground sm:flex"><Database className="h-3.5 w-3.5" />До 10 компаний · 2ГИС и открытые каталоги</span></div>
+                  <div className="flex items-center gap-3"><h2 className="flex items-center gap-2 text-sm font-semibold"><Target className="h-4 w-4 text-primary" />Результаты поиска</h2><span data-testid="status-result-count" className="rounded bg-primary/10 px-2 py-1 font-mono text-[11px] font-semibold text-primary">{results.length}</span><span className="hidden items-center gap-1.5 text-[11px] text-muted-foreground sm:flex"><Database className="h-3.5 w-3.5" />До 10 компаний · 2ГИС и Google Maps</span></div>
                  <div className="flex items-center gap-2"><span className="hidden items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:flex"><ArrowUpDown className="h-3.5 w-3.5" />Сортировка</span><Select value={sortBy} onValueChange={setSortBy}><SelectTrigger data-testid="select-sort-results" className="h-8 w-32 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="score">Приоритет</SelectItem><SelectItem value="issues">Сигналы</SelectItem><SelectItem value="name">Название</SelectItem></SelectContent></Select><span className="hidden items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:flex"><Filter className="h-3.5 w-3.5" />Фильтр</span><Select value={minimumScore} onValueChange={setMinimumScore}><SelectTrigger data-testid="select-score-filter" className="h-8 w-28 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Все оценки</SelectItem><SelectItem value="80">Оценка от 80</SelectItem><SelectItem value="60">Оценка от 60</SelectItem></SelectContent></Select></div>
               </div>
                 {!searchMutation.isPending && results.length > 0 && <div className="grid grid-cols-2 border-t border-border/60 sm:grid-cols-5"><div className="px-4 py-2.5"><p data-testid="text-average-score" className="font-mono text-base font-semibold">{summary.average}</p><p className="text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground">средний приоритет</p></div><div className="border-l border-border/60 px-4 py-2.5"><p data-testid="text-website-count" className="font-mono text-base font-semibold">{summary.withWebsite}</p><p className="text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground">с сайтом</p></div><div className="border-l border-border/60 px-4 py-2.5"><p data-testid="text-no-website-count" className="font-mono text-base font-semibold">{summary.withoutWebsite}</p><p className="text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground">без сайта</p></div><div className="border-l border-border/60 px-4 py-2.5"><p data-testid="text-audited-count" className="font-mono text-base font-semibold">{summary.audited}</p><p className="text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground">аудитов завершено</p></div><div className="hidden border-l border-border/60 px-4 py-2.5 sm:block"><p className="font-mono text-base font-semibold">{visibleResults.length}</p><p className="text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground">показано сейчас</p></div></div>}
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto">
                {searchMutation.isPending ? <div className="space-y-3 p-4">{[1, 2, 3, 4].map((row) => <div key={row} className="h-24 animate-pulse rounded-lg bg-muted/50" />)}<p className="text-center text-xs text-muted-foreground">Проверяем подключённый источник…</p></div>
-                 : searchMutation.isError ? <div className="flex min-h-64 flex-col items-center justify-center p-8 text-center"><AlertCircle className="mb-3 h-7 w-7 text-destructive" /><h3 className="text-base font-semibold">Не удалось завершить поиск</h3><p className="mt-2 max-w-sm text-sm text-muted-foreground">Источник не вернул пригодный ответ. Сохраните критерии и попробуйте ещё раз.</p><Button data-testid="button-retry-search" type="button" variant="outline" size="sm" className="mt-5" onClick={runSearch}><RotateCcw className="mr-2 h-3.5 w-3.5" />Повторить</Button></div>
+                 : searchMutation.isError ? <div className="flex min-h-64 flex-col items-center justify-center p-8 text-center"><AlertCircle className="mb-3 h-7 w-7 text-destructive" /><h3 className="text-base font-semibold">Не удалось завершить поиск</h3><p className="mt-2 max-w-sm text-sm text-muted-foreground">{searchErrorMessage(searchMutation.error)}</p><Button data-testid="button-retry-search" type="button" variant="outline" size="sm" className="mt-5" onClick={runSearch}><RotateCcw className="mr-2 h-3.5 w-3.5" />Повторить</Button></div>
                  : results.length === 0 ? <div className="flex min-h-64 flex-col items-center justify-center p-8 text-center"><SearchIcon className="mb-3 h-7 w-7 text-muted-foreground/60" /><h3 className="text-base font-semibold">Компании не найдены</h3><p className="mt-2 max-w-sm text-sm text-muted-foreground">Попробуйте расширить город или соседнюю отрасль. Поиск принимает любой текст, не только подсказки.</p><Button data-testid="button-clear-search" type="button" variant="ghost" size="sm" className="mt-3" onClick={() => { setCity(""); setIndustry(""); }}>Очистить критерии</Button></div>
                  : visibleResults.length === 0 ? <div className="flex min-h-64 flex-col items-center justify-center p-8 text-center"><Filter className="mb-3 h-6 w-6 text-muted-foreground" /><h3 className="text-sm font-semibold">Нет результатов по этому фильтру</h3><p className="mt-1 text-xs text-muted-foreground">Снизьте минимальный приоритет, чтобы увидеть весь ответ.</p></div>
                 : <div className="divide-y divide-border/55">{visibleResults.map((lead) => {

@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
-import { searchTwoGisBusinesses } from "../lib/parser-2gis";
-import { searchPublicBusinesses } from "../lib/osm-leads";
+import { searchTwoGisBusinesses, supportsTwoGisCountry } from "../lib/parser-2gis";
+import { searchGoogleMapsBusinesses } from "../lib/google-maps-leads";
 import { auditAndScoreBusinesses } from "../lib/website-audit";
 import {
   authenticate,
@@ -147,10 +147,11 @@ router.post("/leads/search", async (req, res, next) => {
     return res.status(400).json({ error: "Параметры поиска слишком длинные" });
   }
   const country = requestedCountry || "Россия";
-  const countryKey = country.toLowerCase();
-  const isRussia = ["россия", "russia", "ru"].includes(countryKey);
-  const useTwoGis = isRussia && Boolean(city) && Boolean(industry);
+  const useTwoGis = supportsTwoGisCountry(country);
   if (!requestedCountry && !city && !industry) return res.status(400).json({ error: "Укажите город или отрасль" });
+  if (useTwoGis && (!city || !industry)) {
+    return res.status(400).json({ error: "Для поиска через 2ГИС укажите город и отрасль" });
+  }
 
   try {
     let businesses: Awaited<ReturnType<typeof searchTwoGisBusinesses>> = [];
@@ -161,8 +162,8 @@ router.post("/leads/search", async (req, res, next) => {
     let pagesFetched = 0;
     try {
       if (!useTwoGis) {
-        const broadBusinesses = await searchPublicBusinesses({ country, city, industry });
-        const candidates = broadBusinesses.slice(0, BROAD_SEARCH_POOL_LIMIT);
+        const googleBusinesses = await searchGoogleMapsBusinesses({ country, city, industry });
+        const candidates = googleBusinesses.slice(0, BROAD_SEARCH_POOL_LIMIT);
         businesses = await auditAndScoreBusinesses(candidates);
         pagesFetched = 1;
 
@@ -201,13 +202,13 @@ router.post("/leads/search", async (req, res, next) => {
         }
       }
     } catch (error) {
-      req.log.error({ err: error }, useTwoGis ? "2GIS search failed" : "OpenStreetMap search failed");
+      req.log.error({ err: error }, useTwoGis ? "2GIS search failed" : "Google Maps search failed");
       return res.status(502).json({
         error: useTwoGis
-          ? "Источник 2ГИС временно недоступен. Результаты из OpenStreetMap отключены."
+          ? "Источник 2ГИС временно недоступен."
           : error instanceof Error
             ? error.message
-            : "Не удалось собрать подборку компаний из OpenStreetMap.",
+            : "Не удалось собрать подборку компаний из Google Maps.",
       });
     }
 
@@ -222,7 +223,7 @@ router.post("/leads/search", async (req, res, next) => {
       previouslyShown: previouslyShown.size,
       returned: returned.length,
       pagesFetched,
-    }, useTwoGis ? "2GIS search completed" : "OpenStreetMap search completed");
+    }, useTwoGis ? "2GIS search completed" : "Google Maps search completed");
     return res.json(returned);
   } catch (error) {
     req.log.error({ err: error }, "Public lead search failed");
