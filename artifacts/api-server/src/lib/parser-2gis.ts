@@ -9,6 +9,7 @@ type ParserInput = {
   country: string;
   city: string;
   industry: string;
+  maxRecords?: number;
 };
 
 type TwoGisContact = {
@@ -86,12 +87,34 @@ const cityAliases: Record<string, string> = {
   волгоград: "volgograd",
   воронеж: "voronezh",
   тулa: "tula",
+  саратов: "saratov",
   тюмень: "tyumen",
+  тольятти: "tolyatti",
+  ижевск: "izhevsk",
+  барнаул: "barnaul",
   иркутск: "irkutsk",
+  хабаровск: "khabarovsk",
+  ярославль: "yaroslavl",
+  владивосток: "vladivostok",
+  томск: "tomsk",
+  оренбург: "orenburg",
+  кемерово: "kemerovo",
+  рязань: "ryazan",
+  астрахань: "astrakhan",
+  пенза: "penza",
+  калининград: "kaliningrad",
+  сочи: "sochi",
+  ставрополь: "stavropol",
+  белгород: "belgorod",
+  владимир: "vladimir",
+  архангельск: "arkhangelsk",
+  мурманск: "murmansk",
+  сургут: "surgut",
+  нижневартовск: "nizhnevartovsk",
   алматы: "almaty",
   астана: "astana",
   "нур-султан": "astana",
-  шимкент: "shymkent",
+  шымкент: "shymkent",
   караганда: "karaganda",
   актобе: "aktobe",
   атырау: "atyrau",
@@ -183,7 +206,8 @@ function parserEnvironment(binaryPath: string | null, cwd: string): NodeJS.Proce
 function searchUrl(input: ParserInput, page = 1): string {
   const alias = cityToAlias(input.city);
   if (!alias) throw new Error("Не удалось определить город 2ГИС");
-  const baseUrl = `${twoGisHost(input.country)}/${alias}/search/${encodeURIComponent(input.industry.trim())}`;
+  const searchTerm = input.industry.trim() || "организации";
+  const baseUrl = `${twoGisHost(input.country)}/${alias}/search/${encodeURIComponent(searchTerm)}`;
   return page > 1 ? `${baseUrl}/page/${page}` : baseUrl;
 }
 
@@ -406,7 +430,7 @@ async function findParserCommand(): Promise<string> {
   return "uv";
 }
 
-async function runParser(url: string, outputPath: string): Promise<void> {
+async function runParser(url: string, outputPath: string, maxRecords: number): Promise<void> {
   const binaryPath = await findChromeBinary();
   const parserCommand = await findParserCommand();
   const cwd = findProjectRoot();
@@ -420,7 +444,7 @@ async function runParser(url: string, outputPath: string): Promise<void> {
     "-i", url,
     "-o", outputPath,
     "-f", "json",
-    "--parser.max-records", "25",
+    "--parser.max-records", String(maxRecords),
     "--chrome.headless", "yes",
     "--chrome.silent-browser", "yes",
   ];
@@ -473,8 +497,11 @@ async function runParser(url: string, outputPath: string): Promise<void> {
 }
 
 export async function searchTwoGisBusinesses(input: ParserInput): Promise<PublicBusiness[]> {
-  if (!supportsTwoGisCountry(input.country) || !input.city.trim() || !input.industry.trim()) return [];
-  const key = [input.country, input.city, input.industry].map((value) => value.trim().toLowerCase()).join("|");
+  if (!supportsTwoGisCountry(input.country) || !input.city.trim()) return [];
+  const maxRecords = Math.min(25, Math.max(1, Math.floor(input.maxRecords ?? 25)));
+  const key = [input.country, input.city, input.industry, String(maxRecords)]
+    .map((value) => value.trim().toLowerCase())
+    .join("|");
   const cached = parserCache.get(key);
   if (cached && cached.expiresAt <= Date.now()) parserCache.delete(key);
   const current = cached && cached.expiresAt > Date.now() ? cached : undefined;
@@ -488,7 +515,7 @@ export async function searchTwoGisBusinesses(input: ParserInput): Promise<Public
     const outputPath = path.join(tempDir, "result.json");
     const page = current?.nextPage ?? 1;
     try {
-      await runParser(searchUrl(input, page), outputPath);
+      await runParser(searchUrl(input, page), outputPath, maxRecords);
       await access(outputPath);
       const raw = await readFile(outputPath, "utf8");
       const parsed = JSON.parse(raw.replace(/^\uFEFF/, "").trim()) as

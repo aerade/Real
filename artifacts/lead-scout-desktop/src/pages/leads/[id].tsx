@@ -161,6 +161,7 @@ export function LeadDetailsPage() {
                <Button data-testid="button-copy-lead-address" type="button" variant="ghost" size="icon" className="h-7 w-7" aria-label={`Скопировать: ${addressLabel.toLowerCase()}`} title={`Скопировать: ${addressLabel.toLowerCase()}`} disabled={!addressToCopy} onClick={() => void copyLeadValue(addressToCopy, addressCopiedMessage)}><Copy className="h-3.5 w-3.5" /></Button>
                <span className="flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" />{lead.industry}</span>
                {website && <a data-testid="link-lead-website" href={website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-primary hover:underline"><Globe2 className="h-3.5 w-3.5" />{websiteHost(lead.website)}<ExternalLink className="h-3 w-3" /></a>}
+               {lead.sourceUrl && <Button data-testid="button-open-lead-2gis" asChild type="button" variant="outline" size="sm" className="h-7 gap-1.5 px-2 text-[10px]"><a href={lead.sourceUrl} target="_blank" rel="noopener noreferrer">Открыть в 2ГИС<ExternalLink className="h-3 w-3" /></a></Button>}
              </div>
           </div>
           <div className="w-full max-w-md rounded-2xl border border-border/70 bg-card p-4 shadow-sm">

@@ -38,6 +38,11 @@ export interface Lead {
   branchesCount: number;
   contacts: Contact[];
   source: string;
+  /**
+     * Direct company profile URL at the source
+     * @nullable
+     */
+  sourceUrl: string | null;
   websiteAudit?: WebsiteAudit | null;
   scoreBreakdown: ScoreFactor[];
   scoreVersion: string;

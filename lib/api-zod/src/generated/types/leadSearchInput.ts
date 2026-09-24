@@ -8,7 +8,9 @@
 
 export interface LeadSearchInput {
   country: string;
+  /** Empty means search across the supported 2GIS cities in the selected country. */
   city: string;
+  /** Empty means use a broad organization search rather than a selected industry. */
   industry: string;
   /** Include companies already shown to this user in earlier searches. */
   showPreviouslyFound?: boolean;

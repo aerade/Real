@@ -40,6 +40,7 @@ export type LeadOutput = {
   branchesCount: number;
   contacts: StoredContact[];
   source: string;
+  sourceUrl: string | null;
   websiteAudit: WebsiteAudit | null;
   scoreBreakdown: ScoreFactor[];
   scoreVersion: string;
@@ -52,6 +53,15 @@ type JoinedLead = {
   leads: LeadRow;
   users: UserRow | null;
 };
+
+function twoGisCompanyUrl(sourceId: string, country: string): string | null {
+  const match = /^2gis:(\d+)$/.exec(sourceId);
+  if (!match) return null;
+  const host = ["kz", "казахстан", "kazakhstan"].includes(country.trim().toLowerCase())
+    ? "https://2gis.kz"
+    : "https://2gis.ru";
+  return `${host}/firm/${match[1]}`;
+}
 
 const DEFAULT_COUNTRIES = [
   { code: "RU", name: "Россия", enabled: true },
@@ -208,6 +218,7 @@ function toLead(row: JoinedLead): LeadOutput {
     branchesCount: lead.branchesCount,
     contacts: lead.contacts,
     source: lead.source,
+    sourceUrl: twoGisCompanyUrl(lead.sourceId, lead.country),
     websiteAudit: lead.websiteAudit as WebsiteAudit | null,
     scoreBreakdown: (lead.scoreBreakdown ?? []) as ScoreFactor[],
     scoreVersion: lead.scoreVersion,

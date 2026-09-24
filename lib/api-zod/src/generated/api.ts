@@ -97,6 +97,7 @@ export const ListLeadsResponseItem = zod.object({
   "url": zod.string()
 })),
   "source": zod.string(),
+  "sourceUrl": zod.string().nullable().describe('Direct company profile URL at the source'),
   "websiteAudit": zod.union([zod.object({
   "status": zod.enum(['checked', 'unavailable', 'not_provided']),
   "url": zod.string().nullable(),
@@ -143,8 +144,8 @@ export const searchLeadsBodyShowPreviouslyFoundDefault = false;
 
 export const SearchLeadsBody = zod.object({
   "country": zod.string(),
-  "city": zod.string(),
-  "industry": zod.string(),
+  "city": zod.string().describe('Empty means search across the supported 2GIS cities in the selected country.'),
+  "industry": zod.string().describe('Empty means use a broad organization search rather than a selected industry.'),
   "showPreviouslyFound": zod.boolean().default(searchLeadsBodyShowPreviouslyFoundDefault).describe('Include companies already shown to this user in earlier searches.')
 })
 
@@ -178,6 +179,7 @@ export const SearchLeadsResponseItem = zod.object({
   "url": zod.string()
 })),
   "source": zod.string(),
+  "sourceUrl": zod.string().nullable().describe('Direct company profile URL at the source'),
   "websiteAudit": zod.union([zod.object({
   "status": zod.enum(['checked', 'unavailable', 'not_provided']),
   "url": zod.string().nullable(),
@@ -255,6 +257,7 @@ export const ListLeadArchiveResponseItem = zod.object({
   "url": zod.string()
 })),
   "source": zod.string(),
+  "sourceUrl": zod.string().nullable().describe('Direct company profile URL at the source'),
   "websiteAudit": zod.union([zod.object({
   "status": zod.enum(['checked', 'unavailable', 'not_provided']),
   "url": zod.string().nullable(),
@@ -331,6 +334,7 @@ export const GetLeadResponse = zod.object({
   "url": zod.string()
 })),
   "source": zod.string(),
+  "sourceUrl": zod.string().nullable().describe('Direct company profile URL at the source'),
   "websiteAudit": zod.union([zod.object({
   "status": zod.enum(['checked', 'unavailable', 'not_provided']),
   "url": zod.string().nullable(),
@@ -411,6 +415,7 @@ export const UpdateLeadResponse = zod.object({
   "url": zod.string()
 })),
   "source": zod.string(),
+  "sourceUrl": zod.string().nullable().describe('Direct company profile URL at the source'),
   "websiteAudit": zod.union([zod.object({
   "status": zod.enum(['checked', 'unavailable', 'not_provided']),
   "url": zod.string().nullable(),
@@ -486,6 +491,7 @@ export const AuditLeadResponse = zod.object({
   "url": zod.string()
 })),
   "source": zod.string(),
+  "sourceUrl": zod.string().nullable().describe('Direct company profile URL at the source'),
   "websiteAudit": zod.union([zod.object({
   "status": zod.enum(['checked', 'unavailable', 'not_provided']),
   "url": zod.string().nullable(),
@@ -561,6 +567,7 @@ export const ClaimLeadResponse = zod.object({
   "url": zod.string()
 })),
   "source": zod.string(),
+  "sourceUrl": zod.string().nullable().describe('Direct company profile URL at the source'),
   "websiteAudit": zod.union([zod.object({
   "status": zod.enum(['checked', 'unavailable', 'not_provided']),
   "url": zod.string().nullable(),

@@ -294,7 +294,7 @@ components:
         url: { type: string }
     Lead:
       type: object
-      required: [id, name, country, city, address, industry, websiteStatus, status, score, scoreReasons, issues, reviewsCount, branchesCount, contacts, source, scoreBreakdown, scoreVersion, updatedAt]
+      required: [id, name, country, city, address, industry, websiteStatus, status, score, scoreReasons, issues, reviewsCount, branchesCount, contacts, source, sourceUrl, scoreBreakdown, scoreVersion, updatedAt]
       properties:
         id: { type: integer }
         name: { type: string }
@@ -325,6 +325,7 @@ components:
           items:
             $ref: "#/components/schemas/Contact"
         source: { type: string }
+        sourceUrl: { type: ["string", "null"], description: Direct company profile URL at the source, when available. }
         websiteAudit:
           anyOf:
             - $ref: "#/components/schemas/WebsiteAudit"
@@ -383,8 +384,12 @@ components:
       required: [country, city, industry]
       properties:
         country: { type: string }
-        city: { type: string }
-        industry: { type: string }
+        city:
+          type: string
+          description: Empty means search across the supported 2GIS cities in the selected country.
+        industry:
+          type: string
+          description: Empty means use a broad organization search rather than a selected industry.
         showPreviouslyFound:
           type: boolean
           default: false

@@ -214,6 +214,19 @@ function safeWebsiteUrl(value?: string | null) {
   }
 }
 
+function leadHasContact(
+  lead: { contacts?: Array<{ type: string; value: string; url: string }> },
+  kind: "telegram" | "phone" | "email" | "any",
+): boolean {
+  return (lead.contacts ?? []).some((contact) => {
+    const value = `${contact.type} ${contact.value} ${contact.url}`.toLowerCase();
+    if (kind === "telegram") return /(telegram|t\.me|телеграм)/i.test(value);
+    if (kind === "phone") return /(phone|tel:|телефон|мобильн)/i.test(value);
+    if (kind === "email") return /(email|e-mail|mailto:|почт)/i.test(value);
+    return Boolean(contact.type || contact.value || contact.url);
+  });
+}
+
 function searchErrorMessage(error: unknown): string {
   if (error && typeof error === "object") {
     const response = (error as { response?: { data?: unknown } }).response;
@@ -248,8 +261,7 @@ export function SearchPage() {
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
   const searchMutation = useSearchLeads();
   const usesTwoGis = country === "Россия" || country === "Казахстан";
-  const searchFiltersIncomplete = cityAnySelected || industryAnySelected ||
-    (usesTwoGis && (!city.trim() || !industry.trim()));
+  const searchFiltersIncomplete = !usesTwoGis;
 
   useEffect(() => {
     const login = session?.user?.login;
@@ -293,9 +305,22 @@ export function SearchPage() {
   const results = searchMutation.data ?? [];
   const visibleResults = useMemo(() => {
     const threshold = minimumScore === "all" ? 0 : Number(minimumScore);
-    return [...results].filter((lead) => lead.score >= threshold).sort((a, b) =>
-      sortBy === "name" ? a.name.localeCompare(b.name, "ru") :
-        sortBy === "issues" ? b.issues.length - a.issues.length : b.score - a.score);
+    return [...results].filter((lead) => lead.score >= threshold).sort((a, b) => {
+      const comparePresence = (predicate: (lead: typeof a) => boolean) =>
+        Number(predicate(b)) - Number(predicate(a));
+      const comparison = sortBy === "name" ? a.name.localeCompare(b.name, "ru") :
+        sortBy === "issues" ? b.issues.length - a.issues.length :
+          sortBy === "website" ? comparePresence((lead) => lead.websiteStatus === "present") :
+            sortBy === "no-website" ? comparePresence((lead) => lead.websiteStatus === "missing") :
+              sortBy === "telegram" ? comparePresence((lead) => leadHasContact(lead, "telegram")) :
+                sortBy === "phone" ? comparePresence((lead) => leadHasContact(lead, "phone")) :
+                  sortBy === "email" ? comparePresence((lead) => leadHasContact(lead, "email")) :
+                    sortBy === "contacts" ? b.contacts.length - a.contacts.length :
+                      sortBy === "rating" ? (b.rating ?? -1) - (a.rating ?? -1) :
+                        b.score - a.score;
+      if (comparison !== 0) return comparison;
+      return b.score - a.score || a.name.localeCompare(b.name, "ru");
+    });
   }, [results, sortBy, minimumScore]);
   const summary = useMemo(() => ({
     average: results.length ? Math.round(results.reduce((sum, lead) => sum + lead.score, 0) / results.length) : 0,
@@ -310,7 +335,7 @@ export function SearchPage() {
          <header className="shrink-0 border-b border-border/70 pb-5">
            <p className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-primary"><SearchIcon className="h-3.5 w-3.5" />Поиск лидов</p>
           <div className="flex items-end justify-between gap-4">
-            <div><h1 className="text-2xl font-semibold tracking-tight">Найдите следующий разговор</h1><p className="mt-1 text-sm text-muted-foreground">Поиск через 2ГИС доступен для России и Казахстана. Укажите город и отрасль.</p></div>
+            <div><h1 className="text-2xl font-semibold tracking-tight">Найдите следующий разговор</h1><p className="mt-1 text-sm text-muted-foreground">2ГИС ищет по России и Казахстану. «Любой» город и «Любая» отрасль снимают соответствующий фильтр.</p></div>
              {hasSearched && <div className="hidden text-right sm:block"><p data-testid="text-search-result-count" className="font-mono text-2xl font-semibold">{results.length}</p><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">найдено компаний</p></div>}
           </div>
         </header>
@@ -332,8 +357,8 @@ export function SearchPage() {
            <section className="flex min-h-[24rem] flex-1 flex-col overflow-hidden rounded-xl border border-border/70 bg-card/45 shadow-sm">
             <div className="shrink-0 border-b border-border/70">
               <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-                  <div className="flex items-center gap-3"><h2 className="flex items-center gap-2 text-sm font-semibold"><Target className="h-4 w-4 text-primary" />Результаты поиска</h2><span data-testid="status-result-count" className="rounded bg-primary/10 px-2 py-1 font-mono text-[11px] font-semibold text-primary">{results.length}</span><span className="hidden items-center gap-1.5 text-[11px] text-muted-foreground sm:flex"><Database className="h-3.5 w-3.5" />До 10 компаний · 2ГИС</span></div>
-                 <div className="flex items-center gap-2"><span className="hidden items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:flex"><ArrowUpDown className="h-3.5 w-3.5" />Сортировка</span><Select value={sortBy} onValueChange={setSortBy}><SelectTrigger data-testid="select-sort-results" className="h-8 w-32 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="score">Приоритет</SelectItem><SelectItem value="issues">Сигналы</SelectItem><SelectItem value="name">Название</SelectItem></SelectContent></Select><span className="hidden items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:flex"><Filter className="h-3.5 w-3.5" />Фильтр</span><Select value={minimumScore} onValueChange={setMinimumScore}><SelectTrigger data-testid="select-score-filter" className="h-8 w-28 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Все оценки</SelectItem><SelectItem value="80">Оценка от 80</SelectItem><SelectItem value="60">Оценка от 60</SelectItem></SelectContent></Select></div>
+                   <div className="flex items-center gap-3"><h2 className="flex items-center gap-2 text-sm font-semibold"><Target className="h-4 w-4 text-primary" />Результаты поиска</h2><span data-testid="status-result-count" className="rounded bg-primary/10 px-2 py-1 font-mono text-[11px] font-semibold text-primary">{results.length}</span><span className="hidden items-center gap-1.5 text-[11px] text-muted-foreground sm:flex"><Database className="h-3.5 w-3.5" />До 15 компаний · 2ГИС</span></div>
+                  <div className="flex items-center gap-2"><span className="hidden items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:flex"><ArrowUpDown className="h-3.5 w-3.5" />Сортировка</span><Select value={sortBy} onValueChange={setSortBy}><SelectTrigger data-testid="select-sort-results" className="h-8 w-40 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="score">Приоритет</SelectItem><SelectItem value="website">Сначала с сайтом</SelectItem><SelectItem value="no-website">Сначала без сайта</SelectItem><SelectItem value="telegram">Есть Telegram</SelectItem><SelectItem value="phone">Есть телефон</SelectItem><SelectItem value="email">Есть email</SelectItem><SelectItem value="contacts">Больше контактов</SelectItem><SelectItem value="rating">Рейтинг 2ГИС</SelectItem><SelectItem value="issues">Сигналы</SelectItem><SelectItem value="name">Название</SelectItem></SelectContent></Select><span className="hidden items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:flex"><Filter className="h-3.5 w-3.5" />Фильтр</span><Select value={minimumScore} onValueChange={setMinimumScore}><SelectTrigger data-testid="select-score-filter" className="h-8 w-28 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Все оценки</SelectItem><SelectItem value="80">Оценка от 80</SelectItem><SelectItem value="60">Оценка от 60</SelectItem></SelectContent></Select></div>
               </div>
                 {!searchMutation.isPending && results.length > 0 && <div className="grid grid-cols-2 border-t border-border/60 sm:grid-cols-5"><div className="px-4 py-2.5"><p data-testid="text-average-score" className="font-mono text-base font-semibold">{summary.average}</p><p className="text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground">средний приоритет</p></div><div className="border-l border-border/60 px-4 py-2.5"><p data-testid="text-website-count" className="font-mono text-base font-semibold">{summary.withWebsite}</p><p className="text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground">с сайтом</p></div><div className="border-l border-border/60 px-4 py-2.5"><p data-testid="text-no-website-count" className="font-mono text-base font-semibold">{summary.withoutWebsite}</p><p className="text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground">без сайта</p></div><div className="border-l border-border/60 px-4 py-2.5"><p data-testid="text-audited-count" className="font-mono text-base font-semibold">{summary.audited}</p><p className="text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground">аудитов завершено</p></div><div className="hidden border-l border-border/60 px-4 py-2.5 sm:block"><p className="font-mono text-base font-semibold">{visibleResults.length}</p><p className="text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground">показано сейчас</p></div></div>}
             </div>
