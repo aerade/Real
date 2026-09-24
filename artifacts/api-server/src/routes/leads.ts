@@ -143,11 +143,13 @@ router.post("/leads/search", async (req, res, next) => {
   const city = String(req.body?.city ?? "").trim();
   const industry = String(req.body?.industry ?? "").trim();
   const showPreviouslyFound = req.body?.showPreviouslyFound === true;
-  const countryKey = requestedCountry.toLowerCase();
-  if (countryKey && !["россия", "russia", "ru"].includes(countryKey)) {
-    return res.status(400).json({ error: "Пока доступен поиск только по России" });
+  if (requestedCountry.length > 100 || city.length > 160 || industry.length > 160) {
+    return res.status(400).json({ error: "Параметры поиска слишком длинные" });
   }
-  const country = "Россия";
+  const country = requestedCountry || "Россия";
+  const countryKey = country.toLowerCase();
+  const isRussia = ["россия", "russia", "ru"].includes(countryKey);
+  const useTwoGis = isRussia && Boolean(city) && Boolean(industry);
   if (!requestedCountry && !city && !industry) return res.status(400).json({ error: "Укажите город или отрасль" });
 
   try {
@@ -158,7 +160,7 @@ router.post("/leads/search", async (req, res, next) => {
     let parsedCount = 0;
     let pagesFetched = 0;
     try {
-      if (!city || !industry) {
+      if (!useTwoGis) {
         const broadBusinesses = await searchPublicBusinesses({ country, city, industry });
         const candidates = broadBusinesses.slice(0, BROAD_SEARCH_POOL_LIMIT);
         businesses = await auditAndScoreBusinesses(candidates);
@@ -199,11 +201,13 @@ router.post("/leads/search", async (req, res, next) => {
         }
       }
     } catch (error) {
-      req.log.error({ err: error }, city && industry ? "2GIS search failed" : "Broad lead search failed");
+      req.log.error({ err: error }, useTwoGis ? "2GIS search failed" : "OpenStreetMap search failed");
       return res.status(502).json({
-        error: city && industry
+        error: useTwoGis
           ? "Источник 2ГИС временно недоступен. Результаты из OpenStreetMap отключены."
-          : "Не удалось собрать широкую подборку компаний из открытых каталогов.",
+          : error instanceof Error
+            ? error.message
+            : "Не удалось собрать подборку компаний из OpenStreetMap.",
       });
     }
 
@@ -218,7 +222,7 @@ router.post("/leads/search", async (req, res, next) => {
       previouslyShown: previouslyShown.size,
       returned: returned.length,
       pagesFetched,
-    }, "2GIS search completed");
+    }, useTwoGis ? "2GIS search completed" : "OpenStreetMap search completed");
     return res.json(returned);
   } catch (error) {
     req.log.error({ err: error }, "Public lead search failed");

@@ -75,8 +75,77 @@ const categoryAliases: Record<string, string[]> = {
   бухгалтер: ["accountant"],
   маркетинг: ["advertising_agency"],
   ремонт: ["craft", "electronics_repair"],
+  "кафе и кофейня": ["cafe"],
+  автомойка: ["car_wash"],
+  автозапчасти: ["car_parts"],
+  "грузоперевозки": ["logistics"],
+  логистика: ["logistics"],
+  клининг: ["cleaning"],
+  "медицинская клиника": ["clinic", "doctors"],
+  "ветеринарная клиника": ["veterinary"],
+  "детский сад": ["kindergarten", "childcare"],
+  "образовательный центр": ["language_school", "training"],
+  "интернет-магазин": ["e-commerce"],
+  "оптовая торговля": ["wholesale"],
+  "дизайн интерьера": ["interior_design"],
+  "архитектурное бюро": ["architect"],
+  "бухгалтерские услуги": ["accountant"],
+  "рекламное агентство": ["advertising_agency"],
+  "туристическое агентство": ["travel_agency"],
+  "фото и видеостудия": ["photographer"],
+  барбершоп: ["barber"],
+  пекарня: ["bakery"],
+  "доставка еды": ["food_delivery"],
+  "магазин одежды": ["clothes"],
+  "мебельный салон": ["furniture"],
+  "оконная компания": ["windows"],
+  электромонтаж: ["electrician"],
+  "сервис кондиционеров": ["hvac"],
+  "тату-студия": ["tattoo"],
 };
 const searchCache = new Map<string, { expiresAt: number; results: PublicBusiness[] }>();
+
+const countrySearchConfigs = [
+  { names: ["россия", "russia", "ru"], searchName: "Russia", cities: ["Москва", "Санкт-Петербург", "Новосибирск", "Екатеринбург", "Казань"] },
+  { names: ["сша", "united states", "usa", "us"], searchName: "United States", cities: ["New York", "Los Angeles", "Chicago", "Houston", "Miami"] },
+  { names: ["канада", "canada", "ca"], searchName: "Canada", cities: ["Toronto", "Vancouver", "Montreal", "Calgary", "Ottawa"] },
+  { names: ["мексика", "mexico", "mx"], searchName: "Mexico", cities: ["Mexico City", "Guadalajara", "Monterrey", "Puebla", "Tijuana"] },
+  { names: ["бразилия", "brazil", "br"], searchName: "Brazil", cities: ["São Paulo", "Rio de Janeiro", "Brasília", "Salvador", "Curitiba"] },
+  { names: ["аргентина", "argentina", "ar"], searchName: "Argentina", cities: ["Buenos Aires", "Córdoba", "Rosario", "Mendoza", "La Plata"] },
+  { names: ["чили", "chile", "cl"], searchName: "Chile", cities: ["Santiago", "Valparaíso", "Concepción", "Viña del Mar", "Antofagasta"] },
+  { names: ["колумбия", "colombia", "co"], searchName: "Colombia", cities: ["Bogotá", "Medellín", "Cali", "Barranquilla", "Cartagena"] },
+  { names: ["перу", "peru", "pe"], searchName: "Peru", cities: ["Lima", "Arequipa", "Cusco", "Trujillo", "Chiclayo"] },
+  { names: ["великобритания", "united kingdom", "uk", "great britain"], searchName: "United Kingdom", cities: ["London", "Manchester", "Birmingham", "Edinburgh", "Bristol"] },
+  { names: ["германия", "germany", "de"], searchName: "Germany", cities: ["Berlin", "Munich", "Hamburg", "Cologne", "Frankfurt"] },
+  { names: ["франция", "france", "fr"], searchName: "France", cities: ["Paris", "Lyon", "Marseille", "Toulouse", "Nice"] },
+  { names: ["испания", "spain", "es"], searchName: "Spain", cities: ["Madrid", "Barcelona", "Valencia", "Seville", "Málaga"] },
+  { names: ["италия", "italy", "it"], searchName: "Italy", cities: ["Rome", "Milan", "Naples", "Turin", "Florence"] },
+  { names: ["нидерланды", "netherlands", "holland", "nl"], searchName: "Netherlands", cities: ["Amsterdam", "Rotterdam", "The Hague", "Utrecht", "Eindhoven"] },
+  { names: ["бельгия", "belgium", "be"], searchName: "Belgium", cities: ["Brussels", "Antwerp", "Ghent", "Liège", "Bruges"] },
+  { names: ["швейцария", "switzerland", "ch"], searchName: "Switzerland", cities: ["Zurich", "Geneva", "Basel", "Bern", "Lausanne"] },
+  { names: ["австрия", "austria", "at"], searchName: "Austria", cities: ["Vienna", "Graz", "Linz", "Salzburg", "Innsbruck"] },
+  { names: ["португалия", "portugal", "pt"], searchName: "Portugal", cities: ["Lisbon", "Porto", "Braga", "Coimbra", "Faro"] },
+  { names: ["швеция", "sweden", "se"], searchName: "Sweden", cities: ["Stockholm", "Gothenburg", "Malmö", "Uppsala", "Västerås"] },
+  { names: ["норвегия", "norway", "no"], searchName: "Norway", cities: ["Oslo", "Bergen", "Trondheim", "Stavanger", "Tromsø"] },
+  { names: ["дания", "denmark", "dk"], searchName: "Denmark", cities: ["Copenhagen", "Aarhus", "Odense", "Aalborg", "Esbjerg"] },
+  { names: ["финляндия", "finland", "fi"], searchName: "Finland", cities: ["Helsinki", "Tampere", "Turku", "Oulu", "Espoo"] },
+  { names: ["польша", "poland", "pl"], searchName: "Poland", cities: ["Warsaw", "Kraków", "Wrocław", "Gdańsk", "Poznań"] },
+  { names: ["чехия", "czechia", "czech republic", "cz"], searchName: "Czechia", cities: ["Prague", "Brno", "Ostrava", "Plzeň", "Liberec"] },
+  { names: ["ирландия", "ireland", "ie"], searchName: "Ireland", cities: ["Dublin", "Cork", "Galway", "Limerick", "Waterford"] },
+  { names: ["греция", "greece", "gr"], searchName: "Greece", cities: ["Athens", "Thessaloniki", "Patras", "Heraklion", "Larissa"] },
+  { names: ["румыния", "romania", "ro"], searchName: "Romania", cities: ["Bucharest", "Cluj-Napoca", "Timișoara", "Iași", "Constanța"] },
+  { names: ["венгрия", "hungary", "hu"], searchName: "Hungary", cities: ["Budapest", "Debrecen", "Szeged", "Pécs", "Győr"] },
+  { names: ["украина", "ukraine", "ua"], searchName: "Ukraine", cities: ["Kyiv", "Lviv", "Odesa", "Dnipro", "Kharkiv"] },
+];
+
+function countryConfig(country: string) {
+  const normalized = country.trim().toLowerCase();
+  return countrySearchConfigs.find((item) => item.names.includes(normalized));
+}
+
+function countryNameForSearch(country: string) {
+  return countryConfig(country)?.searchName ?? country;
+}
 
 function escapeOverpass(value: string): string {
   return value.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
@@ -122,7 +191,7 @@ async function searchNominatimBusinesses(input: {
   if (!input.city || !input.industry) return [];
   const alias = Object.entries(categoryAliases)
     .find(([name]) => input.industry.toLowerCase().includes(name))?.[1][0] ?? input.industry;
-  const query = `${alias} in ${input.city}${input.country && input.country !== "any" ? `, ${input.country}` : ""}`;
+  const query = `${alias} in ${input.city}${input.country && input.country !== "any" ? `, ${countryNameForSearch(input.country)}` : ""}`;
   const url = new URL(NOMINATIM_URL);
   url.searchParams.set("q", query);
   url.searchParams.set("format", "jsonv2");
@@ -188,31 +257,16 @@ function buildQuery(lat: number, lon: number, industry: string): string {
   return `[out:json][timeout:25];(${selectors.join("")});out center tags 80;`;
 }
 
-async function searchPublicBusinessesUncached(input: {
+async function searchCityBusinesses(input: {
   country: string;
   city: string;
   industry: string;
 }): Promise<PublicBusiness[]> {
-  if (!input.city && input.country.toLowerCase().includes("рос")) {
-    const popularCities = ["Москва", "Санкт-Петербург", "Новосибирск", "Екатеринбург", "Казань"];
-    const broadIndustries = ["СТО", "Стоматология", "Ресторан", "Салон красоты", "Недвижимость"];
-    const countryResults: PublicBusiness[] = [];
-    for (const [index, city] of popularCities.entries()) {
-      const cityResults = await searchNominatimBusinesses({
-        ...input,
-        city,
-        industry: input.industry || broadIndustries[index]!,
-      });
-      countryResults.push(...cityResults.slice(0, 5));
-      if (city !== popularCities.at(-1)) await new Promise((resolve) => setTimeout(resolve, 1_050));
-    }
-    if (countryResults.length > 0) return countryResults.slice(0, 40);
-  }
-
-  const directResults = await searchNominatimBusinesses(input);
+  const directResults = input.industry ? await searchNominatimBusinesses(input) : [];
   if (directResults.length >= 5) return directResults.slice(0, 5);
 
-  const location = [input.city, input.country === "any" ? "" : input.country].filter(Boolean).join(", ");
+  if (input.industry) await new Promise((resolve) => setTimeout(resolve, 1_050));
+  const location = [input.city, input.country === "any" ? "" : countryNameForSearch(input.country)].filter(Boolean).join(", ");
   if (!location) throw new Error("Для реального поиска укажите город или страну");
 
   const geocodeUrl = new URL(NOMINATIM_URL);
@@ -299,6 +353,34 @@ async function searchPublicBusinessesUncached(input: {
     merged.set(business.sourceId, business);
   }
   return [...merged.values()].sort((a, b) => b.score - a.score).slice(0, 40);
+}
+
+async function searchPublicBusinessesUncached(input: {
+  country: string;
+  city: string;
+  industry: string;
+}): Promise<PublicBusiness[]> {
+  if (input.city) return searchCityBusinesses(input);
+
+  const config = countryConfig(input.country);
+  if (!config) {
+    throw new Error("Для поиска по стране без города выберите поддерживаемую страну или укажите город вручную");
+  }
+
+  const countryResults: PublicBusiness[] = [];
+  let lastCityError: unknown;
+  for (const [index, city] of config.cities.entries()) {
+    try {
+      const cityResults = await searchCityBusinesses({ ...input, city });
+      countryResults.push(...cityResults.slice(0, 10));
+    } catch (error) {
+      lastCityError = error;
+    }
+    if (countryResults.length >= 40) break;
+    if (index < config.cities.length - 1) await new Promise((resolve) => setTimeout(resolve, 1_050));
+  }
+  if (countryResults.length === 0 && lastCityError) throw lastCityError;
+  return countryResults;
 }
 
 export async function searchPublicBusinesses(input: {

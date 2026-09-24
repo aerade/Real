@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { Link } from "wouter";
 import {
   AlertCircle, AlertTriangle, ArrowUpDown, Building2, Check, CheckCircle2, Database,
-  ExternalLink, Filter, Globe2, History, LockKeyhole, MapPin, RotateCcw, Search as SearchIcon,
+  ExternalLink, Filter, Globe2, History, MapPin, RotateCcw, Search as SearchIcon,
   Target, XCircle,
 } from "lucide-react";
 
@@ -57,6 +57,69 @@ const POPULAR_CITIES = [
   { value: "Мурманск", aliases: ["murmansk", "мурманск"] },
   { value: "Сургут", aliases: ["surgut", "сургут"] },
   { value: "Нижневартовск", aliases: ["nizhnevartovsk", "нижневартовск"] },
+];
+const CITIES_BY_COUNTRY: Record<string, Array<{ value: string; aliases: string[] }>> = {
+  "США": ["New York", "Los Angeles", "Chicago", "Houston", "Miami", "Boston", "Seattle"].map((value) => ({ value, aliases: [] })),
+  "Канада": ["Toronto", "Vancouver", "Montreal", "Calgary", "Ottawa", "Edmonton"].map((value) => ({ value, aliases: [] })),
+  "Мексика": ["Mexico City", "Guadalajara", "Monterrey", "Puebla", "Tijuana"].map((value) => ({ value, aliases: [] })),
+  "Бразилия": ["São Paulo", "Rio de Janeiro", "Brasília", "Salvador", "Curitiba"].map((value) => ({ value, aliases: [] })),
+  "Аргентина": ["Buenos Aires", "Córdoba", "Rosario", "Mendoza"].map((value) => ({ value, aliases: [] })),
+  "Чили": ["Santiago", "Valparaíso", "Concepción", "Viña del Mar"].map((value) => ({ value, aliases: [] })),
+  "Колумбия": ["Bogotá", "Medellín", "Cali", "Barranquilla"].map((value) => ({ value, aliases: [] })),
+  "Перу": ["Lima", "Arequipa", "Cusco", "Trujillo"].map((value) => ({ value, aliases: [] })),
+  "Великобритания": ["London", "Manchester", "Birmingham", "Edinburgh", "Bristol"].map((value) => ({ value, aliases: [] })),
+  "Германия": ["Berlin", "Munich", "Hamburg", "Cologne", "Frankfurt"].map((value) => ({ value, aliases: [] })),
+  "Франция": ["Paris", "Lyon", "Marseille", "Toulouse", "Nice"].map((value) => ({ value, aliases: [] })),
+  "Испания": ["Madrid", "Barcelona", "Valencia", "Seville", "Málaga"].map((value) => ({ value, aliases: [] })),
+  "Италия": ["Rome", "Milan", "Naples", "Turin", "Florence"].map((value) => ({ value, aliases: [] })),
+  "Нидерланды": ["Amsterdam", "Rotterdam", "The Hague", "Utrecht", "Eindhoven"].map((value) => ({ value, aliases: [] })),
+  "Бельгия": ["Brussels", "Antwerp", "Ghent", "Liège", "Bruges"].map((value) => ({ value, aliases: [] })),
+  "Швейцария": ["Zurich", "Geneva", "Basel", "Bern", "Lausanne"].map((value) => ({ value, aliases: [] })),
+  "Австрия": ["Vienna", "Graz", "Linz", "Salzburg", "Innsbruck"].map((value) => ({ value, aliases: [] })),
+  "Португалия": ["Lisbon", "Porto", "Braga", "Coimbra", "Faro"].map((value) => ({ value, aliases: [] })),
+  "Швеция": ["Stockholm", "Gothenburg", "Malmö", "Uppsala"].map((value) => ({ value, aliases: [] })),
+  "Норвегия": ["Oslo", "Bergen", "Trondheim", "Stavanger"].map((value) => ({ value, aliases: [] })),
+  "Дания": ["Copenhagen", "Aarhus", "Odense", "Aalborg"].map((value) => ({ value, aliases: [] })),
+  "Финляндия": ["Helsinki", "Tampere", "Turku", "Oulu"].map((value) => ({ value, aliases: [] })),
+  "Польша": ["Warsaw", "Kraków", "Wrocław", "Gdańsk", "Poznań"].map((value) => ({ value, aliases: [] })),
+  "Чехия": ["Prague", "Brno", "Ostrava", "Plzeň"].map((value) => ({ value, aliases: [] })),
+  "Ирландия": ["Dublin", "Cork", "Galway", "Limerick"].map((value) => ({ value, aliases: [] })),
+  "Греция": ["Athens", "Thessaloniki", "Patras", "Heraklion"].map((value) => ({ value, aliases: [] })),
+  "Румыния": ["Bucharest", "Cluj-Napoca", "Timișoara", "Iași"].map((value) => ({ value, aliases: [] })),
+  "Венгрия": ["Budapest", "Debrecen", "Szeged", "Pécs"].map((value) => ({ value, aliases: [] })),
+  "Украина": ["Kyiv", "Lviv", "Odesa", "Dnipro", "Kharkiv"].map((value) => ({ value, aliases: [] })),
+};
+const SEARCH_COUNTRIES = [
+  { value: "Россия", label: "Россия" },
+  { value: "США", label: "США" },
+  { value: "Канада", label: "Канада" },
+  { value: "Мексика", label: "Мексика" },
+  { value: "Бразилия", label: "Бразилия" },
+  { value: "Аргентина", label: "Аргентина" },
+  { value: "Чили", label: "Чили" },
+  { value: "Колумбия", label: "Колумбия" },
+  { value: "Перу", label: "Перу" },
+  { value: "Великобритания", label: "Великобритания" },
+  { value: "Германия", label: "Германия" },
+  { value: "Франция", label: "Франция" },
+  { value: "Испания", label: "Испания" },
+  { value: "Италия", label: "Италия" },
+  { value: "Нидерланды", label: "Нидерланды" },
+  { value: "Бельгия", label: "Бельгия" },
+  { value: "Швейцария", label: "Швейцария" },
+  { value: "Австрия", label: "Австрия" },
+  { value: "Португалия", label: "Португалия" },
+  { value: "Швеция", label: "Швеция" },
+  { value: "Норвегия", label: "Норвегия" },
+  { value: "Дания", label: "Дания" },
+  { value: "Финляндия", label: "Финляндия" },
+  { value: "Польша", label: "Польша" },
+  { value: "Чехия", label: "Чехия" },
+  { value: "Ирландия", label: "Ирландия" },
+  { value: "Греция", label: "Греция" },
+  { value: "Румыния", label: "Румыния" },
+  { value: "Венгрия", label: "Венгрия" },
+  { value: "Украина", label: "Украина" },
 ];
 const POPULAR_INDUSTRIES = [
   { value: "СТО", aliases: ["car service", "автосервис", "авто сервис", "ремонт авто", "шин"] },
@@ -208,6 +271,7 @@ function auditSummary(lead: { websiteAudit?: { status: string; qualityScore: num
 
 export function SearchPage() {
   const { session } = useAuth();
+  const [country, setCountry] = useState("Россия");
   const [city, setCity] = useState("");
   const [industry, setIndustry] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
@@ -222,11 +286,13 @@ export function SearchPage() {
     if (!login) return;
     try {
       const raw = window.localStorage.getItem(`real:search-defaults:${login.toLowerCase()}`) ?? window.localStorage.getItem(`lead-scout:search-defaults:${login.toLowerCase()}`);
-      const defaults = raw ? JSON.parse(raw) as { city?: string; industry?: string; showPreviouslyFound?: boolean } : {};
+      const defaults = raw ? JSON.parse(raw) as { country?: string; city?: string; industry?: string; showPreviouslyFound?: boolean } : {};
+      setCountry(defaults.country ?? "Россия");
       setCity(defaults.city ?? "");
       setIndustry(defaults.industry ?? "");
       setShowPreviouslyFound(defaults.showPreviouslyFound ?? false);
     } catch {
+      setCountry("Россия");
       setCity("");
       setIndustry("");
     } finally {
@@ -240,13 +306,13 @@ export function SearchPage() {
     const key = `real:search-defaults:${login.toLowerCase()}`;
     try {
       const existing = JSON.parse(window.localStorage.getItem(key) ?? "{}") as object;
-      window.localStorage.setItem(key, JSON.stringify({ ...existing, city, industry, showPreviouslyFound }));
+      window.localStorage.setItem(key, JSON.stringify({ ...existing, country, city, industry, showPreviouslyFound }));
     } catch { /* local preferences are optional */ }
-  }, [city, industry, showPreviouslyFound, preferencesLoaded, session?.user?.login]);
+  }, [country, city, industry, showPreviouslyFound, preferencesLoaded, session?.user?.login]);
 
   const runSearch = () => {
     setHasSearched(true);
-    searchMutation.mutate({ data: { country: "Россия", city: city.trim(), industry: industry.trim(), showPreviouslyFound } });
+    searchMutation.mutate({ data: { country, city: city.trim(), industry: industry.trim(), showPreviouslyFound } });
   };
   const handleSearch = (event: FormEvent) => { event.preventDefault(); runSearch(); };
   const results = searchMutation.data ?? [];
@@ -275,9 +341,9 @@ export function SearchPage() {
         </header>
 
         <form onSubmit={handleSearch} className="shrink-0 rounded-xl border border-border/70 bg-card p-4 shadow-sm md:p-5">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-[.7fr_1fr_1fr_auto]">
-             <div className="space-y-2"><Label className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">Страна</Label><div className="flex h-11 items-center gap-2 rounded-md border border-border/70 bg-background px-3 text-sm font-semibold"><LockKeyhole className="h-4 w-4 text-muted-foreground" />Россия</div></div>
-              <div className="space-y-2"><Label className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">Город</Label><SuggestionInput value={city} onChange={setCity} options={POPULAR_CITIES} placeholder="Любой город или введите свой" anyLabel="Любой город" anyTestId="button-any-city" icon={MapPin} /></div>
+         <div className="grid grid-cols-1 gap-4 md:grid-cols-[.8fr_1fr_1fr_auto]">
+             <div className="space-y-2"><Label className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">Страна</Label><Select value={country} onValueChange={(value) => { setCountry(value); setCity(""); }}><SelectTrigger data-testid="select-search-country" className="h-11 border-border/70 bg-background text-sm"><SelectValue /></SelectTrigger><SelectContent className="max-h-72">{SEARCH_COUNTRIES.map((item) => <SelectItem data-testid={`country-${item.value}`} key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectContent></Select></div>
+              <div className="space-y-2"><Label className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">Город</Label><SuggestionInput value={city} onChange={setCity} options={CITIES_BY_COUNTRY[country] ?? POPULAR_CITIES} placeholder="Любой город или введите свой" anyLabel="Любой город" anyTestId="button-any-city" icon={MapPin} /></div>
                <div className="space-y-2"><Label className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">Отрасль</Label><SuggestionInput value={industry} onChange={setIndustry} options={POPULAR_INDUSTRIES} placeholder="Любая отрасль или введите свою" anyLabel="Любая отрасль" anyTestId="button-any-industry" icon={Building2} /></div>
               <Button data-testid="button-search-leads" type="submit" disabled={searchMutation.isPending} className="h-11 self-end font-semibold"><SearchIcon className="mr-2 h-4 w-4" />Искать</Button>
           </div>
