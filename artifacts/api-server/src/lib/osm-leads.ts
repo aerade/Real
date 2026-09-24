@@ -25,6 +25,7 @@ export type PublicBusiness = {
   sourceId: string;
   name: string;
   city?: string;
+  address?: string | null;
   industry: string;
   website: string | null;
   contacts: Array<{ type: string; value: string; url: string }>;

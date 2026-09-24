@@ -294,12 +294,13 @@ components:
         url: { type: string }
     Lead:
       type: object
-      required: [id, name, country, city, industry, websiteStatus, status, score, scoreReasons, issues, reviewsCount, branchesCount, contacts, source, scoreBreakdown, scoreVersion, updatedAt]
+      required: [id, name, country, city, address, industry, websiteStatus, status, score, scoreReasons, issues, reviewsCount, branchesCount, contacts, source, scoreBreakdown, scoreVersion, updatedAt]
       properties:
         id: { type: integer }
         name: { type: string }
         country: { type: string }
         city: { type: string }
+        address: { type: ["string", "null"] }
         industry: { type: string }
         website: { type: ["string", "null"] }
         websiteStatus:

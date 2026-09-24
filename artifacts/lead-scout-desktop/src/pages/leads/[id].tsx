@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { useLocation, useParams } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  AlertCircle, ArrowLeft, Building2, CheckCircle2, CircleHelp, ExternalLink,
+  AlertCircle, ArrowLeft, Building2, CheckCircle2, CircleHelp, Copy, ExternalLink,
   FileText, Globe2, Mail, MapPin, Phone, ShieldAlert, Users, XCircle,
   RefreshCw,
 } from "lucide-react";
@@ -104,6 +104,18 @@ export function LeadDetailsPage() {
     });
   };
 
+  const copyLeadValue = async (value: string, successMessage: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      toast({ title: successMessage });
+    } catch {
+      toast({
+        title: "Не удалось скопировать",
+        description: "Проверьте разрешение на доступ к буферу обмена и попробуйте ещё раз.",
+      });
+    }
+  };
+
   const back = () => { if (window.history.length > 1) window.history.back(); else setLocation("/search"); };
   if (!leadId) return <AppLayout><EmptyState title="Лид не найден" copy="Идентификатор компании недействителен." action="Назад к поиску" onAction={() => setLocation("/search")} /></AppLayout>;
   if (isLoading) return <AppLayout><div className="mx-auto max-w-5xl space-y-5 animate-pulse"><div className="h-4 w-24 rounded bg-muted" /><div className="h-12 w-2/3 rounded bg-muted" /><div className="h-24 rounded-xl bg-muted" /><div className="grid gap-4 md:grid-cols-2"><div className="h-72 rounded-xl bg-muted" /><div className="h-72 rounded-xl bg-muted" /></div></div></AppLayout>;
@@ -120,6 +132,11 @@ export function LeadDetailsPage() {
     : [];
   if (!Array.isArray(lead.scoreBreakdown)) lead.scoreBreakdown = scoreBreakdown;
   const website = safeUrl(lead.website);
+  const addressToCopy = lead.address?.trim() || [lead.city, lead.country].filter(Boolean).join(", ");
+  const addressLabel = lead.address?.trim() ? "Адрес компании" : "Город и страна";
+  const addressCopiedMessage = lead.address?.trim()
+    ? "Адрес компании скопирован"
+    : "Город и страна скопированы";
   const groupedFactors = scoreBreakdown.reduce<Record<string, typeof scoreBreakdown>>((groups, factor) => {
     (groups[factor.category] ??= []).push(factor);
     return groups;
@@ -135,8 +152,16 @@ export function LeadDetailsPage() {
         <header className="flex flex-col justify-between gap-5 border-b border-border/70 pb-5 lg:flex-row lg:items-start">
           <div className="min-w-0">
              <div className="mb-2 flex flex-wrap items-center gap-2"><span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">Карточка компании</span><span data-testid="status-lead" className="rounded-full border border-border/70 bg-card px-2 py-1 text-[10px] text-muted-foreground">{status.label}</span><span data-testid="status-website" className={cn("rounded-full border px-2 py-1 text-[10px]", lead.websiteStatus === "present" ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300" : "border-cyan-500/30 bg-cyan-500/10 text-cyan-300")}>{lead.websiteStatus === "present" ? "Есть сайт" : "Сайта нет"}</span></div>
-            <h1 data-testid="text-lead-name" className="truncate text-2xl font-semibold tracking-tight">{lead.name}</h1>
-            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground"><span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{lead.city}, {lead.country}</span><span className="flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" />{lead.industry}</span>{website && <a data-testid="link-lead-website" href={website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-primary hover:underline"><Globe2 className="h-3.5 w-3.5" />{websiteHost(lead.website)}<ExternalLink className="h-3 w-3" /></a>}</div>
+             <div className="flex min-w-0 items-center gap-2">
+               <h1 data-testid="text-lead-name" className="truncate text-2xl font-semibold tracking-tight">{lead.name}</h1>
+               <Button data-testid="button-copy-lead-name" type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" aria-label="Скопировать название компании" title="Скопировать название компании" onClick={() => void copyLeadValue(lead.name, "Название компании скопировано")}><Copy className="h-3.5 w-3.5" /></Button>
+             </div>
+             <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+               <span data-testid="text-lead-address" className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{lead.address?.trim() || `${lead.city}, ${lead.country}`}</span>
+               <Button data-testid="button-copy-lead-address" type="button" variant="ghost" size="icon" className="h-7 w-7" aria-label={`Скопировать: ${addressLabel.toLowerCase()}`} title={`Скопировать: ${addressLabel.toLowerCase()}`} disabled={!addressToCopy} onClick={() => void copyLeadValue(addressToCopy, addressCopiedMessage)}><Copy className="h-3.5 w-3.5" /></Button>
+               <span className="flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" />{lead.industry}</span>
+               {website && <a data-testid="link-lead-website" href={website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-primary hover:underline"><Globe2 className="h-3.5 w-3.5" />{websiteHost(lead.website)}<ExternalLink className="h-3 w-3" /></a>}
+             </div>
           </div>
           <div className="w-full max-w-md rounded-2xl border border-border/70 bg-card p-4 shadow-sm">
             <div className="flex items-center gap-4">

@@ -157,6 +157,8 @@ export interface Lead {
   name: string;
   country: string;
   city: string;
+  /** @nullable */
+  address: string | null;
   industry: string;
   /** @nullable */
   website?: string | null;

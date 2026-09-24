@@ -27,6 +27,7 @@ export type LeadOutput = {
   name: string;
   country: string;
   city: string;
+  address: string | null;
   industry: string;
   website: string | null;
   websiteStatus: "present" | "missing";
@@ -194,6 +195,7 @@ function toLead(row: JoinedLead): LeadOutput {
     name: lead.name,
     country: lead.country,
     city: lead.city,
+    address: lead.address ?? null,
     industry: lead.industry,
     website: lead.website,
     websiteStatus: lead.website ? "present" : "missing",
@@ -367,11 +369,13 @@ export async function upsertSearchedLead(
   country: string,
   city: string,
 ): Promise<LeadOutput> {
+  const address = business.address?.trim() || null;
   const inserted = await db.insert(leadsTable).values({
     sourceId: business.sourceId,
     name: business.name,
     country: country === "any" ? "" : country,
     city: business.city || city,
+    address,
     industry: business.industry,
     website: business.website,
     status: "new",
@@ -395,6 +399,7 @@ export async function upsertSearchedLead(
       name: business.name,
       country: country === "any" ? "" : country,
       city: business.city || city,
+      ...(address ? { address } : {}),
       industry: business.industry,
       website: business.website,
       score: business.score,

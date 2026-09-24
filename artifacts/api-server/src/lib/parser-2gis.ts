@@ -31,7 +31,10 @@ type TwoGisItem = {
     branch_count?: number;
   };
   category?: string;
-  address?: string;
+  address?: string | {
+    building_name?: string;
+    components?: Array<{ number?: string; street?: string }>;
+  };
   city?: string;
   website?: string | null;
   has_website?: boolean;
@@ -256,6 +259,18 @@ function mapItem(item: TwoGisItem, input: ParserInput): PublicBusiness | null {
     ?? item.city
     ?? item.city_alias
     ?? input.city;
+  const address = item.address_name?.trim()
+    || (typeof item.address === "string" ? item.address.trim() : "")
+    || [
+      item.address && typeof item.address !== "string"
+        ? item.address.components?.find((component) => component.street)?.street?.trim()
+        : "",
+      item.address && typeof item.address !== "string"
+        ? item.address.components?.find((component) => component.number)?.number?.trim()
+        : "",
+    ].filter(Boolean).join(", ")
+    || (item.address && typeof item.address !== "string" ? item.address.building_name?.trim() : "")
+    || null;
   const reviewsCount = Number(
     item.reviews?.general_review_count ??
     item.reviews?.org_review_count ??
@@ -275,6 +290,7 @@ function mapItem(item: TwoGisItem, input: ParserInput): PublicBusiness | null {
     sourceId: `2gis:${item.id}`,
     name,
     city,
+    address,
     industry,
     website,
     contacts,
