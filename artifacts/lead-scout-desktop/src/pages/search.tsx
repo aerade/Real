@@ -122,21 +122,23 @@ function editDistance(a: string, b: string) {
   return row[b.length];
 }
 
-function SuggestionInput({ value, onChange, options, placeholder, anyLabel, anyTestId, icon: Icon, disabled = false }: {
+function SuggestionInput({ value, onChange, options, placeholder, anyLabel, anyTestId, anySelected = false, onAnyChange, icon: Icon, disabled = false }: {
   value: string;
   onChange: (value: string) => void;
   options: Array<{ value: string; aliases: string[] }>;
   placeholder: string;
   anyLabel?: string;
   anyTestId?: string;
+  anySelected?: boolean;
+  onAnyChange?: (selected: boolean) => void;
   icon: ElementType;
   disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const [inputValue, setInputValue] = useState(value);
-  useEffect(() => setInputValue(value), [value]);
+  const [inputValue, setInputValue] = useState(anySelected ? anyLabel ?? "" : value);
+  useEffect(() => setInputValue(anySelected ? anyLabel ?? "" : value), [value, anyLabel, anySelected]);
   const filtered = options.filter((option) => {
-    const query = inputValue.trim().toLowerCase();
+    const query = anySelected ? "" : inputValue.trim().toLowerCase();
     if (!query) return true;
     return [option.value, ...option.aliases].some((candidate) => {
       const normalized = candidate.toLowerCase();
@@ -145,11 +147,18 @@ function SuggestionInput({ value, onChange, options, placeholder, anyLabel, anyT
     });
   });
   const normalizedInput = inputValue.trim().toLowerCase();
-  const canUseCustomValue = Boolean(normalizedInput) &&
+  const canUseCustomValue = !anySelected && Boolean(normalizedInput) &&
     !options.some((option) => option.value.toLowerCase() === normalizedInput);
   const choose = (next: string) => {
     setInputValue(next);
+    onAnyChange?.(false);
     onChange(next);
+    setOpen(false);
+  };
+  const chooseAny = () => {
+    setInputValue(anyLabel ?? "");
+    onAnyChange?.(true);
+    onChange("");
     setOpen(false);
   };
   return (
@@ -160,8 +169,8 @@ function SuggestionInput({ value, onChange, options, placeholder, anyLabel, anyT
           <Input
             data-testid={`input-${placeholder}`}
             value={inputValue}
-            onChange={(event) => { setInputValue(event.target.value); onChange(event.target.value); }}
-            onFocus={() => setOpen(true)}
+            onChange={(event) => { setInputValue(event.target.value); onAnyChange?.(false); onChange(event.target.value); }}
+            onFocus={(event) => { if (anySelected) event.currentTarget.select(); setOpen(true); }}
             onKeyDown={(event) => { if (event.key === "Escape" || event.key === "Enter") setOpen(false); }}
             placeholder={placeholder}
             disabled={disabled}
@@ -171,9 +180,9 @@ function SuggestionInput({ value, onChange, options, placeholder, anyLabel, anyT
       </PopoverAnchor>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-1" align="start">
         <div className="max-h-52 overflow-y-auto">
-          {anyLabel && anyTestId && <button data-testid={anyTestId} type="button" onClick={() => choose("")} className="flex w-full items-center justify-between rounded bg-primary/10 px-3 py-2 text-left text-sm font-semibold text-primary hover:bg-primary/15">
+          {anyLabel && anyTestId && <button data-testid={anyTestId} type="button" onClick={chooseAny} className="flex w-full items-center justify-between rounded bg-primary/10 px-3 py-2 text-left text-sm font-semibold text-primary hover:bg-primary/15">
             {anyLabel}
-            {!value && <Check className="h-4 w-4" />}
+            {anySelected && <Check className="h-4 w-4" />}
           </button>}
           {canUseCustomValue && <button data-testid="button-use-search-value" type="button" onClick={() => choose(inputValue.trim())} className="flex w-full items-center gap-2 rounded bg-primary/10 px-3 py-2 text-left text-sm font-medium text-primary hover:bg-primary/15">
             Искать «{inputValue.trim()}»
@@ -229,7 +238,9 @@ export function SearchPage() {
   const { session } = useAuth();
   const [country, setCountry] = useState("Россия");
   const [city, setCity] = useState("");
+  const [cityAnySelected, setCityAnySelected] = useState(false);
   const [industry, setIndustry] = useState("");
+  const [industryAnySelected, setIndustryAnySelected] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [sortBy, setSortBy] = useState("score");
   const [minimumScore, setMinimumScore] = useState("all");
@@ -237,22 +248,27 @@ export function SearchPage() {
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
   const searchMutation = useSearchLeads();
   const usesTwoGis = country === "Россия" || country === "Казахстан";
-  const missingTwoGisFilters = usesTwoGis && (!city.trim() || !industry.trim());
+  const searchFiltersIncomplete = cityAnySelected || industryAnySelected ||
+    (usesTwoGis && (!city.trim() || !industry.trim()));
 
   useEffect(() => {
     const login = session?.user?.login;
     if (!login) return;
     try {
       const raw = window.localStorage.getItem(`real:search-defaults:${login.toLowerCase()}`) ?? window.localStorage.getItem(`lead-scout:search-defaults:${login.toLowerCase()}`);
-      const defaults = raw ? JSON.parse(raw) as { country?: string; city?: string; industry?: string; showPreviouslyFound?: boolean } : {};
+      const defaults = raw ? JSON.parse(raw) as { country?: string; city?: string; cityAnySelected?: boolean; industry?: string; industryAnySelected?: boolean; showPreviouslyFound?: boolean } : {};
       setCountry(defaults.country === "Казахстан" ? "Казахстан" : "Россия");
       setCity(defaults.city ?? "");
+      setCityAnySelected(defaults.cityAnySelected ?? false);
       setIndustry(defaults.industry ?? "");
+      setIndustryAnySelected(defaults.industryAnySelected ?? false);
       setShowPreviouslyFound(defaults.showPreviouslyFound ?? false);
     } catch {
       setCountry("Россия");
       setCity("");
+      setCityAnySelected(false);
       setIndustry("");
+      setIndustryAnySelected(false);
     } finally {
       setPreferencesLoaded(true);
     }
@@ -264,12 +280,12 @@ export function SearchPage() {
     const key = `real:search-defaults:${login.toLowerCase()}`;
     try {
       const existing = JSON.parse(window.localStorage.getItem(key) ?? "{}") as object;
-      window.localStorage.setItem(key, JSON.stringify({ ...existing, country, city, industry, showPreviouslyFound }));
+      window.localStorage.setItem(key, JSON.stringify({ ...existing, country, city, cityAnySelected, industry, industryAnySelected, showPreviouslyFound }));
     } catch { /* local preferences are optional */ }
-  }, [country, city, industry, showPreviouslyFound, preferencesLoaded, session?.user?.login]);
+  }, [country, city, cityAnySelected, industry, industryAnySelected, showPreviouslyFound, preferencesLoaded, session?.user?.login]);
 
   const runSearch = () => {
-    if (missingTwoGisFilters) return;
+    if (searchFiltersIncomplete) return;
     setHasSearched(true);
     searchMutation.mutate({ data: { country, city: city.trim(), industry: industry.trim(), showPreviouslyFound } });
   };
@@ -301,10 +317,10 @@ export function SearchPage() {
 
         <form onSubmit={handleSearch} className="shrink-0 rounded-xl border border-border/70 bg-card p-4 shadow-sm md:p-5">
          <div className="grid grid-cols-1 gap-4 md:grid-cols-[.8fr_1fr_1fr_auto]">
-             <div className="space-y-2"><Label className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">Страна</Label><Select value={country} onValueChange={(value) => { setCountry(value); setCity(""); }}><SelectTrigger data-testid="select-search-country" className="h-11 border-border/70 bg-background text-sm"><SelectValue /></SelectTrigger><SelectContent className="max-h-72">{SEARCH_COUNTRIES.map((item) => <SelectItem data-testid={`country-${item.value}`} key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectContent></Select></div>
-               <div className="space-y-2"><Label className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">Город</Label><SuggestionInput value={city} onChange={setCity} options={CITIES_BY_COUNTRY[country] ?? []} placeholder="Выберите или введите город" anyLabel="Любой" anyTestId="any-city" icon={MapPin} /></div>
-               <div className="space-y-2"><Label className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">Отрасль</Label><SuggestionInput value={industry} onChange={setIndustry} options={POPULAR_INDUSTRIES} placeholder="Выберите или введите отрасль" anyLabel="Любая" anyTestId="any-industry" icon={Building2} /></div>
-              <Button data-testid="button-search-leads" type="submit" disabled={searchMutation.isPending || missingTwoGisFilters} className="h-11 font-semibold md:mt-[18px]"><SearchIcon className="mr-2 h-4 w-4" />Искать</Button>
+              <div className="space-y-2"><Label className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">Страна</Label><Select value={country} onValueChange={(value) => { setCountry(value); setCity(""); setCityAnySelected(false); }}><SelectTrigger data-testid="select-search-country" className="h-11 border-border/70 bg-background text-sm"><SelectValue /></SelectTrigger><SelectContent className="max-h-72">{SEARCH_COUNTRIES.map((item) => <SelectItem data-testid={`country-${item.value}`} key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectContent></Select></div>
+                <div className="space-y-2"><Label className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">Город</Label><SuggestionInput value={city} onChange={setCity} anySelected={cityAnySelected} onAnyChange={setCityAnySelected} options={CITIES_BY_COUNTRY[country] ?? []} placeholder="Выберите или введите город" anyLabel="Любой" anyTestId="any-city" icon={MapPin} /></div>
+                <div className="space-y-2"><Label className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">Отрасль</Label><SuggestionInput value={industry} onChange={setIndustry} anySelected={industryAnySelected} onAnyChange={setIndustryAnySelected} options={POPULAR_INDUSTRIES} placeholder="Выберите или введите отрасль" anyLabel="Любая" anyTestId="any-industry" icon={Building2} /></div>
+               <Button data-testid="button-search-leads" type="submit" disabled={searchMutation.isPending || searchFiltersIncomplete} className="h-11 font-semibold md:mt-[18px]"><SearchIcon className="mr-2 h-4 w-4" />Искать</Button>
           </div>
           <div className="mt-4 flex items-center justify-between gap-3 rounded-md border border-border/60 bg-background/50 px-3 py-2.5">
              <div className="flex items-center gap-2.5"><History className="h-4 w-4 text-muted-foreground" /><div><p className="text-xs font-semibold">Включать ранее найденные компании</p><p className="text-[11px] text-muted-foreground">История поиска доступна только вам.</p></div></div>
@@ -324,7 +340,7 @@ export function SearchPage() {
             <div className="min-h-0 flex-1 overflow-y-auto">
                {searchMutation.isPending ? <div className="space-y-3 p-4">{[1, 2, 3, 4].map((row) => <div key={row} className="h-24 animate-pulse rounded-lg bg-muted/50" />)}<p className="text-center text-xs text-muted-foreground">Проверяем подключённый источник…</p></div>
                  : searchMutation.isError ? <div className="flex min-h-64 flex-col items-center justify-center p-8 text-center"><AlertCircle className="mb-3 h-7 w-7 text-destructive" /><h3 className="text-base font-semibold">Не удалось завершить поиск</h3><p className="mt-2 max-w-sm text-sm text-muted-foreground">{searchErrorMessage(searchMutation.error)}</p><Button data-testid="button-retry-search" type="button" variant="outline" size="sm" className="mt-5" onClick={runSearch}><RotateCcw className="mr-2 h-3.5 w-3.5" />Повторить</Button></div>
-                 : results.length === 0 ? <div className="flex min-h-64 flex-col items-center justify-center p-8 text-center"><SearchIcon className="mb-3 h-7 w-7 text-muted-foreground/60" /><h3 className="text-base font-semibold">Компании не найдены</h3><p className="mt-2 max-w-sm text-sm text-muted-foreground">Попробуйте расширить город или соседнюю отрасль. Поиск принимает любой текст, не только подсказки.</p><Button data-testid="button-clear-search" type="button" variant="ghost" size="sm" className="mt-3" onClick={() => { setCity(""); setIndustry(""); }}>Очистить критерии</Button></div>
+                  : results.length === 0 ? <div className="flex min-h-64 flex-col items-center justify-center p-8 text-center"><SearchIcon className="mb-3 h-7 w-7 text-muted-foreground/60" /><h3 className="text-base font-semibold">Компании не найдены</h3><p className="mt-2 max-w-sm text-sm text-muted-foreground">Попробуйте расширить город или соседнюю отрасль. Поиск принимает любой текст, не только подсказки.</p><Button data-testid="button-clear-search" type="button" variant="ghost" size="sm" className="mt-3" onClick={() => { setCity(""); setCityAnySelected(false); setIndustry(""); setIndustryAnySelected(false); }}>Очистить критерии</Button></div>
                  : visibleResults.length === 0 ? <div className="flex min-h-64 flex-col items-center justify-center p-8 text-center"><Filter className="mb-3 h-6 w-6 text-muted-foreground" /><h3 className="text-sm font-semibold">Нет результатов по этому фильтру</h3><p className="mt-1 text-xs text-muted-foreground">Снизьте минимальный приоритет, чтобы увидеть весь ответ.</p></div>
                 : <div className="divide-y divide-border/55">{visibleResults.map((lead) => {
                   const audit = auditSummary(lead);
