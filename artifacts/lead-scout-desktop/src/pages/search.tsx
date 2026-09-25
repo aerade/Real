@@ -8,6 +8,11 @@ import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/use-auth";
+import {
+  playSearchCompletionSound,
+  readSearchCompletionSound,
+  resumeSearchCompletionAudio,
+} from "@/lib/search-completion-sound";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
 import {
@@ -238,6 +243,13 @@ function searchErrorMessage(error: unknown): string {
   return "Не удалось подключиться к источнику. Проверьте настройки и повторите поиск.";
 }
 
+function isPersistedSearchLead(value: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+  const lead = value as { id?: unknown; name?: unknown; score?: unknown; contacts?: unknown; issues?: unknown };
+  return Number.isFinite(lead.id) && typeof lead.name === "string" && typeof lead.score === "number" &&
+    Array.isArray(lead.contacts) && Array.isArray(lead.issues);
+}
+
 function auditSummary(lead: { websiteAudit?: { status: string; qualityScore: number | null; checks: unknown[] } | null; website?: string | null }) {
   if (!lead.websiteAudit || lead.websiteAudit.status === "not_provided") return { label: "Аудит не проводился", tone: "muted" };
   if (lead.websiteAudit.status === "unavailable") return { label: "Сайт недоступен", tone: "warn" };
@@ -249,6 +261,7 @@ function auditSummary(lead: { websiteAudit?: { status: string; qualityScore: num
 
 export function SearchPage() {
   const { session } = useAuth();
+  const login = session?.user?.login?.toLowerCase() ?? "";
   const [country, setCountry] = useState("Россия");
   const [city, setCity] = useState("");
   const [cityAnySelected, setCityAnySelected] = useState(false);
@@ -260,14 +273,17 @@ export function SearchPage() {
   const [showPreviouslyFound, setShowPreviouslyFound] = useState(false);
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
   const searchMutation = useSearchLeads();
+  const [cachedResults, setCachedResults] = useState<typeof searchMutation.data>([]);
+  const [searchSnapshotLoadedFor, setSearchSnapshotLoadedFor] = useState<string | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const searchSnapshotKey = login ? `real:search-state:${login}` : null;
   const usesTwoGis = country === "Россия" || country === "Казахстан";
   const searchFiltersIncomplete = !usesTwoGis;
 
   useEffect(() => {
-    const login = session?.user?.login;
     if (!login) return;
     try {
-      const raw = window.localStorage.getItem(`real:search-defaults:${login.toLowerCase()}`) ?? window.localStorage.getItem(`lead-scout:search-defaults:${login.toLowerCase()}`);
+      const raw = window.localStorage.getItem(`real:search-defaults:${login}`) ?? window.localStorage.getItem(`lead-scout:search-defaults:${login}`);
       const defaults = raw ? JSON.parse(raw) as { country?: string; city?: string; cityAnySelected?: boolean; industry?: string; industryAnySelected?: boolean; showPreviouslyFound?: boolean } : {};
       setCountry(defaults.country === "Казахстан" ? "Казахстан" : "Россия");
       setCity(defaults.city ?? "");
@@ -284,25 +300,116 @@ export function SearchPage() {
     } finally {
       setPreferencesLoaded(true);
     }
-  }, [session?.user?.login]);
+  }, [login]);
 
   useEffect(() => {
-    const login = session?.user?.login;
-    if (!login || !preferencesLoaded) return;
-    const key = `real:search-defaults:${login.toLowerCase()}`;
+    if (!login || !preferencesLoaded || searchSnapshotLoadedFor !== login) return;
+    const key = `real:search-defaults:${login}`;
     try {
       const existing = JSON.parse(window.localStorage.getItem(key) ?? "{}") as object;
       window.localStorage.setItem(key, JSON.stringify({ ...existing, country, city, cityAnySelected, industry, industryAnySelected, showPreviouslyFound }));
     } catch { /* local preferences are optional */ }
-  }, [country, city, cityAnySelected, industry, industryAnySelected, showPreviouslyFound, preferencesLoaded, session?.user?.login]);
+  }, [country, city, cityAnySelected, industry, industryAnySelected, showPreviouslyFound, preferencesLoaded, searchSnapshotLoadedFor, login]);
+
+  useEffect(() => {
+    if (!login || !searchSnapshotKey) {
+      setSearchSnapshotLoadedFor(null);
+      setCachedResults([]);
+      setHasSearched(false);
+      return;
+    }
+
+    setCachedResults([]);
+    setHasSearched(false);
+    try {
+      const raw = window.sessionStorage.getItem(searchSnapshotKey);
+      if (raw) {
+        const saved = JSON.parse(raw) as Record<string, unknown>;
+        if (saved.version === 1) {
+          if (saved.country === "Россия" || saved.country === "Казахстан") setCountry(saved.country);
+          if (typeof saved.city === "string") setCity(saved.city);
+          if (typeof saved.cityAnySelected === "boolean") setCityAnySelected(saved.cityAnySelected);
+          if (typeof saved.industry === "string") setIndustry(saved.industry);
+          if (typeof saved.industryAnySelected === "boolean") setIndustryAnySelected(saved.industryAnySelected);
+          if (typeof saved.showPreviouslyFound === "boolean") setShowPreviouslyFound(saved.showPreviouslyFound);
+          if (typeof saved.sortBy === "string") setSortBy(saved.sortBy);
+          if (saved.minimumScore === "all" || saved.minimumScore === "80" || saved.minimumScore === "60") setMinimumScore(saved.minimumScore);
+          setHasSearched(saved.hasSearched === true);
+          if (Array.isArray(saved.results)) {
+            setCachedResults(saved.results.filter(isPersistedSearchLead).slice(0, 15) as NonNullable<typeof searchMutation.data>);
+          }
+        }
+      }
+    } catch {
+      setCachedResults([]);
+      setHasSearched(false);
+    } finally {
+      setSearchSnapshotLoadedFor(login);
+    }
+  }, [login, searchSnapshotKey]);
+
+  useEffect(() => {
+    if (searchMutation.data !== undefined) setCachedResults(searchMutation.data);
+  }, [searchMutation.data]);
+
+  useEffect(() => () => {
+    const context = audioContextRef.current;
+    audioContextRef.current = null;
+    if (context && context.state !== "closed") void context.close().catch(() => undefined);
+  }, []);
+
+  const results = searchMutation.data ?? cachedResults ?? [];
+
+  useEffect(() => {
+    if (
+      !login || !searchSnapshotKey || searchSnapshotLoadedFor !== login || !hasSearched ||
+      searchMutation.isPending || searchMutation.isError
+    ) return;
+    try {
+      window.sessionStorage.setItem(searchSnapshotKey, JSON.stringify({
+        version: 1,
+        country,
+        city,
+        cityAnySelected,
+        industry,
+        industryAnySelected,
+        showPreviouslyFound,
+        sortBy,
+        minimumScore,
+        hasSearched,
+        results: results.slice(0, 15),
+      }));
+    } catch { /* Search state is restored only when session storage is available. */ }
+  }, [
+    login, searchSnapshotKey, searchSnapshotLoadedFor, hasSearched, country, city, cityAnySelected,
+    industry, industryAnySelected, showPreviouslyFound, sortBy, minimumScore, results,
+    searchMutation.isPending, searchMutation.isError,
+  ]);
 
   const runSearch = () => {
     if (searchFiltersIncomplete) return;
     setHasSearched(true);
-    searchMutation.mutate({ data: { country, city: city.trim(), industry: industry.trim(), showPreviouslyFound } });
+    const selectedSound = readSearchCompletionSound();
+    if (selectedSound !== "off") {
+      audioContextRef.current = resumeSearchCompletionAudio(audioContextRef.current);
+    }
+    searchMutation.mutate(
+      { data: { country, city: city.trim(), industry: industry.trim(), showPreviouslyFound } },
+      {
+        onSettled: () => {
+          const sound = readSearchCompletionSound();
+          const context = audioContextRef.current;
+          if (sound === "off" || !context || context.state === "closed") return;
+          void context.resume()
+            .then(() => {
+              if (context.state === "running") playSearchCompletionSound(context, sound);
+            })
+            .catch(() => undefined);
+        },
+      },
+    );
   };
   const handleSearch = (event: FormEvent) => { event.preventDefault(); runSearch(); };
-  const results = searchMutation.data ?? [];
   const visibleResults = useMemo(() => {
     const threshold = minimumScore === "all" ? 0 : Number(minimumScore);
     return [...results].filter((lead) => lead.score >= threshold).sort((a, b) => {

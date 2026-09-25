@@ -40,6 +40,7 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import type { SearchCompletionSound } from "@/lib/search-completion-sound";
 import { cn } from "@/lib/utils";
 import realMarkWhite from "@/assets/real-mark-white.svg";
 import realMarkBlack from "@/assets/real-mark.svg";
@@ -67,6 +68,7 @@ type Preferences = {
   animationStyle: "smooth" | "spring" | "snappy" | "slide" | "minimal";
   buttonSound: string;
   notificationSound: boolean;
+  searchCompletionSound: SearchCompletionSound;
   topBarStyle: "icons" | "labels";
   startupTab: string;
   toolbarPosition: "top" | "bottom";
@@ -113,6 +115,7 @@ const defaultPreferences: Preferences = {
   animationStyle: "smooth",
   buttonSound: "off",
   notificationSound: true,
+  searchCompletionSound: "chime",
   topBarStyle: "labels",
   startupTab: "overview",
   toolbarPosition: "top",
@@ -138,7 +141,16 @@ function readPreferences(): Preferences {
     const saved = window.localStorage.getItem("real:settings") ?? window.localStorage.getItem("lead-scout:settings");
     if (!saved) return defaultPreferences;
     const parsed = JSON.parse(saved) as Partial<Preferences>;
-    return { ...defaultPreferences, ...parsed, customTheme: { ...defaultCustomTheme, ...(parsed.customTheme ?? {}) } };
+    const validSearchSounds: SearchCompletionSound[] = ["off", "chime", "double", "soft"];
+    const searchCompletionSound = validSearchSounds.includes(parsed.searchCompletionSound ?? "chime")
+      ? parsed.searchCompletionSound ?? "chime"
+      : defaultPreferences.searchCompletionSound;
+    return {
+      ...defaultPreferences,
+      ...parsed,
+      searchCompletionSound,
+      customTheme: { ...defaultCustomTheme, ...(parsed.customTheme ?? {}) },
+    };
   } catch {
     return defaultPreferences;
   }
@@ -563,7 +575,18 @@ export function AdminPage() {
               </Select>
             </SettingRow>
            <SettingRow icon={Volume2} title="Звук кнопок" description="Проигрывать короткий звук при нажатии кнопки."><Select value={preferences.buttonSound} onValueChange={(value) => updatePreference("buttonSound", value)}><SelectTrigger className="h-8 w-32 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="off">Выкл.</SelectItem><SelectItem value="tap">Щелчок</SelectItem><SelectItem value="soft">Мягкий щелчок</SelectItem><SelectItem value="pop">Короткий звук</SelectItem></SelectContent></Select></SettingRow>
-            <SettingRow icon={Bell} title="Звук уведомлений" description="Проигрывать короткий звук при появлении уведомления."><Switch checked={preferences.notificationSound} onCheckedChange={(value) => updatePreference("notificationSound", value)} /></SettingRow>
+            <SettingRow icon={Volume2} title="Сигнал завершения поиска" description="Выберите звук после получения результатов или полностью отключите его.">
+              <Select value={preferences.searchCompletionSound} onValueChange={(value) => updatePreference("searchCompletionSound", value as SearchCompletionSound)}>
+                <SelectTrigger data-testid="select-search-completion-sound" aria-label="Сигнал завершения поиска" className="h-8 w-40 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem data-testid="search-sound-chime" value="chime">Мелодичный</SelectItem>
+                  <SelectItem data-testid="search-sound-double" value="double">Двойной</SelectItem>
+                  <SelectItem data-testid="search-sound-soft" value="soft">Мягкий</SelectItem>
+                  <SelectItem data-testid="search-sound-off" value="off">Выкл.</SelectItem>
+                </SelectContent>
+              </Select>
+            </SettingRow>
+            <SettingRow icon={Bell} title="Звук уведомлений" description="Общий выключатель звуков уведомлений, включая сигнал завершения поиска."><Switch data-testid="switch-notification-sound" checked={preferences.notificationSound} onCheckedChange={(value) => updatePreference("notificationSound", value)} aria-label="Звук уведомлений" /></SettingRow>
         </div>
       </div>
     </>
